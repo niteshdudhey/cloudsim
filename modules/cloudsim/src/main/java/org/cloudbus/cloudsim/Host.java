@@ -9,6 +9,8 @@ package org.cloudbus.cloudsim;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.lists.PeList;
@@ -57,6 +59,8 @@ public class Host {
 
 	/** The datacenter where the host is placed. */
 	private Datacenter datacenter;
+	
+	private Map<Double, FullHostStateHistoryEntry> fullStateHistory;
 
 	/**
 	 * Instantiates a new host.
@@ -83,6 +87,8 @@ public class Host {
 
 		setPeList(peList);
 		setFailed(false);
+		
+		fullStateHistory = new TreeMap<Double, FullHostStateHistoryEntry>();
 	}
 
 	/**
@@ -630,4 +636,102 @@ public class Host {
 		this.datacenter = datacenter;
 	}
 
+	public Map<Double, FullHostStateHistoryEntry> getFullHostStateHistory() {
+		return fullStateHistory;
+	}
+
+	public void storeCurrentState(double time) {
+		double totalAllocatedMips = 0.0;
+		double totalRequestedMips = 0.0;
+		for (Vm vm: vmList) {
+			totalAllocatedMips += getTotalAllocatedMipsForVm(vm);
+		}
+		for (Vm vm: vmList) {
+			totalRequestedMips += getTotalAllocatedMipsForVm(vm);
+		}
+		FullHostStateHistoryEntry stateHistory = new 
+				FullHostStateHistoryEntry(time, totalAllocatedMips, totalRequestedMips, true);
+		
+		/*
+		 * Add all function calls to setters of StateHistory attributes
+		 */
+		
+		/*
+		 * Ram related attributes
+		 */
+		stateHistory.setRam(getRam());
+		stateHistory.setAvailableRam(getRamProvisioner().getAvailableRam());
+		int totalRequestedRam = 0;
+		for (Vm vm: getVmList()) {
+			totalRequestedRam += vm.getRam();
+		}
+		stateHistory.setRequestedRam(totalRequestedRam);
+		
+		/*
+		 * Mips related attributes
+		 */
+		stateHistory.setMips(getTotalMips());
+		List<Double> availableMipsList = new ArrayList<Double>();
+		double availableMips = 0.0;
+		for (Pe pe: peList) {
+			double mips = pe.getPeProvisioner().getAvailableMips();
+			availableMips += mips;
+			availableMipsList.add(mips);
+		}
+		stateHistory.setAvailableMipsList(availableMipsList);
+		stateHistory.setAvailableMips(availableMips);
+		stateHistory.setRequestedMips(totalRequestedMips);
+		
+		/*
+		 * Bw related attributes
+		 */
+		stateHistory.setBw(getBw());
+		stateHistory.setAvailableBw(getBwProvisioner().getAvailableBw());
+		long totalRequestedBw = 0;
+		for (Vm vm: getVmList()) {
+			totalRequestedBw += vm.getBw();
+		}
+		stateHistory.setRequestedBw(totalRequestedBw);
+		
+		/*
+		 * Utilization attributes
+		 */
+		double totalCpuUtil = 0.0;
+		for (Vm vm: getVmList()) {
+			totalCpuUtil += vm.getTotalUtilizationOfCpu(time);
+		}
+		stateHistory.setCpuUtil(totalCpuUtil);
+		
+		double totalRamUtil = 0.0;
+		for (Vm vm: getVmList()) {
+			totalRamUtil += 
+					(vm.getCloudletScheduler().getCurrentRequestedUtilizationOfRam())
+					*(vm.getRam());
+		}
+		totalRamUtil /= getRam();
+		stateHistory.setRamUtil(totalRamUtil);
+		
+		double totalBwUtil = 0.0;
+		for (Vm vm: getVmList()) {
+			totalBwUtil += 
+					(vm.getCloudletScheduler().getCurrentRequestedUtilizationOfBw())
+					*(vm.getBw());
+		}
+		totalBwUtil /= getBw();
+		stateHistory.setBwUtil(totalBwUtil);
+		
+		List<Integer> vmIdsList = new ArrayList<Integer>();
+		for (Vm vm: getVmList()) {
+			vmIdsList.add(vm.getId());
+		}
+		stateHistory.setVmIdsList(vmIdsList);
+		
+		/*
+		 * State History stored for the given time instant
+		 */
+		fullStateHistory.put(time, stateHistory);
+//		System.out.println("Host " + getId() + " state stored at time " + time);
+		
+	}
+	
 }

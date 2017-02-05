@@ -13,6 +13,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.cloudbus.cloudsim.EventSummary;
 import org.cloudbus.cloudsim.Log;
 
 /**
@@ -79,6 +80,7 @@ public class CloudInformationService extends SimEntity {
 	@Override
 	public void processEvent(SimEvent ev) {
 		int id = -1;  // requester id
+		EventSummary.storePresentState(CloudSim.clock());
 		switch (ev.getTag()) {
 		// storing regional CIS id
 			case CloudSimTags.REGISTER_REGIONAL_GIS:

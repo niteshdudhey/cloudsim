@@ -98,7 +98,10 @@ public class Datacenter extends SimEntity {
 		for (Host host : getCharacteristics().getHostList()) {
 			host.setDatacenter(this);
 		}
-
+		
+		EventSummary.setHostList(getCharacteristics().getHostList());
+		EventSummary.setVmList(getVmList());
+		
 		// If this resource doesn't have any PEs then no useful at all
 		if (getCharacteristics().getNumberOfPes() == 0) {
                     throw new Exception(super.getName()
@@ -125,7 +128,7 @@ public class Datacenter extends SimEntity {
 	@Override
 	public void processEvent(SimEvent ev) {
 		int srcId = -1;
-
+		EventSummary.storePresentState(CloudSim.clock());
 		switch (ev.getTag()) {
 		// Resource characteristics inquiry
 			case CloudSimTags.RESOURCE_CHARACTERISTICS:

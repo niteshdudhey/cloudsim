@@ -10,6 +10,8 @@ package org.cloudbus.cloudsim;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * Represents a Virtual Machine (VM) that runs inside a Host, sharing a hostList with other VMs. It processes
@@ -82,6 +84,8 @@ public class Vm {
          * to find the desired entry.
          */
 	private final List<VmStateHistoryEntry> stateHistory = new LinkedList<VmStateHistoryEntry>();
+	
+	private Map<Double, FullVmStateHistoryEntry> fullStateHistory;
 
 	/**
 	 * Creates a new Vm object.
@@ -134,6 +138,7 @@ public class Vm {
 		setCurrentAllocatedMips(null);
 		setCurrentAllocatedRam(0);
 		setCurrentAllocatedSize(0);
+		fullStateHistory = new TreeMap<Double, FullVmStateHistoryEntry>();
 	}
 
 	/**
@@ -614,5 +619,50 @@ public class Vm {
 		}
 		getStateHistory().add(newState);
 	}
+	
+	public Map<Double, FullVmStateHistoryEntry> getFullVmStateHistory() {
+		return fullStateHistory;
+	}
 
+	public void storeCurrentState(double time) {
+		double totalAllocatedMips = 0.0;
+		double totalRequestedMips = 0.0;
+		if (getCurrentAllocatedMips() != null) {
+			for (double mips: getCurrentAllocatedMips()) {
+				totalAllocatedMips += mips;
+			}
+		}
+		if (getCurrentRequestedMips() != null) {
+			for (double mips: getCurrentRequestedMips()) {
+				totalRequestedMips += mips;
+			}
+		}
+		FullVmStateHistoryEntry stateHistory = new 
+				FullVmStateHistoryEntry(time, totalAllocatedMips, totalRequestedMips, isInMigration());
+		
+		/*
+		 * Add all function calls to setters of StateHistory attributes
+		 */
+		
+		stateHistory.setAllocatedRam(currentAllocatedRam);
+		stateHistory.setRequestedRam(ram);
+		
+		stateHistory.setAllocatedBw(currentAllocatedBw);
+		stateHistory.setRequestedBw(bw);
+		
+		stateHistory.setAllocatedMips(totalAllocatedMips);
+		stateHistory.setAllocatedMipsList(currentAllocatedMips);
+		stateHistory.setRequestedMips(totalRequestedMips);
+		
+		stateHistory.setRamUtil(getCloudletScheduler().getCurrentRequestedUtilizationOfRam());
+		stateHistory.setCpuUtil(getCloudletScheduler().getTotalUtilizationOfCpu(time));
+		stateHistory.setBwUtil(getCloudletScheduler().getCurrentRequestedUtilizationOfBw());		
+		
+		/*
+		 * State History stored for the given time instant
+		 */
+		fullStateHistory.put(time, stateHistory);
+//		System.out.println("VM " + getId() + " state stored at time " + time);
+	}
+	
 }
