@@ -29,7 +29,7 @@ import com.google.common.collect.Table;
 public class PhysicalTopology {
 	
 	Hashtable<Integer,Node> nodesTable;	// Address -> Node
-	Table<Integer, Integer, Link> links; 	// From : To -> Link
+	public Table<Integer, Integer, Link> links; 	// From : To -> Link
 	Multimap<Node,Link> nodeLinks;	// Node -> all Links
 
 	public PhysicalTopology() {

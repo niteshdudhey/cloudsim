@@ -129,6 +129,11 @@ public class Switch extends SimEntity implements Node{
 	}
 	public void updateNetworkUtilization() {
 		this.addUtilizationEntry();
+		
+		double time = CloudSim.clock();
+		for(Link l:this.links) {
+			l.updateUtilizationHistory(time, this);
+		}
 	}
 
 	public void addUtilizationEntryTermination(double finishTime) {

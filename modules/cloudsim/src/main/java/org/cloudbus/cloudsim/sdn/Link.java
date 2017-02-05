@@ -9,6 +9,7 @@
 package org.cloudbus.cloudsim.sdn;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 import org.cloudbus.cloudsim.Log;
@@ -32,6 +33,8 @@ public class Link {
 	private List<Channel> upChannels;
 	private List<Channel> downChannels;
 	
+	public List<LinkStateHistoryEntry> stateHistory = new LinkedList<LinkStateHistoryEntry>();
+	
 	public Link(Node highOrder, Node lowOrder, double latency, double bw) {
 		this.highOrder = highOrder;
 		this.lowOrder = lowOrder;
@@ -47,6 +50,10 @@ public class Link {
 		this.downBW = downBW;
 	}
 
+	public void updateUtilizationHistory(double time, Node from){
+		stateHistory.add(new LinkStateHistoryEntry(time, getFreeBandwidth(from)));
+	}
+	
 	public Node getHighOrder() {
 		return highOrder;
 	}
