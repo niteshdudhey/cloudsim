@@ -25,4 +25,25 @@ public class Constants {
 	public static final int REQUEST_COMPLETED = SDN_BASE + 11;
 	public static final int APPLICATION_SUBMIT = SDN_BASE + 20;	// Broker -> Datacenter.
 	public static final int APPLICATION_SUBMIT_ACK = SDN_BASE + 21;
+	
+	public static String TagText(int tagValue) {
+		tagValue = tagValue - SDN_BASE;
+        switch (tagValue) {
+        case 1:
+            return "SDN_PACKAGE";
+        case 2:
+            return "SDN_INTERNAL_PACKAGE_PROCESS";
+        case 10:
+            return "REQUEST_SUBMIT";
+        case 11:
+            return "REQUEST_COMPLETED";
+        case 20:
+            return "APPLICATION_SUBMIT";
+        case 21:
+            return "APPLICATION_SUBMIT_ACK";
+        default:
+            return "Invalid tag value";
+        }
+    }
+	
 }

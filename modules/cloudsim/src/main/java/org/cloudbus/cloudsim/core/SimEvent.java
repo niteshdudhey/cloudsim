@@ -8,6 +8,8 @@
 
 package org.cloudbus.cloudsim.core;
 
+import java.util.ArrayList;
+
 /**
  * This class represents a simulation event which is passed between the entities in the simulation.
  * 
@@ -237,4 +239,25 @@ public class SimEvent implements Cloneable, Comparable<SimEvent> {
 	public void setDestination(int d) {
 		entDst = d;
 	}
+
+	// below code added by anupinder singh
+    public void CustomtoString(String className) {
+ 
+        ArrayList<String> type = new ArrayList<String>();
+        type.add("ENULL");
+        type.add("SEND");
+        type.add("HOLD_DONE");
+        type.add("CREATE");
+        String msg = className + ": -->Event Type = " + type.get(etype)
+                + ";Event tag = " + CloudSimTags.TagText(tag) + "; source = "
+                + CloudSim.getEntity(entSrc).getName() + "; destination = "
+                + CloudSim.getEntity(entDst).getName() + "; \nTime = " + this.time
+                + "; Simulation clock time = " + CloudSim.clock() + "; endwaiting time = " + this.endWaitingTime;
+        if (data != null) {
+            msg += "; data = " + data.toString();
+        }
+        msg += "\n\n";
+ 
+        PrintFile.AddtoFile(msg);
+    }
 }

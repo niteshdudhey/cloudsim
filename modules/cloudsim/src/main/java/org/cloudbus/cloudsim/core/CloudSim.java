@@ -605,6 +605,7 @@ public class CloudSim {
 		}
 
 		SimEvent e = new SimEvent(SimEvent.SEND, clock + delay, src, dest, tag, data);
+		e.CustomtoString("Cloudsim future queue event added");
 		future.addEvent(e);
 	}
 
