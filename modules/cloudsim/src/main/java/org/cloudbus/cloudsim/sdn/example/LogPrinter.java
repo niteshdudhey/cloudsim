@@ -8,7 +8,10 @@
 
 package org.cloudbus.cloudsim.sdn.example;
 
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.cloudbus.cloudsim.Cloudlet;
 import org.cloudbus.cloudsim.Host;
@@ -21,6 +24,9 @@ import org.cloudbus.cloudsim.sdn.Transmission;
 import org.cloudbus.cloudsim.sdn.Switch.HistoryEntry;
 import org.cloudbus.cloudsim.sdn.power.PowerUtilizationHistoryEntry;
 import org.cloudbus.cloudsim.sdn.power.PowerUtilizationInterface;
+import com.google.common.collect.Table;
+import org.cloudbus.cloudsim.sdn.Link;
+import org.cloudbus.cloudsim.sdn.LinkStateHistoryEntry;
 
 /**
  * This class is to print out logs into console.
@@ -76,6 +82,21 @@ public class LogPrinter {
 			}
 	}
 	
+	public static void printLinkUtilizationHistory(Table<Integer, Integer, Link> links){
+		Collection<Link> linksList = links.values();			
+		Set<Link> linksSet = new HashSet<Link>(linksList);
+		
+		Log.printLine("========== LINK UTILIZATIONS ===========");
+		for(Link link:linksSet){
+			Log.printLine("link between nodes " + link.getHighOrder().getAddress() + " and " +  link.getLowOrder().getAddress());
+			Log.printLine("Time AvailableBw");
+			List<LinkStateHistoryEntry> stateHistory = link.stateHistory;
+			for(LinkStateHistoryEntry entry: stateHistory){
+				Log.printLine(String.format("%.12f %.0f", entry.getTime(), entry.getAvailableBw()));
+			}
+		}
+	}
+	
 	static public String indent = ",";
 	static public String tabSize = "10";
 	static public String fString = 	"%"+tabSize+"s"+indent;
@@ -106,6 +127,7 @@ public class LogPrinter {
 		}
 	}
 	
+	@SuppressWarnings("deprecation")
 	private static void printCloudlet(Cloudlet cloudlet) {
 		Log.print(String.format(fInt, cloudlet.getCloudletId()));
 
@@ -120,7 +142,16 @@ public class LogPrinter {
 			Log.print("\n");
 		}
 		else {
-			Log.printLine("FAILED");
+			//Log.printLine("FAILED");
+			Log.print("FAILED");
+			Log.print(cloudlet.getCloudletStatusString());
+			Log.print(String.format(fInt, cloudlet.getResourceId()));
+			Log.print(String.format(fInt, cloudlet.getVmId()));
+			Log.print(String.format(fInt, cloudlet.getCloudletLength()));
+			Log.print(String.format(fFloat, cloudlet.getActualCPUTime()));
+			Log.print(String.format(fFloat, cloudlet.getExecStartTime()));
+			Log.print(String.format(fFloat, cloudlet.getFinishTime()));
+			Log.print("\n");
 		}
 	}
 	

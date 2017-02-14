@@ -29,13 +29,17 @@ import com.google.common.collect.Table;
 public class PhysicalTopology {
 	
 	Hashtable<Integer,Node> nodesTable;	// Address -> Node
-	public Table<Integer, Integer, Link> links; 	// From : To -> Link
+	Table<Integer, Integer, Link> links; 	// From : To -> Link
 	Multimap<Node,Link> nodeLinks;	// Node -> all Links
 
 	public PhysicalTopology() {
 		nodesTable = new Hashtable<Integer,Node>();
 		nodeLinks = HashMultimap.create();
 		links = HashBasedTable.create();
+	}
+	
+	public Table<Integer, Integer, Link> getLinks(){
+		return links;
 	}
 	
 	public Link getLink(int from, int to) {

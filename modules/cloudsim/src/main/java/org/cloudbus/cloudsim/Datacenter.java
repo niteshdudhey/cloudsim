@@ -442,7 +442,10 @@ public class Datacenter extends SimEntity {
 	 */
 	protected void processVmCreate(SimEvent ev, boolean ack) {
 		Vm vm = (Vm) ev.getData();
-
+		
+		// Used only to check the creation time.
+		System.out.println(CloudSim.clock() + " Creating VM " + vm.getUid() + " , Id " + vm.getId());
+		
 		boolean result = getVmAllocationPolicy().allocateHostForVm(vm);
 
 		if (ack) {
@@ -485,6 +488,10 @@ public class Datacenter extends SimEntity {
 	 */
 	protected void processVmDestroy(SimEvent ev, boolean ack) {
 		Vm vm = (Vm) ev.getData();
+		
+		// Used only to check the destruction time.
+		System.out.println(CloudSim.clock() + " Destroying VM " + vm.getUid() + " , Id " + vm.getId());
+		
 		getVmAllocationPolicy().deallocateHostForVm(vm);
 
 		if (ack) {

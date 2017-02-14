@@ -10,7 +10,6 @@ package org.cloudbus.cloudsim.sdn.example;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -21,8 +20,6 @@ import org.cloudbus.cloudsim.Log;
 import org.cloudbus.cloudsim.Storage;
 import org.cloudbus.cloudsim.VmAllocationPolicy;
 import org.cloudbus.cloudsim.core.CloudSim;
-import org.cloudbus.cloudsim.sdn.Link;
-import org.cloudbus.cloudsim.sdn.LinkStateHistoryEntry;
 import org.cloudbus.cloudsim.sdn.NetworkOperatingSystem;
 import org.cloudbus.cloudsim.sdn.SDNDatacenter;
 import org.cloudbus.cloudsim.sdn.Switch;
@@ -184,18 +181,9 @@ public class SDNExample {
 			List<Switch> switchList = nos.getSwitchList();
 			LogPrinter.printEnergyConsumption(hostList, switchList, finishTime);
 			
-			Collection<Link> linksList = nos.topology.links.values();
+			LogPrinter.printLinkUtilizationHistory(nos.getPhysicalTopology().getLinks());
 			
-			Log.printLine("printing link utilizations");
-			for(Link link:linksList){
-				Log.printLine("link");
-				List<LinkStateHistoryEntry> stateHistory = link.stateHistory;
-				for(LinkStateHistoryEntry entry: stateHistory){
-					Log.printLine(entry.getTime() + " " + entry.getAvailableBw());
-				}
-			}
-			
-			Log.printLine("Simultanously used hosts:"+maxHostHandler.getMaxNumHostsUsed());			
+			Log.printLine("Simultanously used hosts:" + maxHostHandler.getMaxNumHostsUsed());			
 			Log.printLine("CloudSim SDN finished!");
 
 		} catch (Exception e) {

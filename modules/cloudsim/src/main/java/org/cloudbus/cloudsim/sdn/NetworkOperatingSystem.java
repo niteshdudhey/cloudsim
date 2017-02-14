@@ -53,7 +53,7 @@ import org.json.simple.JSONValue;
 public abstract class NetworkOperatingSystem extends SimEntity {
 
 	String physicalTopologyFileName; 
-	public PhysicalTopology topology;
+	protected PhysicalTopology topology;
 	//Hashtable<Integer,SDNHost> vmHostTable;
 	Hashtable<Package,Node> pkgTable;
 	
@@ -80,7 +80,9 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	public static int resolutionPlaces = 5;
 	public static int timeUnit = 1;	// 1: sec, 1000: msec
 	
-
+	public PhysicalTopology getPhysicalTopology(){
+		return topology;
+	}
 
 
 	/**

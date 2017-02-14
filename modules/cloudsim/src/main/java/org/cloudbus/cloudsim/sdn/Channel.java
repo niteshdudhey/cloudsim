@@ -56,6 +56,8 @@ public class Channel {
 	}
 	
 	public void initialize() {
+		// Made only for check. Could be removed later.
+		System.out.println(CloudSim.clock() + " : Initializing channel " + chId);
 		// Assign BW to all links
 		for(int i=0; i<nodes.size()-1; i++) {
 			Node from = nodes.get(i);
@@ -69,6 +71,8 @@ public class Channel {
 	}
 	
 	public void terminate() {
+		// Made only for check. Could be removed later.
+		System.out.println(CloudSim.clock() + " : Terminating channel " + chId);
 		// Assign BW to all links
 		for(int i=0; i<nodes.size()-1; i++) {
 			Link link = links.get(i);
