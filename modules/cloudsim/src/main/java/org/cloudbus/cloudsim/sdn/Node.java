@@ -20,6 +20,9 @@ import java.util.List;
 public interface Node {
 	
 	int getAddress();
+	
+	public String getName();
+	
 	public long getBandwidth();
 	public void setRank(int rank);
 	public int getRank();

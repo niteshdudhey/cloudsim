@@ -35,6 +35,8 @@ public class Link {
 	private List<Channel> upChannels;
 	private List<Channel> downChannels;
 	
+	private String name;
+	
 	Set<Double> timeForRecordedHistory  = new HashSet<Double>();
 	
 	public List<LinkStateHistoryEntry> stateHistory = new LinkedList<LinkStateHistoryEntry>();
@@ -47,6 +49,8 @@ public class Link {
 		
 		this.upChannels = new ArrayList<Channel>();
 		this.downChannels = new ArrayList<Channel>();
+		
+		this.name = highOrder.getName() + "-" + lowOrder.getName();
 	}
 	
 	public Link(Node highOrder, Node lowOrder, double latency, double upBW, double downBW) {
@@ -54,7 +58,7 @@ public class Link {
 		this.downBW = downBW;
 	}
 
-	public void updateUtilizationHistory(double time, Node from){
+	public void updateUtilizationHistory(double time){
 		if(!timeForRecordedHistory.contains(time)){
 			stateHistory.add(new LinkStateHistoryEntry(time, Math.min(getFreeBandwidth(highOrder), getFreeBandwidth(lowOrder))));
 			timeForRecordedHistory.add(time);
@@ -86,6 +90,10 @@ public class Link {
 		else {
 			throw new IllegalArgumentException("Link.isUplink(): from("+from+") Node is wrong!!");			
 		}
+	}
+	
+	public String getName(){
+		return name;
 	}
 	
 	public double getBw(Node from) {

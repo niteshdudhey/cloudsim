@@ -28,7 +28,7 @@ import org.cloudbus.cloudsim.core.SimEvent;
  */
 public class Switch extends SimEntity implements Node{
 	
-	//private static long cont=0;
+	//private static long cont = 0;
 	//private static long MULTI = 1;
 	
 	private static double POWER_CONSUMPTION_IDLE = 66.7;
@@ -36,11 +36,17 @@ public class Switch extends SimEntity implements Node{
 	/* based on CARPO: Correlation-Aware Power Optimization in Data Center Networks by Xiaodong Wang et al. */
 	
 	int bw;
+	
 	long iops;
+	
 	double previousTime;
+	
 	int rank = -1;
-	int currentupports=0;
-	int currentdownports=0;
+	
+	int currentupports = 0;
+	
+	int currentdownports = 0;
+	
 	NetworkOperatingSystem nos;
 	
 	Node[] upports;
@@ -49,7 +55,9 @@ public class Switch extends SimEntity implements Node{
 	ArrayList<Link> links = new ArrayList<Link>();
 
 	ForwardingRule forwardingTable;
+	
 	RoutingTable routingTable;	
+	
 	Hashtable<Package,Long> processingTable;
 	
 	public Switch(String name, int bw, long iops, int upports, int downports, NetworkOperatingSystem nos) {
@@ -57,9 +65,12 @@ public class Switch extends SimEntity implements Node{
 		this.bw = bw;
 		this.iops = iops;
 		this.previousTime = 0.0;
-		this.nos=nos;
+		this.nos = nos;
 		
-		if (upports>0) this.upports = new Node[upports];
+		if (upports > 0) {
+			this.upports = new Node[upports];
+		}
+		
 		this.downports = new Node[downports];
 		
 		this.forwardingTable = new ForwardingRule();
@@ -78,9 +89,14 @@ public class Switch extends SimEntity implements Node{
 		int tag = ev.getTag();
 		
 		switch(tag){
-			//case Constants.SDN_INTERNAL_PACKAGE_PROCESS: internalPackageProcessing(); break;
-			//case Constants.SDN_PACKAGE: sendToBuffer((Package) ev.getData()); break;
-			default: System.out.println("Unknown event received by "+super.getName()+". Tag:"+ev.getTag());
+			/*case Constants.SDN_INTERNAL_PACKAGE_PROCESS: 
+				internalPackageProcessing(); 
+				break;
+			case Constants.SDN_PACKAGE: 
+				sendToBuffer((Package) ev.getData()); 
+				break;*/
+			default: 
+				System.out.println("Unknown event received by " + super.getName() + ". Tag:" + ev.getTag());
 		}
 	}
 
@@ -98,41 +114,50 @@ public class Switch extends SimEntity implements Node{
 	public class HistoryEntry {
 		public double startTime;
 		public int numActivePorts;
-		HistoryEntry(double t, int n) { startTime=t; numActivePorts=n;}
+		
+		HistoryEntry(double t, int n) { 
+			startTime = t; 
+			numActivePorts = n;
+		}
 	}
+	
 	public List<HistoryEntry> getUtilizationHisotry() {
 		return utilizationHistories;
 	}
 	
 	public double getUtilizationEnergyConsumption() {
 		
-		double total=0;
-		double lastTime=0;
-		int lastPort=0;
-		if(this.utilizationHistories == null)
+		double total = 0;
+		double lastTime = 0;
+		int lastPort = 0;
+		if(this.utilizationHistories == null) {
 			return 0;
+		}
 		
-		for(HistoryEntry h:this.utilizationHistories) {
+		for(HistoryEntry h : this.utilizationHistories) {
 			double duration = h.startTime - lastTime;
 			double power = calculatePower(lastPort);
 			double energyConsumption = power * duration;
 			
 			// Assume that the host is turned off when duration is long enough
-			if(duration > powerOffDuration && lastPort == 0)
+			if(duration > powerOffDuration && lastPort == 0) {
 				energyConsumption = 0;
+			}
 			
 			total += energyConsumption;
 			lastTime = h.startTime;
 			lastPort = h.numActivePorts;
 		}
-		return total/3600;	// transform to Whatt*hour from What*seconds
+		return total / 3600;	// transform to Whatt*hour from What*seconds
 	}
+	
 	public void updateNetworkUtilization() {
 		this.addUtilizationEntry();
 		
 		double time = CloudSim.clock();
-		for(Link l:this.links) {
-			l.updateUtilizationHistory(time, this);
+		
+		for(Link l : this.links) {
+			l.updateUtilizationHistory(time);
 		}
 	}
 
@@ -144,28 +169,36 @@ public class Switch extends SimEntity implements Node{
 	private void addUtilizationEntry() {
 		double time = CloudSim.clock();
 		int totalActivePorts = getTotalActivePorts();
-		if(utilizationHistories == null)
+		
+		if(utilizationHistories == null) {
 			utilizationHistories = new ArrayList<HistoryEntry>();
+		}
 		else {
-			HistoryEntry hist = this.utilizationHistories.get(this.utilizationHistories.size()-1);
+			HistoryEntry hist = this.utilizationHistories.get(this.utilizationHistories.size() - 1);
 			if(hist.numActivePorts == totalActivePorts) {
 				return;
 			}
 		}		
+		
 		this.utilizationHistories.add(new HistoryEntry(time, totalActivePorts));
 	}
+	
 	private double calculatePower(int numActivePort) {
 		double power = POWER_CONSUMPTION_IDLE + POWER_CONSUMPTION_PER_ACTIVE_PORT * numActivePort;
 		return power;
 	}
+	
 	private int getTotalActivePorts() {
 		int num = 0;
-		for(Link l:this.links) {
-			if(l.isActive())
+		for(Link l : this.links) {
+			if(l.isActive()) {
 				num++;
+			}
 		}
+		
 		return num;
 	}
+	
 	/*
 	private void updateTime(double now) {
 		this.previousTime = now;
@@ -308,8 +341,8 @@ public class Switch extends SimEntity implements Node{
 		if(route == null) {
 			this.printVMRoute();
 			System.err.println("SDNSwitch.getRoute() ERROR: Cannot find route:" + 
-					NetworkOperatingSystem.debugVmIdName.get(src) + "->"+
-					NetworkOperatingSystem.debugVmIdName.get(dest) + ", flow ="+flowId);
+					NetworkOperatingSystem.debugVmIdName.get(src) + "->" +
+					NetworkOperatingSystem.debugVmIdName.get(dest) + ", flow =" + flowId);
 		}
 			
 		return route;
@@ -336,8 +369,9 @@ public class Switch extends SimEntity implements Node{
 	}
 	
 	public String toString() {
-		return "Switch: "+this.getName();
+		return "Switch: " + this.getName();
 	}
+	
 	@Override
 	public void addRoute(Node destHost, Link to) {
 		this.routingTable.addRoute(destHost, to);

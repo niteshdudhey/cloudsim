@@ -24,19 +24,35 @@ public class TimedVm extends Vm {
 	private double startTime;
 	private double finishTime;
 	
-	public TimedVm(int id, int userId, double mips, int numberOfPes, int ram,
+	private String name;
+	
+	public TimedVm(String name, int id, int userId, double mips, int numberOfPes, int ram,
 			long bw, long size, String vmm, CloudletScheduler cloudletScheduler) {
+		
 		super(id, userId, mips, numberOfPes, ram, bw, size, vmm, cloudletScheduler);
+		this.name = name;
 	}
 	
-	public TimedVm(int id, int userId, double mips, int numberOfPes, int ram,
-			long bw, long size, String vmm, CloudletScheduler cloudletScheduler, double startTime, double finishTime) {
+	public TimedVm(String name, int id, int userId, double mips, int numberOfPes, int ram,
+			long bw, long size, String vmm, CloudletScheduler cloudletScheduler, 
+			double startTime, double finishTime) {
+		
 		super(id, userId, mips, numberOfPes, ram, bw, size, vmm, cloudletScheduler);
-	
+		this.name = name;
 		this.startTime = startTime;
 		this.finishTime = finishTime;
 	}
 	
+	public String getName() {
+		return name;
+	}
+	
+	// The id of the datacenter in which the VM is located.
+	// DatacenterId is the userId of the VM.
+	public int getDatacenterId() {
+		return getUserId();
+	}
+
 	public double getStartTime() {
 		return startTime;
 	}
@@ -44,5 +60,4 @@ public class TimedVm extends Vm {
 	public double getFinishTime() {
 		return finishTime;
 	}
-
 }

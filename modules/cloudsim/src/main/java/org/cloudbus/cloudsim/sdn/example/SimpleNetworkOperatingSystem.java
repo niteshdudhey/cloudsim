@@ -40,11 +40,12 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 	public boolean deployApplication(List<Vm> vms, List<Middlebox> middleboxes, List<Arc> links) {
 		Log.printLine(CloudSim.clock() + ": " + getName() + ": Starting deploying application..");
 		
-		for(Vm vm:vms)
+		for(Vm vm : vms)
 		{
 			TimedVm tvm = (TimedVm) vm;
-			Log.printLine(CloudSim.clock() + ": " + getName() + ": Trying to Create VM #" + vm.getId()
+			Log.printLine(CloudSim.clock() + ": " + getName() + ": Trying to Create VM #" + vm.getId() 
 					+ " in " + datacenter.getName() + ", (" + tvm.getStartTime() + "~" +tvm.getFinishTime() + ")");
+			
 			send(datacenter.getId(), tvm.getStartTime(), CloudSimTags.VM_CREATE_ACK, vm);
 			
 			if(tvm.getFinishTime() != Double.POSITIVE_INFINITY) {
@@ -57,7 +58,8 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 	}
 	
 	public boolean deployFlow(List<Arc> links) {
-		for(Arc link:links) {
+		
+		for(Arc link : links) {
 			int srcVm = link.getSrcId();
 			int dstVm = link.getDstId();
 			int flowId = link.getFlowId();
@@ -70,24 +72,27 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 			
 			if(srchost.equals(dsthost)) {
 				Log.printLine(CloudSim.clock() + ": " + getName() + ": Source SDN Host is same as Destination. Go loopback");
+				
 				srchost.addVMRoute(srcVm, dstVm, flowId, dsthost);
 			}
 			else {
 				Log.printLine(CloudSim.clock() + ": " + getName() + ": VMs are in different hosts. Create entire routing table (hosts, switches)");
+				
 				boolean findRoute = buildForwardingTables(srchost, srcVm, dstVm, flowId, null);
 				
 				if(!findRoute) {
-					System.err.println("SimpleNetworkOperatingSystem.deployFlow: Could not find route!!" + 
-							NetworkOperatingSystem.debugVmIdName.get(srcVm) + "->"+NetworkOperatingSystem.debugVmIdName.get(dstVm));
+					System.err.println("SimpleNetworkOperatingSystem.deployFlow: Could not find route!!" 
+							+ NetworkOperatingSystem.debugVmIdName.get(srcVm) + "->" 
+							+ NetworkOperatingSystem.debugVmIdName.get(dstVm));
 				}
 			}
-			
 		}
 		
 		// Print all routing tables.
-		for(Node node:this.topology.getAllNodes()) {
+		for(Node node : this.topology.getAllNodes()) {
 			node.printVMRoute();
 		}
+		
 		return true;
 	}
 	
@@ -95,24 +100,26 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 		return links.get(0);
 	}
 	
-	int i=0;
+	int i = 0;
 	private Link selectLinkRandom(List<Link> links) {
 		return links.get(i++ % links.size());
 	}
 
 	private Link selectLinkByFlow(List<Link> links, int flowId) {
-		if(flowId == -1)
+		if(flowId == -1) {
 			return links.get(0);
-		else
+		}
+		else {
 			return links.get(1 % links.size());
-			
+		}
 	}
 	
 	private Link selectLinkByChannelCount(Node from, List<Link> links) {
 		Link lighter = links.get(0);
-		for(Link l:links) {
+		
+		for(Link l : links) {
 			if(l.getChannelCount(from) < lighter.getChannelCount(from)) {
-				// Less traffic flows using this link
+				// Less traffic flows using this link.
 				lighter = l; 
 			}
 		}
@@ -129,12 +136,14 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 	private boolean buildForwardingTables(Node node, int srcVm, int dstVm, int flowId, Node prevNode) {
 		// There are many links. Determine which hop to go.
 		SDNHost desthost = findSDNHost(dstVm);
-		if(node.equals(desthost))
+		
+		if(node.equals(desthost)) {
 			return true;
+		}
 		
 		List<Link> nextLinks = node.getRoute(desthost);
 		
-		// Let's choose the first link. make simple
+		// Let's choose the first link. make simple.
 		Link nextLink = selectLinkByFlow(nextLinks, flowId);
 		//Link nextLink = selectLinkRandom(nextLinks);
 		//Link nextLink = selectBestLink(node, nextLinks);
@@ -200,7 +209,7 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 	}
 
 	@Override
-	protected Middlebox deployMiddlebox(String type,Vm vm) {
+	protected Middlebox deployMiddlebox(String type, Vm vm) {
 		return null;
 	}
 	
@@ -208,8 +217,8 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 	public void processVmCreateAck(SimEvent ev) {
 		// print the created VM info
 		TimedVm vm = (TimedVm) ev.getData();
-		Log.printLine(CloudSim.clock() + ": " + getName() + ": VM Created: " +  vm.getId() + " in " + this.findSDNHost(vm.getId()));
+		Log.printLine(CloudSim.clock() + ": " + getName() + ": VM Created: " +  vm.getId()  
+				+ " in " + this.findSDNHost(vm.getId()));
 		deployFlow(this.arcList);
 	}
-
 }

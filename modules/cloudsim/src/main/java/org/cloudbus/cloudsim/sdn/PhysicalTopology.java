@@ -138,39 +138,40 @@ public class PhysicalTopology {
 		Node fromNode = nodesTable.get(from);
 		Node toNode = nodesTable.get(to);
 		
-		long bw = (fromNode.getBandwidth()<toNode.getBandwidth())? fromNode.getBandwidth():toNode.getBandwidth();
+		long bw = (fromNode.getBandwidth() < toNode.getBandwidth()) ? fromNode.getBandwidth() : toNode.getBandwidth();
 		
-		if(!nodesTable.containsKey(from)||!nodesTable.containsKey(to)){
-			throw new IllegalArgumentException("Unknown node on link:"+nodesTable.get(from).getAddress()+"->"+nodesTable.get(to).getAddress());
+		if(!nodesTable.containsKey(from) || !nodesTable.containsKey(to)) {
+			throw new IllegalArgumentException("Unknown node on link:" + nodesTable.get(from).getAddress() + "->" + nodesTable.get(to).getAddress());
 		}
 		
-		if (links.contains(fromNode.getAddress(), toNode.getAddress())){
-			throw new IllegalArgumentException("Link added twice:"+fromNode.getAddress()+"->"+toNode.getAddress());
+		if(links.contains(fromNode.getAddress(), toNode.getAddress())) {
+			throw new IllegalArgumentException("Link added twice:" + fromNode.getAddress() + "->" + toNode.getAddress());
 		}
 		
-		if(fromNode.getRank()==-1&&toNode.getRank()==-1){
-			throw new IllegalArgumentException("Unable to establish orders for nodes on link:"+nodesTable.get(from).getAddress()+"->"+nodesTable.get(to).getAddress());
+		if(fromNode.getRank() == -1 && toNode.getRank() == -1){
+			throw new IllegalArgumentException("Unable to establish orders for nodes on link:" + nodesTable.get(from).getAddress() + "->" + nodesTable.get(to).getAddress());
 		}
 		
-		if (fromNode.getRank()>=0 && toNode.getRank()>=0){
-			//we know the rank of both nodes; easy to establish topology
-			if ((toNode.getRank()-fromNode.getRank())!=1) {
+		if (fromNode.getRank() >= 0 && toNode.getRank() >= 0){
+			// We know the rank of both nodes; easy to establish topology.
+			if ((toNode.getRank() - fromNode.getRank()) != 1) {
 				//throw new IllegalArgumentException("Nodes need to be parent and child:"+nodesTable.get(from).getAddress()+"->"+nodesTable.get(to).getAddress());
 			}
 		}
 		
-		if(fromNode.getRank()>=0&&toNode.getRank()==-1){
-			//now we now B is children of A
-			toNode.setRank(fromNode.getRank()+1);
+		if(fromNode.getRank() >= 0 && toNode.getRank() == -1){
+			// Now we now B is children of A.
+			toNode.setRank(fromNode.getRank() + 1);
 		}
 		
-		if(fromNode.getRank()==-1&&toNode.getRank()>=1){
-			//now we now A is parent of B
-			fromNode.setRank(toNode.getRank()-1);
+		if(fromNode.getRank() == -1 && toNode.getRank() >= 1){
+			// Now we now A is parent of B.
+			fromNode.setRank(toNode.getRank() - 1);
 		}
+		
 		Link l = new Link(fromNode, toNode, latency, bw);
 		
-		// Two way links (From -> to, To -> from)
+		// Two way links (From -> to, To -> from).
 		links.put(from, to, l);
 		links.put(to, from, l);
 		

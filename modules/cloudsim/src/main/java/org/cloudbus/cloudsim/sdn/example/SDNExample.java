@@ -150,6 +150,7 @@ public class SDNExample {
 			int brokerId = broker.getId();
 
 			// Submit virtual topology
+			// deploymentFile : virtual-topology file.
 			broker.submitDeployApplication(datacenter, deploymentFile);
 			
 			// Submit individual workloads

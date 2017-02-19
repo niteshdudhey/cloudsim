@@ -53,21 +53,32 @@ import org.json.simple.JSONValue;
 public abstract class NetworkOperatingSystem extends SimEntity {
 
 	String physicalTopologyFileName; 
+	
 	protected PhysicalTopology topology;
-	//Hashtable<Integer,SDNHost> vmHostTable;
+	// Hashtable<Integer,SDNHost> vmHostTable;
+	
 	Hashtable<Package,Node> pkgTable;
 	
 	Hashtable<String, Channel> channelTable;
 
 	List<Host> hosts;
+	
 	protected List<SDNHost> sdnhosts;
-	protected List<Switch> switches= new ArrayList<Switch>();
-	int vmId=0;
+	
+	protected List<Switch> switches = new ArrayList<Switch>();
+	
+	int vmId = 0;
+	
 	protected SDNDatacenter datacenter;
+	
 	protected LinkedList<Vm> vmList;
+	
 	protected LinkedList<Arc> arcList;
+	
 	Map<Integer, Arc> flowIdArcTable;
+	
 	Map<String, Integer> vmNameIdTable;
+	
 	Map<String, Integer> flowNameIdTable;
 	
 	public static Map<Integer, String> debugVmIdName = new HashMap<Integer, String>();
@@ -84,7 +95,6 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		return topology;
 	}
 
-
 	/**
 	 * 1. map VMs and middleboxes to hosts, add the new vm/mb to the vmHostTable, advise host, advise dc
 	 * 2. set channels and bws
@@ -97,7 +107,6 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		super("NOS");
 		
 		this.physicalTopologyFileName = fileName;
-		
 		this.pkgTable = new Hashtable<Package, Node>();
 		this.channelTable = new Hashtable<String, Channel>();
 		
@@ -107,20 +116,25 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	public static double getMinTimeBetweenNetworkEvents() {
 	    return minTimeBetweenEvents* timeUnit;
 	}
+	
 	public static double round(double value) {
 		int places = resolutionPlaces;
-	    if (places < 0) throw new IllegalArgumentException();
+	    
+		if (places < 0) {
+			throw new IllegalArgumentException();
+		}
 
-		if(timeUnit >= 1000) value = Math.floor(value*timeUnit);
+		if(timeUnit >= 1000) {
+			value = Math.floor(value*timeUnit);
+		}
 		
 	    BigDecimal bd = new BigDecimal(value);
 	    bd = bd.setScale(places, RoundingMode.CEILING);
+	    
 	    return bd.doubleValue();
 	    //return value;
 	}
-	
-
-	
+		
 	@Override
 	public void startEntity() {}
 
@@ -131,6 +145,7 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	public void processEvent(SimEvent ev) {
 		int tag = ev.getTag();
 		
+		System.out.println("handling event in NOS. Event Tag " + tag);
 		switch(tag){
 			case Constants.SDN_INTERNAL_PACKAGE_PROCESS: 
 				internalPackageProcess(); 
@@ -141,16 +156,18 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 			case CloudSimTags.VM_DESTROY:
 				processVmDestroyAck(ev);
 				break;
-			default: System.out.println("Unknown event received by "+super.getName()+". Tag:"+ev.getTag());
+			default: 
+				System.out.println("Unknown event received by " + super.getName() + ". Tag:" + ev.getTag());
 		}
 	}
 
 	public void processVmCreateAck(SimEvent ev) {
 	}
+	
 	protected void processVmDestroyAck(SimEvent ev) {
 		Vm destroyedVm = (Vm) ev.getData();
-		// remove all channels transferring data from or to this vm.
-		for(Vm vm:this.vmList) {
+		// Remove all channels transferring data from or to this vm.
+		for(Vm vm : this.vmList) {
 			Channel ch = this.findChannel(vm.getId(), destroyedVm.getId(), -1);
 			if(ch != null) {
 				this.removeChannel(getKey(vm.getId(), destroyedVm.getId(), -1));
@@ -160,11 +177,9 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 			if(ch != null) {
 				this.removeChannel(getKey(destroyedVm.getId(), vm.getId(), -1));
 			}
-
 		}
 		
 		sendInternalEvent();
-		
 	}
 
 	public void addPackageToChannel(Node sender, Package pkg) {
@@ -173,38 +188,38 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		int flowId = pkg.getFlowId();
 					
 		if(sender.equals(sender.getVMRoute(src, dst, flowId))) {
-			// For loopback packet (when src and dst is on the same host)
+			// For loopback packet (when src and dst is on the same host).
 			//Log.printLine(CloudSim.clock() + ": " + getName() + ".addPackageToChannel: Loopback package: "+pkg +". Send to destination:"+dst);
-			sendNow(sender.getAddress(),Constants.SDN_PACKAGE,pkg);
+			sendNow(sender.getAddress(), Constants.SDN_PACKAGE, pkg);
+			
 			return;
 		}
 		
 		updatePackageProcessing();
 		
-		pkgTable.put(pkg,sender);
+		pkgTable.put(pkg, sender);
 		
-		Channel channel=findChannel(src, dst, flowId);
+		Channel channel = findChannel(src, dst, flowId);
 		if(channel == null) {
-			//No channel establisihed. Add a channel.
+			// No channel establisihed. Add a channel.
 			channel = createChannel(src, dst, flowId, sender);
 			
 			if(channel == null) {
-				// failed to create channel
+				// Failed to create channel.
 				return;
 			}
+			
 			addChannel(src, dst, flowId, channel);
 		}
 		
 		double eft = channel.addTransmission(new Transmission(pkg));
-		Log.printLine(CloudSim.clock() + ": " + getName() + ".addPackageToChannel ("+channel
-				+"): Transmission added:" + 
-				NetworkOperatingSystem.debugVmIdName.get(src) + "->"+
-				NetworkOperatingSystem.debugVmIdName.get(dst) + ", flow ="+flowId + " / eft="+eft);
+		Log.printLine(CloudSim.clock() + ": " + getName() + ".addPackageToChannel (" + channel + "): Transmission added:" 
+					+ NetworkOperatingSystem.debugVmIdName.get(src) + "->" 
+					+ NetworkOperatingSystem.debugVmIdName.get(dst) + ", flow=" + flowId + " / eft=" + eft);
 
 		sendInternalEvent();
 	}
 	
-
 	private void internalPackageProcess() {
 		if(updatePackageProcessing()) {
 			sendInternalEvent();
@@ -215,9 +230,9 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		CloudSim.cancelAll(getId(), new PredicateType(Constants.SDN_INTERNAL_PACKAGE_PROCESS));
 		
 		if(channelTable.size() != 0) {
-			// More to process. Send event again
+			// More to process. Send event again.
 			double delay = this.nextFinishTime();
-			Log.printLine(CloudSim.clock() + ": " + getName() + ".sendInternalEvent(): next finish time: "+ delay);
+			Log.printLine(CloudSim.clock() + ": " + getName() + ".sendInternalEvent(): next finish time: " + delay);
 			
 			send(this.getId(), delay, Constants.SDN_INTERNAL_PACKAGE_PROCESS);
 		}
@@ -225,11 +240,12 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	
 	private double nextFinishTime() {
 		double earliestEft = Double.POSITIVE_INFINITY;
-		for(Channel ch:channelTable.values()){
+		
+		for(Channel ch : channelTable.values()){
 			
 			double eft = ch.nextFinishTime();
-			if (eft<earliestEft){
-				earliestEft=eft;
+			if (eft < earliestEft){
+				earliestEft = eft;
 			}
 		}
 		
@@ -237,7 +253,6 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 			throw new IllegalArgumentException("NOS.nextFinishTime(): next finish time is infinite!");
 		}
 		return earliestEft;
-		
 	}
 	
 	private boolean updatePackageProcessing() {
@@ -245,9 +260,10 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		
 		LinkedList<Channel> completeChannels = new LinkedList<Channel>();
 		
-		for(Channel ch:channelTable.values()){
+		for(Channel ch : channelTable.values()){
 			boolean isCompleted = ch.updatePackageProcessing();
 			needSendEvent = needSendEvent || isCompleted;
+			
 			//completeChannels.add(ch.getArrivedPackages());
 			completeChannels.add(ch);
 		}
@@ -261,17 +277,17 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	}
 	
 	private void processCompletePackages(List<Channel> channels){
-		for(Channel ch:channels) {
+		for(Channel ch : channels) {
 			
 			Node dest = ch.getLastNode();
 			
-			for (Transmission tr:ch.getArrivedPackages()){
+			for (Transmission tr : ch.getArrivedPackages()){
 				Package pkg = tr.getPackage();
 				//Node sender = pkgTable.remove(pkg);
 				//Node nextHop = sender.getRoute(pkg.getOrigin(),pkg.getDestination(),pkg.getFlowId());
 				
-				Log.printLine(CloudSim.clock() + ": " + getName() + ": Package completed: "+pkg +". Send to destination:"+dest);
-				sendNow(dest.getAddress(),Constants.SDN_PACKAGE,pkg);
+				Log.printLine(CloudSim.clock() + ": " + getName() + ": Package completed: " + pkg + ". Send to destination:" + dest);
+				sendNow(dest.getAddress(), Constants.SDN_PACKAGE, pkg);
 			}
 		}
 	}
@@ -279,17 +295,18 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	public Map<String, Integer> getVmNameIdTable() {
 		return this.vmNameIdTable;
 	}
+	
 	public Map<String, Integer> getFlowNameIdTable() {
 		return this.flowNameIdTable;
 	}
 	
 	private Channel findChannel(int from, int to, int channelId) {
-		// check if there is a pre-configured channel for this application
-		Channel channel=channelTable.get(getKey(from,to, channelId));
+		// Check if there is a pre-configured channel for this application.
+		Channel channel = channelTable.get(getKey(from, to, channelId));
 
 		if (channel == null) {
-			//there is no channel for specific flow, find the default channel for this link
-			channel=channelTable.get(getKey(from,to));
+			// There is no channel for specific flow, find the default channel for this link.
+			channel = channelTable.get(getKey(from, to));
 		}
 		return channel;
 	}
@@ -310,7 +327,7 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	}
 	
 	private void adjustAllChannels() {
-		for(Channel ch:this.channelTable.values()) {
+		for(Channel ch : this.channelTable.values()) {
 			if(ch.adjustDedicatedBandwidthAlongLink()) {
 				// Channel BW is changed. send event.
 			}
@@ -330,17 +347,21 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		Node origin = srcNode;
 		Node dest = origin.getVMRoute(src, dst, flowId);
 		
-		if(dest==null)
+		if(dest == null) {
 			return null;
+		}
 		
 		Link link;
 		double lowestBw = Double.POSITIVE_INFINITY;
 		double reqBw = 0;
+		String chName = "default";
+		
 		if(flowId != -1) {
 			Arc flow = this.flowIdArcTable.get(flowId);
-			reqBw = flow.getBw();			
+			reqBw = flow.getBw();
+			chName = flow.getName();
 		}
-		
+				
 		nodes.add(origin);
 		
 		while(true) {
@@ -352,48 +373,50 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 				lowestBw = link.getFreeBandwidth(origin);
 			}
 		
-			if(dest instanceof SDNHost)
+			if(dest instanceof SDNHost) {
 				break;
+			}
 			
 			origin = dest;
 			dest = origin.getVMRoute(src, dst, flowId);
 		} 
 		
 		if(flowId != -1 && lowestBw < reqBw) {
-			// free bandwidth is less than required one.
+			// Free bandwidth is less than required one.
 			// Cannot make channel.
-			Log.printLine(CloudSim.clock() + ": " + getName() + ": Free bandwidth is less than required.("+getKey(src,dst,flowId)+"): ReqBW="+ reqBw + "/ Free="+lowestBw);
+			Log.printLine(CloudSim.clock() + ": " + getName() + ": Free bandwidth is less than required.(" + getKey(src, dst, flowId) + "): ReqBW=" + reqBw + "/ Free=" + lowestBw);
 			//return null;
 		}
 		
-		Channel channel=new Channel(flowId, src, dst, nodes, links, reqBw);
+		Channel channel = new Channel(chName, flowId, src, dst, nodes, links, reqBw, this.debugVmIdName.get(src), this.debugVmIdName.get(dst));
 
 		return channel;
 	}
 	
 	private void updateChannel() {
 		List<String> removeCh = new ArrayList<String>();  
-		for(String key:this.channelTable.keySet()) {
+		
+		for(String key : this.channelTable.keySet()) {
 			Channel ch = this.channelTable.get(key);
+			
 			if(ch.getActiveTransmissionNum() == 0) {
-				// No more job in channel. Delete
+				// No more job in channel. Delete.
 				removeCh.add(key);
 			}
 		}
 		
-		for(String key:removeCh) {
+		for(String key : removeCh) {
 			removeChannel(key);
 		}
 	}
 	
 	private String getKey(int origin, int destination) {
-		return origin+"-"+destination;
+		return origin + "-" + destination;
 	}
 	
 	private String getKey(int origin, int destination, int appId) {
-		return getKey(origin,destination)+"-"+appId;
+		return getKey(origin, destination) + "-" + appId;
 	}
-
 
 	public void setDatacenter(SDNDatacenter dc) {
 		this.datacenter = dc;
@@ -412,45 +435,53 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	}
 
 	protected Vm findVm(int vmId) {
-		for(Vm vm:vmList) {
-			if(vm.getId() == vmId)
+		for(Vm vm : vmList) {
+			if(vm.getId() == vmId) {
 				return vm;
+			}
 		}
+		
 		return null;
 	}
+	
 	protected SDNHost findSDNHost(Host host) {
-		for(SDNHost sdnhost:sdnhosts) {
+		for(SDNHost sdnhost : sdnhosts) {
 			if(sdnhost.getHost().equals(host)) {
 				return sdnhost;
 			}
 		}
+		
 		return null;
 	}
+	
 	protected SDNHost findSDNHost(int vmId) {
 		Vm vm = findVm(vmId);
-		if(vm == null)
+		if(vm == null) {
 			return null;
+		}
 		
-		for(SDNHost sdnhost:sdnhosts) {
+		for(SDNHost sdnhost : sdnhosts) {
 			if(sdnhost.getHost().equals(vm.getHost())) {
 				return sdnhost;
 			}
 		}
 		//System.err.println("NOS.findSDNHost: Host is not found for VM:"+ vmId);
+		
 		return null;
 	}
 	
 	public int getHostAddressByVmId(int vmId) {
 		Vm vm = findVm(vmId);
+		
 		if(vm == null) {
-			Log.printLine(CloudSim.clock() + ": " + getName() + ": Cannot find VM with vmId = "+ vmId);
+			Log.printLine(CloudSim.clock() + ": " + getName() + ": Cannot find VM with vmId = " + vmId);
 			return -1;
 		}
 		
 		Host host = vm.getHost();
 		SDNHost sdnhost = findSDNHost(host);
 		if(sdnhost == null) {
-			Log.printLine(CloudSim.clock() + ": " + getName() + ": Cannot find SDN Host with vmId = "+ vmId);
+			Log.printLine(CloudSim.clock() + ": " + getName() + ": Cannot find SDN Host with vmId = " + vmId);
 			return -1;
 		}
 		
@@ -459,12 +490,16 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	
 	protected Host createHost(int hostId, int ram, long bw, long storage, long pes, double mips) {
 		LinkedList<Pe> peList = new LinkedList<Pe>();
-		int peId=0;
-		for(int i=0;i<pes;i++) peList.add(new Pe(peId++,new PeProvisionerSimple(mips)));
+		int peId = 0;
+		
+		for(int i = 0 ; i < pes ; i++) {
+			peList.add(new Pe(peId++, new PeProvisionerSimple(mips)));
+		}
 		
 		RamProvisioner ramPro = new RamProvisionerSimple(ram);
 		BwProvisioner bwPro = new BwProvisionerSimple(bw);
 		VmScheduler vmScheduler = new VmSchedulerTimeSharedEnergy(peList);		
+		
 		Host newHost = new Host(hostId, ramPro, bwPro, storage, peList, vmScheduler);
 		
 		return newHost;		
@@ -475,20 +510,23 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		this.hosts = new ArrayList<Host>();
 		this.sdnhosts = new ArrayList<SDNHost>();
 		
-		int hostId=0;
-		Hashtable<String,Integer> nameIdTable = new Hashtable<String, Integer>();
+		int hostId = 0;
+		Hashtable<String, Integer> nameIdTable = new Hashtable<String, Integer>();
+		
 		try {
     		JSONObject doc = (JSONObject) JSONValue.parse(new FileReader(this.physicalTopologyFileName));
     		
     		JSONArray nodes = (JSONArray) doc.get("nodes");
     		@SuppressWarnings("unchecked")
 			Iterator<JSONObject> iter =nodes.iterator(); 
-			while(iter.hasNext()){
+			
+    		while(iter.hasNext()){
 				JSONObject node = iter.next();
 				String nodeType = (String) node.get("type");
 				String nodeName = (String) node.get("name");
 				
 				if(nodeType.equalsIgnoreCase("host")){
+					// Host.
 					long pes = (Long) node.get("pes");
 					long mips = (Long) node.get("mips");
 					int ram = new BigDecimal((Long)node.get("ram")).intValueExact();
@@ -496,16 +534,24 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 					long bw = new BigDecimal((Long)node.get("bw")).intValueExact();
 					
 					int num = 1;
-					if (node.get("nums")!= null)
+					if (node.get("nums")!= null) {
 						num = new BigDecimal((Long)node.get("nums")).intValueExact();
-
-					for(int n = 0; n< num; n++) {
+					}
+					
+					// Number of hosts with same specification.
+					// Name of hosts will be <original name><number(0..n-1)>
+					for(int n = 0 ; n < num ; n++) {
 						String nodeName2 = nodeName;
-						if(num >1) nodeName2 = nodeName + n;
+						if(num > 1) {
+							// TODO: could be changed to nodeName_n for better understanding.
+							nodeName2 = nodeName + n;
+						}
 						
 						Host host = createHost(hostId, ram, bw, storage, pes, mips);
-						SDNHost sdnHost = new SDNHost(host, this);
+						
+						SDNHost sdnHost = new SDNHost(nodeName2, host, this);
 						nameIdTable.put(nodeName2, sdnHost.getAddress());
+						
 						hostId++;
 						
 						topology.addNode(sdnHost);
@@ -513,26 +559,37 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 						this.sdnhosts.add(sdnHost);
 					}
 					
-				} else {
+				} 
+				else {
+					// Switch.
+					
 					int MAX_PORTS = 256;
 							
 					int bw = new BigDecimal((Long)node.get("bw")).intValueExact();
 					long iops = (Long) node.get("iops");
+					
 					int upports = MAX_PORTS;
-					int downports = MAX_PORTS;
-					if (node.get("upports")!= null)
+					if (node.get("upports") != null) {
 						upports = new BigDecimal((Long)node.get("upports")).intValueExact();
-					if (node.get("downports")!= null)
+					}
+					
+					int downports = MAX_PORTS;
+					if (node.get("downports")!= null) {
 						downports = new BigDecimal((Long)node.get("downports")).intValueExact();
+					}
+					
 					Switch sw = null;
 					
 					if(nodeType.equalsIgnoreCase("core")) {
 						sw = new CoreSwitch(nodeName, bw, iops, upports, downports, this);
-					} else if (nodeType.equalsIgnoreCase("aggregate")){
+					} 
+					else if (nodeType.equalsIgnoreCase("aggregate")) {
 						sw = new AggregationSwitch(nodeName, bw, iops, upports, downports, this);
-					} else if (nodeType.equalsIgnoreCase("edge")){
+					} 
+					else if (nodeType.equalsIgnoreCase("edge")) {
 						sw = new EdgeSwitch(nodeName, bw, iops, upports, downports, this);
-					} else {
+					} 
+					else {
 						throw new IllegalArgumentException("No switch found!");
 					}
 					
@@ -546,7 +603,8 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 				
 			JSONArray links = (JSONArray) doc.get("links");
 			@SuppressWarnings("unchecked")
-			Iterator<JSONObject> linksIter =links.iterator(); 
+			Iterator<JSONObject> linksIter = links.iterator(); 
+			
 			while(linksIter.hasNext()){
 				JSONObject link = linksIter.next();
 				String src = (String) link.get("source");  
@@ -558,27 +616,35 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 				topology.addLink(srcAddress, dstAddress, lat);
 			}
     		
-    		
-		} catch (FileNotFoundException e) {
+		} 
+		catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
 		
 		topology.buildDefaultRouting();
 	}
 	
-	private static int flowNumbers=0;
+	// Used to assign flow Ids to Arcs.
+	// TOCHECK: whether is should necessarily be static.
+	private static int flowNumbers = 0;
+	
+	// userId = DatacenterId.
 	public boolean deployApplication(int userId, String vmsFileName){
 
 		vmNameIdTable = new HashMap<String, Integer>();
 		vmList = new LinkedList<Vm>();
+		
 		LinkedList<Middlebox> mbList = new LinkedList<Middlebox>();
+		
 		arcList = new LinkedList<Arc>();
 		flowIdArcTable = new HashMap<Integer, Arc>();
+		
 		flowNameIdTable = new HashMap<String, Integer>();
 		flowNameIdTable.put("default", -1);
 		
 		try {
     		JSONObject doc = (JSONObject) JSONValue.parse(new FileReader(vmsFileName));
+    		
     		JSONArray nodes = (JSONArray) doc.get("nodes");
     		
     		@SuppressWarnings("unchecked")
@@ -588,43 +654,53 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 				
 				String nodeType = (String) node.get("type");
 				String nodeName = (String) node.get("name");
-				int pes = new BigDecimal((Long)node.get("pes")).intValueExact();
+				int pes = new BigDecimal((Long) node.get("pes")).intValueExact();
 				long mips = (Long) node.get("mips");
-				int ram = new BigDecimal((Long)node.get("ram")).intValueExact();
+				int ram = new BigDecimal((Long) node.get("ram")).intValueExact();
 				long size = (Long) node.get("size");
+				
 				long bw = 1000;
 				if(node.get("bw") != null)
 					bw = (Long) node.get("bw");
 				
 				double starttime = 0;
-				double endtime = Double.POSITIVE_INFINITY;
-				if(node.get("starttime") != null)
+				if(node.get("starttime") != null){
 					starttime = (Double) node.get("starttime");
-				if(node.get("endtime") != null)
-					endtime = (Double) node.get("endtime");
-
-				long nums =1;
-				if(node.get("nums") != null)
-					nums = (Long) node.get("nums");
+				}
 				
-				for(int n=0; n<nums; n++) {
+				double endtime = Double.POSITIVE_INFINITY;
+				if(node.get("endtime") != null){
+					endtime = (Double) node.get("endtime");
+				}
+
+				// Number of nodes with same specification.
+				// Name of nodes will be <original name><number(0..n-1)>
+				long nums = 1;
+				if(node.get("nums") != null){
+					nums = (Long) node.get("nums");
+				}
+				
+				for(int n = 0 ; n < nums ; n++) {
 					String nodeName2 = nodeName;
 					if(nums > 1) {
 						// Nodename should be numbered.
+						// TODO: could be changed to nodeName_n for better understanding.
 						nodeName2 = nodeName + n;
 					}
+					
 					if(nodeType.equalsIgnoreCase("vm")){
 						// VM
-						Vm vm = new TimedVm(vmId,userId,mips,pes,ram,bw,size,"VMM",new CloudletSchedulerTimeShared(), starttime, endtime);
+						Vm vm = new TimedVm(nodeName2, vmId, userId, mips, pes, ram, bw, size, "VMM", new CloudletSchedulerTimeShared(), starttime, endtime);
 						vmNameIdTable.put(nodeName2, vmId);
 						NetworkOperatingSystem.debugVmIdName.put(vmId, nodeName2);
 						
 						vmList.add(vm);
 						vmId++;
-					} else {
+					}
+					else{
 						// Middle box
-						Vm vm = new Vm(vmId,userId,mips,pes,ram,bw,size,"VMM",new CloudletSchedulerTimeShared());
-						Middlebox m = deployMiddlebox(nodeType,vm);
+						Vm vm = new Vm(vmId, userId, mips, pes, ram, bw, size, "VMM", new CloudletSchedulerTimeShared());
+						Middlebox m = deployMiddlebox(nodeType, vm);
 						vmNameIdTable.put(nodeName2, vmId);
 						mbList.add(m);
 						vmId++;
@@ -632,26 +708,30 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 				}
 			}
 			
+			// Adding Arcs.
 			JSONArray links = (JSONArray) doc.get("links");
 			
 			@SuppressWarnings("unchecked")
-			Iterator<JSONObject> linksIter = links.iterator(); 
+			Iterator<JSONObject> linksIter = links.iterator();
+			
 			while(linksIter.hasNext()){
 				JSONObject link = linksIter.next();
-				String name = (String) link.get("name");
-				String src = (String) link.get("source");  
-				String dst = (String) link.get("destination");
 				
+				String name = (String) link.get("name");
+				String src = (String) link.get("source");
+				String dst = (String) link.get("destination");
 				Object reqLat = link.get("latency");
 				Object reqBw = link.get("bandwidth");
 				
 				double lat = 0.0;
-				long bw = 0;
-				
-				if(reqLat != null)
+				if(reqLat != null){
 					lat = (Double) reqLat;
-				if(reqBw != null)
+				}
+				
+				long bw = 0;
+				if(reqBw != null){
 					bw = (Long) reqBw;
+				}
 				
 				int srcId = vmNameIdTable.get(src);
 				int dstId = vmNameIdTable.get(dst);
@@ -659,7 +739,7 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 				int flowId = -1;
 				
 				if(name == null || "default".equalsIgnoreCase(name)) {
-					// default flow.
+					// Default flow.
 					flowId = -1;
 				}
 				else {
@@ -667,11 +747,11 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 					flowNameIdTable.put(name, flowId);
 				}
 				
-				Arc arc = new Arc(srcId, dstId, flowId, bw, lat);
+				Arc arc = new Arc(name, srcId, dstId, flowId, bw, lat);
 				arcList.add(arc);
+				
 				if(flowId != -1) {
 					flowIdArcTable.put(flowId, arc);
-
 				}
 			}
     	
@@ -680,10 +760,11 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 				isApplicationDeployed = true;
 				return true;
 			}
-		} catch (FileNotFoundException e) {
+		}
+		catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
+		
 		return false;
 	}
-	
 }

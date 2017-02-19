@@ -87,11 +87,13 @@ public class LogPrinter {
 		Set<Link> linksSet = new HashSet<Link>(linksList);
 		
 		Log.printLine("========== LINK UTILIZATIONS ===========");
-		for(Link link:linksSet){
-			Log.printLine("link between nodes " + link.getHighOrder().getAddress() + " and " +  link.getLowOrder().getAddress());
+		
+		for(Link link : linksSet){
+			Log.printLine("link: " + link.getName());
 			Log.printLine("Time AvailableBw");
 			List<LinkStateHistoryEntry> stateHistory = link.stateHistory;
-			for(LinkStateHistoryEntry entry: stateHistory){
+			
+			for(LinkStateHistoryEntry entry : stateHistory){
 				Log.printLine(String.format("%.12f %.0f", entry.getTime(), entry.getAvailableBw()));
 			}
 		}
