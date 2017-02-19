@@ -24,20 +24,28 @@ public interface Node {
 	public String getName();
 	
 	public long getBandwidth();
+	
 	public void setRank(int rank);
+	
 	public int getRank();
 	
 	public void clearVMRoutingTable();
+	
 	public void addVMRoute(int srcVM, int destVM, int flowId, Node to);
+	
 	public Node getVMRoute(int srcVM, int destVM, int flowId);
+	
 	public void removeVMRoute(int srcVM, int destVM, int flowId);
+	
 	public void printVMRoute();
 
 	public void addRoute(Node destHost, Link to);
+	
 	public List<Link> getRoute(Node destHost);
 	
 	public RoutingTable getRoutingTable();
 
 	public void addLink(Link l);
+	
 	public void updateNetworkUtilization();
 }

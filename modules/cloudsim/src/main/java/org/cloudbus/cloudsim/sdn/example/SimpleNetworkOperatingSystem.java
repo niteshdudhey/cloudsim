@@ -19,6 +19,7 @@ import org.cloudbus.cloudsim.sdn.Link;
 import org.cloudbus.cloudsim.sdn.Middlebox;
 import org.cloudbus.cloudsim.sdn.NetworkOperatingSystem;
 import org.cloudbus.cloudsim.sdn.Node;
+import org.cloudbus.cloudsim.sdn.SDNDatacenter;
 import org.cloudbus.cloudsim.sdn.SDNHost;
 import org.cloudbus.cloudsim.sdn.TimedVm;
 
@@ -41,10 +42,12 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 		Log.printLine(CloudSim.clock() + ": " + getName() + ": Starting deploying application..");
 		
 		for(Vm vm : vms)
-		{
+		{	
 			TimedVm tvm = (TimedVm) vm;
+			SDNDatacenter datacenter = getDatacenterById(tvm.getDatacenterId());
+			
 			Log.printLine(CloudSim.clock() + ": " + getName() + ": Trying to Create VM #" + vm.getId() 
-					+ " in " + datacenter.getName() + ", (" + tvm.getStartTime() + "~" +tvm.getFinishTime() + ")");
+					+ " in " + datacenter.getName() + ", (" + tvm.getStartTime() + "~" + tvm.getFinishTime() + ")");
 			
 			send(datacenter.getId(), tvm.getStartTime(), CloudSimTags.VM_CREATE_ACK, vm);
 			

@@ -20,6 +20,7 @@ import org.cloudbus.cloudsim.sdn.Link;
 import org.cloudbus.cloudsim.sdn.Middlebox;
 import org.cloudbus.cloudsim.sdn.NetworkOperatingSystem;
 import org.cloudbus.cloudsim.sdn.Node;
+import org.cloudbus.cloudsim.sdn.SDNDatacenter;
 import org.cloudbus.cloudsim.sdn.SDNHost;
 import org.cloudbus.cloudsim.sdn.TimedVm;
 
@@ -33,11 +34,13 @@ public class OverbookingNetworkOperatingSystem extends NetworkOperatingSystem {
 	public boolean deployApplication(List<Vm> vms, List<Middlebox> middleboxes, List<Arc> links) {
 		Log.printLine(CloudSim.clock() + ": " + getName() + ": Starting deploying application..");
 		
-		for(Vm vm:vms)
+		for(Vm vm : vms)
 		{
 			TimedVm tvm = (TimedVm) vm;
-			Log.printLine(CloudSim.clock() + ": " + getName() + ": Trying to Create VM #" + vm.getId()
-					+ " in " + datacenter.getName() + ", (" + tvm.getStartTime() + "~" +tvm.getFinishTime() + ")");
+			SDNDatacenter datacenter = getDatacenterById(tvm.getDatacenterId());
+			
+			Log.printLine(CloudSim.clock() + ": " + getName() + ": Trying to Create VM #" + vm.getId() 
+					+ " in " + datacenter.getName() + ", (" + tvm.getStartTime() + "~"  + tvm.getFinishTime() + ")");
 			send(datacenter.getId(), tvm.getStartTime(), CloudSimTags.VM_CREATE_ACK, vm);
 			
 			if(tvm.getFinishTime() != Double.POSITIVE_INFINITY) {

@@ -57,7 +57,7 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	protected PhysicalTopology topology;
 	// Hashtable<Integer,SDNHost> vmHostTable;
 	
-	Hashtable<Package,Node> pkgTable;
+	Hashtable<Package, Node> pkgTable;
 	
 	Hashtable<String, Channel> channelTable;
 
@@ -69,7 +69,10 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	
 	int vmId = 0;
 	
-	protected SDNDatacenter datacenter;
+	//protected SDNDatacenter datacenter;
+	
+	Map<Integer, Integer> brokerIdToDatacenterIdMap;
+	protected Map<Integer, SDNDatacenter> datacenterIdToDatacenterMap;
 	
 	protected LinkedList<Vm> vmList;
 	
@@ -109,6 +112,9 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		this.physicalTopologyFileName = fileName;
 		this.pkgTable = new Hashtable<Package, Node>();
 		this.channelTable = new Hashtable<String, Channel>();
+		
+		this.brokerIdToDatacenterIdMap = new HashMap<Integer, Integer>();
+		this.datacenterIdToDatacenterMap = new HashMap<Integer, SDNDatacenter>();
 		
 		initPhysicalTopology();
 	}
@@ -388,7 +394,7 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 			//return null;
 		}
 		
-		Channel channel = new Channel(chName, flowId, src, dst, nodes, links, reqBw, this.debugVmIdName.get(src), this.debugVmIdName.get(dst));
+		Channel channel = new Channel(chName, flowId, src, dst, nodes, links, reqBw, debugVmIdName.get(src), debugVmIdName.get(dst));
 
 		return channel;
 	}
@@ -418,10 +424,19 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		return getKey(origin, destination) + "-" + appId;
 	}
 
-	public void setDatacenter(SDNDatacenter dc) {
+	/*public void setDatacenter(SDNDatacenter dc) {
 		this.datacenter = dc;
+	}*/
+	
+	public void addDatacenter(SDNDatacenter dc, int userId) {
+		brokerIdToDatacenterIdMap.put(userId, dc.getId());
+		datacenterIdToDatacenterMap.put(dc.getId(), dc);
 	}
-
+	
+	public SDNDatacenter getDatacenterById(int datacenterId) {
+		return datacenterIdToDatacenterMap.get(datacenterId);
+	}
+	
 	public List<Host> getHostList() {
 		return this.hosts;		
 	}
@@ -642,6 +657,8 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		flowNameIdTable = new HashMap<String, Integer>();
 		flowNameIdTable.put("default", -1);
 		
+		int datacenterId = brokerIdToDatacenterIdMap.get(userId);
+		
 		try {
     		JSONObject doc = (JSONObject) JSONValue.parse(new FileReader(vmsFileName));
     		
@@ -690,7 +707,7 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 					
 					if(nodeType.equalsIgnoreCase("vm")){
 						// VM
-						Vm vm = new TimedVm(nodeName2, vmId, userId, mips, pes, ram, bw, size, "VMM", new CloudletSchedulerTimeShared(), starttime, endtime);
+						Vm vm = new TimedVm(nodeName2, vmId, userId, datacenterId, mips, pes, ram, bw, size, "VMM", new CloudletSchedulerTimeShared(), starttime, endtime);
 						vmNameIdTable.put(nodeName2, vmId);
 						NetworkOperatingSystem.debugVmIdName.put(vmId, nodeName2);
 						

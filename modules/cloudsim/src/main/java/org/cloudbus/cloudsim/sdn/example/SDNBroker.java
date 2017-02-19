@@ -31,10 +31,13 @@ import org.cloudbus.cloudsim.sdn.SDNDatacenter;
 public class SDNBroker extends SimEntity {
 
 	private SDNDatacenter datacenter = null;
+	
 	private String applicationFileName = null;
+	
 	private List<String> workloadFileNames=null;
 
 	private List<Cloudlet> cloudletList;
+	
 	private List<Workload> workloads;
 	
 	public SDNBroker(String name) throws Exception {
@@ -48,13 +51,16 @@ public class SDNBroker extends SimEntity {
 	public void startEntity() {
 		sendNow(this.datacenter.getId(), Constants.APPLICATION_SUBMIT, this.applicationFileName);
 	}
+	
 	@Override
 	public void shutdownEntity() {
 		List<Vm> vmList = this.datacenter.getVmList();
-		for(Vm vm:vmList) {
+		
+		for(Vm vm : vmList) {
 			Log.printLine(CloudSim.clock() + ": " + getName() + ": Shuttingdown.. VM:" + vm.getId());
 		}
 	}
+	
 	public void submitDeployApplication(SDNDatacenter dc, String filename) {
 		this.datacenter = dc;
 		this.applicationFileName = filename;
@@ -69,18 +75,24 @@ public class SDNBroker extends SimEntity {
 		int tag = ev.getTag();
 		
 		switch(tag){
-			case CloudSimTags.VM_CREATE_ACK: 	processVmCreate(ev);			break;
-			case Constants.APPLICATION_SUBMIT_ACK: 		applicationSubmitCompleted(ev); break;
-			case Constants.REQUEST_COMPLETED:	requestCompleted(ev); break;
-			default: System.out.println("Unknown event received by "+super.getName()+". Tag:"+ev.getTag());
+			case CloudSimTags.VM_CREATE_ACK:
+				processVmCreate(ev);
+				break;
+			case Constants.APPLICATION_SUBMIT_ACK:
+				applicationSubmitCompleted(ev); 
+				break;
+			case Constants.REQUEST_COMPLETED:
+				requestCompleted(ev); 
+				break;
+			default: 
+				System.out.println("Unknown event received by " + super.getName() + ". Tag:" + ev.getTag());
 		}
 	}
-	private void processVmCreate(SimEvent ev) {
-		
+	
+	private void processVmCreate(SimEvent ev) {	
 	}
 	
 	private void requestCompleted(SimEvent ev) {
-		
 	}
 	
 	public List<Cloudlet> getCloudletReceivedList() {
@@ -90,17 +102,17 @@ public class SDNBroker extends SimEntity {
 	public static int appId = 0;
 	
 	private void applicationSubmitCompleted(SimEvent ev) {
-		for(String workloadFileName:this.workloadFileNames) {
+		for (String workloadFileName : this.workloadFileNames) {
 			scheduleRequest(workloadFileName);
 			SDNBroker.appId++;
 		}
 	}
 	
 	private void scheduleRequest(String workloadFile) {
-		WorkloadParser rp = new WorkloadParser(workloadFile, this.getId(), new UtilizationModelFull(), 
+		WorkloadParser rp = new WorkloadParser(workloadFile, this.getId(), new UtilizationModelFull(),  
 				this.datacenter.getVmNameIdTable(), this.datacenter.getFlowNameIdTable());
 		
-		for(Workload wl: rp.getWorkloads()) {
+		for(Workload wl : rp.getWorkloads()) {
 			send(this.datacenter.getId(), wl.time, Constants.REQUEST_SUBMIT, wl.request);
 			wl.appId = SDNBroker.appId;
 		}
@@ -112,6 +124,7 @@ public class SDNBroker extends SimEntity {
 	public List<Workload> getWorkloads() {
 		return this.workloads;
 	}
+	
 	/*
 	private static int reqId=0; 
 	private void scheduleRequestTest() {

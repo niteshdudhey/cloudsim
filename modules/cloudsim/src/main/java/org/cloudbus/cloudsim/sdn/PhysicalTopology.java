@@ -29,7 +29,9 @@ import com.google.common.collect.Table;
 public class PhysicalTopology {
 	
 	Hashtable<Integer,Node> nodesTable;	// Address -> Node
+	
 	Table<Integer, Integer, Link> links; 	// From : To -> Link
+	
 	Multimap<Node,Link> nodeLinks;	// Node -> all Links
 
 	public PhysicalTopology() {
@@ -45,9 +47,11 @@ public class PhysicalTopology {
 	public Link getLink(int from, int to) {
 		return links.get(from, to);
 	}
+	
 	public Node getNode(int id) {
 		return nodesTable.get(id);
 	}
+	
 	public double getLinkBandwidth(int from, int to){
 		return getLink(from, to).getBw(getNode(from));
 	}
@@ -58,25 +62,34 @@ public class PhysicalTopology {
 	
 	public void addNode(Node node){
 		nodesTable.put(node.getAddress(), node);
-		if (node instanceof CoreSwitch){//coreSwitch is rank 0 (root)
+		if (node instanceof CoreSwitch){
+			// coreSwitch is rank 0 (root)
 			node.setRank(0);
-		} else if (node instanceof AggregateSwitch){//Hosts are on the bottom of hierarchy (leaf)
+		} 
+		else if (node instanceof AggregateSwitch){
+			// Hosts are on the bottom of hierarchy (leaf)
 			node.setRank(1);
-		} else if (node instanceof EdgeSwitch){//Edge switches are just before hosts in the hierarchy
+		} 
+		else if (node instanceof EdgeSwitch){
+			// Edge switches are just before hosts in the hierarchy
 			node.setRank(2);
-		} else if (node instanceof SDNHost){//Hosts are on the bottom of hierarchy (leaf)
+		} 
+		else if (node instanceof SDNHost){
+			//Hosts are on the bottom of hierarchy (leaf)
 			node.setRank(3);
 		}
 	}
+	
 	public void buildDefaultRouting() {
 		Collection<Node> nodes = getAllNodes();
 		
-		// For SDNHost: build path to edge switch
-		// For Edge: build path to SDN Host
-		for(Node sdnhost:nodes) {
-			if(sdnhost.getRank() == 3) {	// Rank3 = SDN Host
+		// For SDNHost: build path to edge switch.
+		// For Edge: build path to SDN Host.
+		for(Node sdnhost : nodes) {
+			if(sdnhost.getRank() == 3) {
+				// Rank3 = SDN Host
 				Collection<Link> links = getAdjacentLinks(sdnhost);
-				for(Link l:links) {
+				for(Link l : links) {
 					if(l.getLowOrder().equals(sdnhost)) {
 						sdnhost.addRoute(null, l);
 						Node edge = l.getHighOrder();
@@ -85,50 +98,56 @@ public class PhysicalTopology {
 				}
 			}
 		}
-		// For Edge: build path to aggregate switch
-		// For Aggregate: build path to edge switch
-		for(Node lowerNode:nodes) {
-			if(lowerNode.getRank() == 2) {	// Rank2 = Edge switch
+		
+		// For Edge: build path to aggregate switch.
+		// For Aggregate: build path to edge switch.
+		for(Node lowerNode : nodes) {
+			if(lowerNode.getRank() == 2) {	
+				// Rank2 = Edge switch
 				Collection<Link> links = getAdjacentLinks(lowerNode);
-				for(Link l:links) {
+				for(Link l : links) {
 					if(l.getLowOrder().equals(lowerNode)) {
 						// Link is between Edge and Aggregate
 						lowerNode.addRoute(null, l);
 						Node higherNode = l.getHighOrder();
 						
 						// Add all children hosts to
-						for(Node destination: lowerNode.getRoutingTable().getKnownDestination()) {
-							if(destination != null)
+						for(Node destination : lowerNode.getRoutingTable().getKnownDestination()) {
+							if (destination != null) {
 								higherNode.addRoute(destination, l);
-						}
-					}
-				}
-			}
-		}
-		// For Agg: build path to core switch
-		// For Core: build path to aggregate switch
-		for(Node agg:nodes) {
-			if(agg.getRank() == 1) {	// Rank1 = Agg switch
-				Collection<Link> links = getAdjacentLinks(agg);
-				for(Link l:links) {
-					if(l.getLowOrder().equals(agg)) {
-						// Link is between Edge and Aggregate
-						agg.addRoute(null, l);
-						Node core = l.getHighOrder();
-						
-						// Add all children hosts to
-						for(Node destination: agg.getRoutingTable().getKnownDestination()) {
-							if(destination != null)
-								core.addRoute(destination, l);
+							}
 						}
 					}
 				}
 			}
 		}
 		
-		for(Node n:nodes) {
+		// For Agg: build path to core switch.
+		// For Core: build path to aggregate switch.
+		for(Node agg : nodes) {
+			if(agg.getRank() == 1) {
+				// Rank1 = Agg switch
+				Collection<Link> links = getAdjacentLinks(agg);
+				for(Link l : links) {
+					if(l.getLowOrder().equals(agg)) {
+						// Link is between Edge and Aggregate.
+						agg.addRoute(null, l);
+						Node core = l.getHighOrder();
+						
+						// Add all children hosts to
+						for(Node destination : agg.getRoutingTable().getKnownDestination()) {
+							if(destination != null) {
+								core.addRoute(destination, l);
+							}
+						}
+					}
+				}
+			}
+		}
+		
+		for(Node n : nodes) {
 			System.out.println("============================================");
-			System.out.println("Node: "+n);
+			System.out.println("Node: " + n);
 			n.getRoutingTable().printRoutingTable();
 		}
 
@@ -193,5 +212,4 @@ public class PhysicalTopology {
 	public Collection<Link> getAllLinks() {
 		return nodeLinks.values();
 	}
-
 }

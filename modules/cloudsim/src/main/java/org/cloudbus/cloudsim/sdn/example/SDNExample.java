@@ -142,12 +142,12 @@ public class SDNExample {
 				System.exit(1);
 			}
 
-			// Create a Datacenter
-			SDNDatacenter datacenter = createSDNDatacenter("Datacenter_0", physicalTopologyFile, snos, vmAllocationFac);
-
 			// Broker
 			SDNBroker broker = createBroker();
 			int brokerId = broker.getId();
+						
+			// Create a Datacenter
+			SDNDatacenter datacenter = createSDNDatacenter("Datacenter_0", brokerId, physicalTopologyFile, snos, vmAllocationFac);
 
 			// Submit virtual topology
 			// deploymentFile : virtual-topology file.
@@ -221,7 +221,7 @@ public class SDNExample {
 	 */
 	protected static NetworkOperatingSystem nos;
 	protected static PowerUtilizationMaxHostInterface maxHostHandler = null;
-	protected static SDNDatacenter createSDNDatacenter(String name, String physicalTopology, NetworkOperatingSystem snos, VmAllocationPolicyFactory vmAllocationFactory) {
+	protected static SDNDatacenter createSDNDatacenter(String name, int userId, String physicalTopology, NetworkOperatingSystem snos, VmAllocationPolicyFactory vmAllocationFactory) {
 		// In order to get Host information, pre-create NOS.
 		nos=snos;
 		List<Host> hostList = nos.getHostList();
@@ -251,7 +251,8 @@ public class SDNExample {
 			datacenter = new SDNDatacenter(name, characteristics, vmPolicy, storageList, 0, nos);
 			
 			
-			nos.setDatacenter(datacenter);
+			//nos.setDatacenter(datacenter);
+			nos.addDatacenter(datacenter, userId);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
