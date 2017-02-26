@@ -92,7 +92,7 @@ public class SDNHost extends SimEntity implements Node {
 		int tag = ev.getTag();
 		
 		switch(tag){
-			case Constants.SDN_PACKAGE: 
+			case Constants.SDN_PACKAGE:
 				processPackage((Package) ev.getData()); 
 				break;
 			case CloudSimTags.CLOUDLET_RETURN: 
@@ -168,7 +168,8 @@ public class SDNHost extends SimEntity implements Node {
 				cl.setVmId(vmId);
 				
 				requestsTable.put(cl, req);
-				sendNow(host.getDatacenter().getId(), CloudSimTags.CLOUDLET_SUBMIT, cl);
+				//sendNow(host.getDatacenter().getId(), CloudSimTags.CLOUDLET_SUBMIT, cl);
+				sendNow(nos.getDatacenterIdFromBrokerId(cl.getUserId()), CloudSimTags.CLOUDLET_SUBMIT, cl);
 		} 
 		else {
 			Log.printLine(CloudSim.clock() + ": " + getName() + ": Activity is unknown..");

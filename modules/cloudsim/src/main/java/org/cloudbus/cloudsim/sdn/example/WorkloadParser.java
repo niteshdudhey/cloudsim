@@ -36,19 +36,30 @@ import org.cloudbus.cloudsim.sdn.Transmission;
  */
 
 public class WorkloadParser {
+	
 	private final Map<String, Integer> vmNames;
+	
 	private final Map<String, Integer> flowNames;
+	
 	private String file;
+	
 	private static int reqId = 0;
+	
 	private static int cloudletId = 0;
+	
 	private int userId;
+	
 	private UtilizationModel utilizationModel;
+	
 	private List<Workload> workloads;
+	
 	private List<Cloudlet> lastCloudlets;
+	
 	private List<Cloudlet> allCloudlets;
 	
 	public WorkloadParser(String file, int userId, UtilizationModel cloudletUtilModel, 
 			Map<String, Integer> vmNameIdMap, Map<String, Integer> flowNameIdMap) {
+		
 		this.file = file;
 		this.userId = userId;
 		this.utilizationModel = cloudletUtilModel;
@@ -75,10 +86,12 @@ public class WorkloadParser {
 	
 	private int getVmId(String vmName) {
 		Integer vmId = this.vmNames.get(vmName);
+		
 		if(vmId == null) {
-			System.err.println("Cannot find VM name:"+vmName);
+			System.err.println("Cannot find VM name:" + vmName);
 			return -1;
 		}
+		
 		return vmId;
 	}
 
@@ -86,6 +99,7 @@ public class WorkloadParser {
 		int peNum=1;
 		long fileSize = 300;
 		long outputSize = 300;
+		
 		Cloudlet cloudlet= new Cloudlet(cloudletId++, length, peNum, fileSize, outputSize, utilizationModel, utilizationModel, utilizationModel);
 		cloudlet.setUserId(userId);
 		cloudlet.setVmId(vmId);
@@ -95,8 +109,7 @@ public class WorkloadParser {
 	
 	// Cloud_Len -> /FlowId/ -> ToVmId -> PktSize
 	private Request parseRequest(int fromVmId, Queue<String> lineitems) {
-		if(lineitems.size() <= 0)
-		{
+		if(lineitems.size() <= 0) {
 			System.err.println("No REQUEST! ERROR");
 			return null;
 		}
@@ -104,14 +117,15 @@ public class WorkloadParser {
 		long cloudletLen = Long.parseLong(lineitems.poll());
 
 		Request req = new Request(reqId++, userId);
-		Cloudlet cl = generateCloudlet(fromVmId, (int) cloudletLen);
+		Cloudlet cl = generateCloudlet(fromVmId, (int)cloudletLen);
 		this.allCloudlets.add(cl);
 		
 		Processing proc = new Processing(cl);
 		req.addActivity(proc);
 		
 		if(lineitems.size() != 0) {
-			// Has more requests after this. Create a transmission and add
+			// Has more requests after this. Create a transmission and add.
+			
 			String linkName = lineitems.poll();
 			Integer flowId = this.flowNames.get(linkName);
 			
@@ -128,10 +142,12 @@ public class WorkloadParser {
 			
 			Transmission trans = new Transmission(fromVmId, toVmId, pktSize, flowId, nextReq);
 			req.addActivity(trans);
-		} else {
-			// this is the last request.
+		} 
+		else {
+			// This is the last request.
 			this.lastCloudlets.add(cl);
 		}
+		
 		return req;
 	}
 	
@@ -143,7 +159,8 @@ public class WorkloadParser {
 		BufferedReader br = null;
 		try {
 			br = new BufferedReader(new FileReader(file));
-		} catch (FileNotFoundException e) {
+		} 
+		catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
@@ -151,11 +168,11 @@ public class WorkloadParser {
 		String line;
 		try {
 			@SuppressWarnings("unused")
-			String head=br.readLine();
+			String head = br.readLine();
 			//System.out.println("Headline: "+ head);
 			
 			while ((line = br.readLine()) != null) {
-				//System.out.println("parsing:"+line);
+				//System.out.println("parsing:" + line);
 				
 				Workload tr = new Workload();
 				
@@ -173,13 +190,16 @@ public class WorkloadParser {
 				
 				workloads.add(tr);
 			}
-		} catch (IOException e) {
+		} 
+		catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		
 		try {
 			br.close();
-		} catch (IOException e) {
+		} 
+		catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}

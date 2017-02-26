@@ -30,6 +30,12 @@ import org.cloudbus.cloudsim.core.SimEvent;
  * @author Rodrigo N. Calheiros
  * @since CloudSimSDN 1.0
  */
+
+/**
+ * 
+ * @author Nitesh Dudhey
+ *
+ */
 public class SDNDatacenter extends Datacenter {
 
 	NetworkOperatingSystem nos;
@@ -38,9 +44,12 @@ public class SDNDatacenter extends Datacenter {
 		super(name, characteristics, vmAllocationPolicy, storageList, schedulingInterval);
 		
 		this.nos = nos;
-		//nos.init();
 	}
 	
+	/**
+	 * Adds a VM to the datacenter.
+	 * @param vm
+	 */
 	public void addVm(Vm vm){
 		getVmList().add(vm);
 		

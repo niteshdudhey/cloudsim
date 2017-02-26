@@ -41,8 +41,7 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 	public boolean deployApplication(List<Vm> vms, List<Middlebox> middleboxes, List<Arc> links) {
 		Log.printLine(CloudSim.clock() + ": " + getName() + ": Starting deploying application..");
 		
-		for(Vm vm : vms)
-		{	
+		for(Vm vm : vms) {	
 			TimedVm tvm = (TimedVm) vm;
 			SDNDatacenter datacenter = getDatacenterById(tvm.getDatacenterId());
 			
@@ -52,7 +51,6 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 			send(datacenter.getId(), tvm.getStartTime(), CloudSimTags.VM_CREATE_ACK, vm);
 			
 			if(tvm.getFinishTime() != Double.POSITIVE_INFINITY) {
-				//System.err.println("VM will be terminated at: "+tvm.getFinishTime());
 				send(datacenter.getId(), tvm.getFinishTime(), CloudSimTags.VM_DESTROY, vm);
 				send(this.getId(), tvm.getFinishTime(), CloudSimTags.VM_DESTROY, vm);
 			}
@@ -218,10 +216,12 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 	
 	@Override
 	public void processVmCreateAck(SimEvent ev) {
-		// print the created VM info
+		// Print the created VM info.
 		TimedVm vm = (TimedVm) ev.getData();
-		Log.printLine(CloudSim.clock() + ": " + getName() + ": VM Created: " +  vm.getId()  
-				+ " in " + this.findSDNHost(vm.getId()));
+		SDNHost host = this.findSDNHost(vm.getId());
+		
+		Log.printLine(CloudSim.clock() + ": " + getName() 
+				+ ": VM Created: " +  vm.getId() + " in " + host);
 		deployFlow(this.arcList);
 	}
 }
