@@ -17,9 +17,14 @@ import org.cloudbus.cloudsim.sdn.Request;
  * @since CloudSimSDN 1.0
  */
 public class Workload {
+	
 	public int appId;
+	
 	public double time;
+	
 	public int submitVmId;
+	
 	public int submitPktSize;
+	
 	public Request request;	
 }

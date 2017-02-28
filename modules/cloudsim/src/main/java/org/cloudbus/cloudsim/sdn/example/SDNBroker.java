@@ -28,13 +28,19 @@ import org.cloudbus.cloudsim.sdn.SDNDatacenter;
  * @author Jungmin Son
  * @since CloudSimSDN 1.0
  */
+
+/**
+ * Each Broker is associated with one Datacenter.
+ * @author Nitesh Dudhey
+ *
+ */
 public class SDNBroker extends SimEntity {
 
 	private SDNDatacenter datacenter = null;
 	
 	private String applicationFileName = null;
 	
-	private List<String> workloadFileNames=null;
+	private List<String> workloadFileNames = null;
 
 	private List<Cloudlet> cloudletList;
 	
@@ -49,6 +55,7 @@ public class SDNBroker extends SimEntity {
 	
 	@Override
 	public void startEntity() {
+		System.out.println("Starting Broker:" + this.getId());
 		sendNow(this.datacenter.getId(), Constants.APPLICATION_SUBMIT, this.applicationFileName);
 	}
 	
@@ -124,65 +131,4 @@ public class SDNBroker extends SimEntity {
 	public List<Workload> getWorkloads() {
 		return this.workloads;
 	}
-	
-	/*
-	private static int reqId=0; 
-	private void scheduleRequestTest() {
-		
-		cloudletList = new ArrayList<Cloudlet>();
-		int cloudletId = 0;
-		
-		List<Vm> vmList = this.datacenter.getVmList();
-		
-		Vm vm1 = vmList.get(0);
-		Vm vm2 = vmList.get(1);
-		Vm vm3 = vmList.get(2);
-
-		///////////////////////////////////////
-		// req = vm1:p1 -> tr1 -> vm2:p2 -> tr2 -> vm3:p3 -> tr3 -> vm1:p4
-		// req                    r1               r2               r3    
-		long fileSize = 300;
-		long outputSize = 300;
-		UtilizationModel utilizationModel = new UtilizationModelFull();
-		
-		Cloudlet cloudlet1 = new Cloudlet(cloudletId++, 4000, 1, fileSize, outputSize, utilizationModel, utilizationModel, utilizationModel);
-		Cloudlet cloudlet2 = new Cloudlet(cloudletId++, 30000, 1, fileSize, outputSize, utilizationModel, utilizationModel, utilizationModel);
-		Cloudlet cloudlet3 = new Cloudlet(cloudletId++, 6000, 1, fileSize, outputSize, utilizationModel, utilizationModel, utilizationModel);
-		Cloudlet cloudlet4 = new Cloudlet(cloudletId++, 10000, 1, fileSize, outputSize, utilizationModel, utilizationModel, utilizationModel);
-		cloudlet1.setUserId(getId());
-		cloudlet2.setUserId(getId());
-		cloudlet3.setUserId(getId());
-		cloudlet4.setUserId(getId());
-		cloudlet1.setVmId(vm1.getId());
-		cloudletList.add(cloudlet1);
-		cloudletList.add(cloudlet2);
-		cloudletList.add(cloudlet3);
-		cloudletList.add(cloudlet4);
-		Processing p1 = new Processing(cloudlet1);
-		Processing p2 = new Processing(cloudlet2);
-		Processing p3 = new Processing(cloudlet3);
-		Processing p4 = new Processing(cloudlet4);
-
-		Request req = new Request(reqId++, getId(), getId());
-		Request r1 = new Request(reqId++, getId(), getId());
-		Request r2 = new Request(reqId++, getId(), getId());
-		Request r3 = new Request(reqId++, getId(), getId());
-		
-		r3.addActivity(p4);
-		
-		Transmission tr3 = new Transmission(vm3.getId(), vm1.getId(), 30000, r3);
-		r2.addActivity(p3);
-		r2.addActivity(tr3);
-		
-		Transmission tr2 = new Transmission(vm2.getId(), vm3.getId(), 7000, r2);
-		r1.addActivity(p2);
-		r1.addActivity(tr2);
-
-		Transmission tr1 = new Transmission(vm1.getId(), vm2.getId(), 3000, r1);
-		req.addActivity(p1);
-		req.addActivity(tr1);
-		sendNow(this.datacenter.getId(), Constants.REQUEST_SUBMIT, req);
-	}
-
-	*/
 }
