@@ -462,6 +462,10 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	public List<Host> getHostList() {
 		return this.hosts;		
 	}
+	
+	public List<Vm> getVmList() {
+		return this.vmList;		
+	}
 
 	public List<Switch> getSwitchList() {
 		return this.switches;

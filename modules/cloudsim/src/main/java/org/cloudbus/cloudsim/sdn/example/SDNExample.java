@@ -186,6 +186,8 @@ public class SDNExample {
 			
 			LogPrinter.printHostMetricsToFile(nos.getSDNHostList());
 			
+			LogPrinter.printVmMetricsToFile(nos.getVmList());
+			
 			Log.printLine("Simultanously used hosts:" + maxHostHandler.getMaxNumHostsUsed());			
 			Log.printLine("CloudSim SDN finished!");
 

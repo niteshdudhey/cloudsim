@@ -85,7 +85,7 @@ public class Vm {
          */
 	private final List<VmStateHistoryEntry> stateHistory = new LinkedList<VmStateHistoryEntry>();
 	
-	private Map<Double, FullVmStateHistoryEntry> fullStateHistory;
+	private List<FullVmStateHistoryEntry> fullStateHistory;
 
 	/**
 	 * Creates a new Vm object.
@@ -138,7 +138,7 @@ public class Vm {
 		setCurrentAllocatedMips(null);
 		setCurrentAllocatedRam(0);
 		setCurrentAllocatedSize(0);
-		fullStateHistory = new TreeMap<Double, FullVmStateHistoryEntry>();
+		fullStateHistory = new LinkedList<FullVmStateHistoryEntry>();
 	}
 
 	/**
@@ -620,11 +620,12 @@ public class Vm {
 		getStateHistory().add(newState);
 	}
 	
-	public Map<Double, FullVmStateHistoryEntry> getFullVmStateHistory() {
+	public List<FullVmStateHistoryEntry> getFullVmStateHistory() {
 		return fullStateHistory;
 	}
 
 	public void storeCurrentState(double time) {
+		
 		double totalAllocatedMips = 0.0;
 		double totalRequestedMips = 0.0;
 		if (getCurrentAllocatedMips() != null) {
@@ -637,8 +638,7 @@ public class Vm {
 				totalRequestedMips += mips;
 			}
 		}
-		FullVmStateHistoryEntry stateHistory = new 
-				FullVmStateHistoryEntry(time, totalAllocatedMips, totalRequestedMips, isInMigration());
+		FullVmStateHistoryEntry stateHistory = new FullVmStateHistoryEntry(time);
 		
 		/*
 		 * Add all function calls to setters of StateHistory attributes
@@ -661,7 +661,7 @@ public class Vm {
 		/*
 		 * State History stored for the given time instant
 		 */
-		fullStateHistory.put(time, stateHistory);
+		fullStateHistory.add(stateHistory);
 //		System.out.println("VM " + getId() + " state stored at time " + time);
 	}
 	

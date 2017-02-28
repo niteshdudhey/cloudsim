@@ -2,7 +2,9 @@ package org.cloudbus.cloudsim;
 
 import java.util.List;
 
-public class FullVmStateHistoryEntry extends VmStateHistoryEntry {
+public class FullVmStateHistoryEntry {
+	
+	double time;
 		
 	int allocatedRam;
 	
@@ -30,8 +32,12 @@ public class FullVmStateHistoryEntry extends VmStateHistoryEntry {
 	
 	double bwUtil;
 	
-	public FullVmStateHistoryEntry(double time, double allocatedMips, double requestedMips, boolean isInMigration) {
-		super(time, allocatedMips, requestedMips, isInMigration);
+	double bwUpUtil;
+	
+	double bwDownUtil;
+	
+	public FullVmStateHistoryEntry(double time) {
+		this.time = time;
 	}
 	
 	public String toString() {
@@ -43,8 +49,13 @@ public class FullVmStateHistoryEntry extends VmStateHistoryEntry {
 		str += "Allocated Bw = " + Long.toString(allocatedBw)
 				+ "; Requested Bw = " + Long.toString(requestedBw) + "\n";
 		str += "CPU Util = " + Double.toString(cpuUtil) + "; Ram Util = " + Double.toString(ramUtil)
-				+ "; Bw Util = " + Double.toString(bwUtil) + "\n";
+				+ "; Bw Util = " + Double.toString(bwUtil) + "; Bw Up Util = " + Double.toString(bwUpUtil)
+				+ "; Bw Down Util = " + Double.toString(bwDownUtil) +"\n";
 		return str;
+	}
+	
+	public double getTime() {
+		return time;
 	}
 	
 	public int getAllocatedRam() {
@@ -125,6 +136,22 @@ public class FullVmStateHistoryEntry extends VmStateHistoryEntry {
 	
 	public void setBwUtil(double bwUtil) {
 		this.bwUtil = bwUtil;
+	}
+	
+	public double getUpBwUtil() {
+		return bwUpUtil;
+	}
+	
+	public void setUpBwUtil(double bwUtil) {
+		this.bwUpUtil = bwUtil;
+	}
+	
+	public double getDownBwUtil() {
+		return bwDownUtil;
+	}
+	
+	public void setDownBwUtil(double bwUtil) {
+		this.bwDownUtil = bwUtil;
 	}
 
 }

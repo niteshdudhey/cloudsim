@@ -18,8 +18,10 @@ import java.util.Set;
 
 import org.cloudbus.cloudsim.Cloudlet;
 import org.cloudbus.cloudsim.FullHostStateHistoryEntry;
+import org.cloudbus.cloudsim.FullVmStateHistoryEntry;
 import org.cloudbus.cloudsim.Host;
 import org.cloudbus.cloudsim.Log;
+import org.cloudbus.cloudsim.Vm;
 import org.cloudbus.cloudsim.sdn.Activity;
 import org.cloudbus.cloudsim.sdn.Processing;
 import org.cloudbus.cloudsim.sdn.Request;
@@ -295,7 +297,7 @@ public class LogPrinter {
 	}
 	
 	public static void printHostMetricsToFile(List<SDNHost> hostList) {
-		String fileName = "/home/ravi/Documents/Ravi Teja A.V/RnD/metrics.txt";
+		String fileName = "/home/ravi/Documents/Ravi Teja A.V/RnD/metrics_host.txt";
 		try {
 			File file = new File(fileName);
             if (!file.exists()) {
@@ -320,6 +322,36 @@ public class LogPrinter {
                     addToDataFile("Host-" + host.getId() + "-BW-Util", entry.getTime(), entry.getBwUtil());
                     addToDataFile("Host-" + host.getId() + "-CPU-Util", entry.getTime(), entry.getCpuUtil());
                 }
+    		}
+            fw.close();
+		} catch(Exception e) {
+			System.out.println(e);
+		}
+	}
+	
+	public static void printVmMetricsToFile(List<? extends Vm> vmList) {
+		String fileName = "/home/ravi/Documents/Ravi Teja A.V/RnD/metrics_vm.txt";
+		try {
+			File file = new File(fileName);
+            if (!file.exists()) {
+                file.createNewFile();
+            }
+            FileWriter fw = new FileWriter(file.getAbsoluteFile(), false);
+            for (Vm vm: vmList) {
+    			fw.write("VM " + vm.getId() + "\n");
+    			fw.write("------\n");
+    			for (FullVmStateHistoryEntry entry : vm.getFullVmStateHistory()) {
+    				fw.write("Time = " + entry.getTime() + "\n" + entry.toString() + "\n");
+                    addToDataFile("VM-" + vm.getId() + "-Available-RAM", entry.getTime(), entry.getAllocatedRam());
+                    addToDataFile("VM-" + vm.getId() + "-Requested-RAM", entry.getTime(), entry.getRequestedRam());
+                    addToDataFile("VM-" + vm.getId() + "-Available-BW", entry.getTime(), entry.getAllocatedBw());
+                    addToDataFile("VM-" + vm.getId() + "-Requested-BW", entry.getTime(), entry.getRequestedBw());
+                    addToDataFile("VM-" + vm.getId() + "-Available-MIPS", entry.getTime(), entry.getAllocatedMips());
+                    addToDataFile("VM-" + vm.getId() + "-Requested-MIPS", entry.getTime(), entry.getRequestedMips());
+                    addToDataFile("VM-" + vm.getId() + "-RAM-Util", entry.getTime(), entry.getRamUtil());
+                    addToDataFile("VM-" + vm.getId() + "-BW-Util", entry.getTime(), entry.getBwUtil());
+                    addToDataFile("VM-" + vm.getId() + "-CPU-Util", entry.getTime(), entry.getCpuUtil());
+    			}
     		}
             fw.close();
 		} catch(Exception e) {

@@ -8,6 +8,7 @@
 package org.cloudbus.cloudsim.sdn;
 
 import org.cloudbus.cloudsim.CloudletScheduler;
+import org.cloudbus.cloudsim.FullVmStateHistoryEntry;
 import org.cloudbus.cloudsim.Vm;
 
 /**
@@ -63,4 +64,48 @@ public class TimedVm extends Vm {
 	public double getFinishTime() {
 		return finishTime;
 	}
+	
+	@Override
+	public void storeCurrentState(double time) {
+		
+		FullVmStateHistoryEntry stateHistory = new FullVmStateHistoryEntry(time);
+		
+		double totalAllocatedMips = 0.0;
+		double totalRequestedMips = 0.0;
+		if (getCurrentAllocatedMips() != null) {
+			for (double mips: getCurrentAllocatedMips()) {
+				totalAllocatedMips += mips;
+			}
+		}
+		if (getCurrentRequestedMips() != null) {
+			for (double mips: getCurrentRequestedMips()) {
+				totalRequestedMips += mips;
+			}
+		}
+		
+		/*
+		 * Add all function calls to setters of StateHistory attributes
+		 */
+		
+		stateHistory.setAllocatedRam(getCurrentAllocatedRam());
+		stateHistory.setRequestedRam(getRam());
+		
+		stateHistory.setAllocatedBw(getCurrentAllocatedBw());
+		stateHistory.setRequestedBw(getBw());
+		
+		stateHistory.setAllocatedMips(totalAllocatedMips);
+		stateHistory.setAllocatedMipsList(getCurrentAllocatedMips());
+		stateHistory.setRequestedMips(totalRequestedMips);
+		
+		stateHistory.setRamUtil(getCloudletScheduler().getCurrentRequestedUtilizationOfRam());
+		stateHistory.setCpuUtil(getCloudletScheduler().getTotalUtilizationOfCpu(time));
+		stateHistory.setBwUtil(getCloudletScheduler().getCurrentRequestedUtilizationOfBw());
+		
+		/*
+		 * State History stored for the given time instant
+		 */
+		getFullVmStateHistory().add(stateHistory);
+//		System.out.println("VM " + getId() + " state stored at time " + time);
+	}
+	
 }
