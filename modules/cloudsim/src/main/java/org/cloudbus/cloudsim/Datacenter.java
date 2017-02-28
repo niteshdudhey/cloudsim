@@ -261,6 +261,7 @@ public class Datacenter extends SimEntity {
 				processOtherEvent(ev);
 				break;
 		}
+		EventSummary.storePresentState(CloudSim.clock());
 	}
 
 	/**

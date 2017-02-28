@@ -283,11 +283,16 @@ public class CloudletSchedulerTimeShared extends CloudletScheduler {
                 /*
                  * @todo 
                  */
-		double totalUtilization = 0;
-		for (ResCloudlet gl : getCloudletExecList()) {
-			totalUtilization += gl.getCloudlet().getUtilizationOfCpu(time);
+//		double totalUtilization = 0;
+//		for (ResCloudlet gl : getCloudletExecList()) {
+//			totalUtilization += gl.getCloudlet().getUtilizationOfCpu(time);
+//		}
+//		return totalUtilization;
+		if (cloudletExecList.size() > 0) {
+			return 1.0;
+		} else {
+			return 0.0;
 		}
-		return totalUtilization;
 	}
 
 	@Override
@@ -342,11 +347,16 @@ public class CloudletSchedulerTimeShared extends CloudletScheduler {
 
 	@Override
 	public double getCurrentRequestedUtilizationOfRam() {
-		double ram = 0;
-		for (ResCloudlet cloudlet : cloudletExecList) {
-			ram += cloudlet.getCloudlet().getUtilizationOfRam(CloudSim.clock());
+//		double ram = 0;
+//		for (ResCloudlet cloudlet : cloudletExecList) {
+//			ram += cloudlet.getCloudlet().getUtilizationOfRam(CloudSim.clock());
+//		}
+//		return ram;
+		if (cloudletExecList.size() > 0) {
+			return 1.0;
+		} else {
+			return 0.0;
 		}
-		return ram;
 	}
 
 	@Override

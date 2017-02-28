@@ -2,7 +2,9 @@ package org.cloudbus.cloudsim;
 
 import java.util.List;
 
-public class FullHostStateHistoryEntry extends HostStateHistoryEntry {
+public class FullHostStateHistoryEntry {
+	
+	double time;
 	
 	int ram;
 	
@@ -27,11 +29,11 @@ public class FullHostStateHistoryEntry extends HostStateHistoryEntry {
 	
 	double requestedMips;
 	
-	long bw;
+	double bw;
 	
-	long availableBw;
+	double availableBw;
 	
-	long requestedBw;
+	double requestedBw;
 	
 	double cpuUtil;
 	
@@ -39,10 +41,14 @@ public class FullHostStateHistoryEntry extends HostStateHistoryEntry {
 	
 	double bwUtil;
 	
+	double bwUpUtil;
+	
+	double bwDownUtil;
+	
 	List<Integer> vmIdsList;
 	
-	public FullHostStateHistoryEntry(double time, double allocatedMips, double requestedMips, boolean isActive) {
-		super(time, allocatedMips, requestedMips, isActive);
+	public FullHostStateHistoryEntry(double time) {
+		this.time = time;
 	}
 	
 	public String toString() {
@@ -51,16 +57,21 @@ public class FullHostStateHistoryEntry extends HostStateHistoryEntry {
 				+ "; Requested Ram = " + Integer.toString(requestedRam) + "\n";
 		str += "Mips = " + Double.toString(mips) + "; Available Mips = " + Double.toString(availableMips)
 				+ "; Requested Mips = " + Double.toString(requestedMips) + "\n";
-		str += "Bw = " + Long.toString(bw) + "; Available Bw = " + Long.toString(availableBw)
-				+ "; Requested Bw = " + Long.toString(requestedBw) + "\n";
+		str += "Bw = " + Double.toString(bw) + "; Available Bw = " + Double.toString(availableBw)
+				+ "; Requested Bw = " + Double.toString(requestedBw) + "\n";
 		str += "CPU Util = " + Double.toString(cpuUtil) + "; Ram Util = " + Double.toString(ramUtil)
-				+ "; Bw Util = " + Double.toString(bwUtil) + "\n";
+				+ "; Bw Util = " + Double.toString(bwUtil) + "; Bw Up Util = " + Double.toString(bwUpUtil)
+				+ "; Bw Down Util = " + Double.toString(bwDownUtil) +"\n";
 		str += "VM IDs = ";
 		for (Integer id: vmIdsList) {
 			str += Integer.toString(id) + " ";
 		}
 		str += "\n";
 		return str;
+	}
+	
+	public double getTime() {
+		return time;
 	}
 	
 	public int getRam() {
@@ -119,27 +130,27 @@ public class FullHostStateHistoryEntry extends HostStateHistoryEntry {
 		this.availableMipsList = mipsList;
 	}
 	
-	public long getBw() {
+	public double getBw() {
 		return bw;
 	}
 	
-	public void setBw(long bw) {
+	public void setBw(double bw) {
 		this.bw = bw;
 	}
 	
-	public long getAvailableBw() {
+	public double getAvailableBw() {
 		return availableBw;
 	}
 	
-	public void setAvailableBw(long bw) {
+	public void setAvailableBw(double bw) {
 		this.availableBw = bw;
 	}
 	
-	public long getRequestedBw() {
+	public double getRequestedBw() {
 		return requestedBw;
 	}
 	
-	public void setRequestedBw(long bw) {
+	public void setRequestedBw(double bw) {
 		this.requestedBw = bw;
 	}
 	
@@ -165,6 +176,22 @@ public class FullHostStateHistoryEntry extends HostStateHistoryEntry {
 	
 	public void setBwUtil(double bwUtil) {
 		this.bwUtil = bwUtil;
+	}
+	
+	public double getUpBwUtil() {
+		return bwUpUtil;
+	}
+	
+	public void setUpBwUtil(double bwUtil) {
+		this.bwUpUtil = bwUtil;
+	}
+	
+	public double getDownBwUtil() {
+		return bwDownUtil;
+	}
+	
+	public void setDownBwUtil(double bwUtil) {
+		this.bwDownUtil = bwUtil;
 	}
 	
 	public List<Integer> getVmIdsList() {

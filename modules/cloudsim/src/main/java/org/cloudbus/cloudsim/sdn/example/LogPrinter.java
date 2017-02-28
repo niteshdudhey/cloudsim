@@ -8,17 +8,22 @@
 
 package org.cloudbus.cloudsim.sdn.example;
 
+import java.io.File;
+import java.io.FileWriter;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.cloudbus.cloudsim.Cloudlet;
+import org.cloudbus.cloudsim.FullHostStateHistoryEntry;
 import org.cloudbus.cloudsim.Host;
 import org.cloudbus.cloudsim.Log;
 import org.cloudbus.cloudsim.sdn.Activity;
 import org.cloudbus.cloudsim.sdn.Processing;
 import org.cloudbus.cloudsim.sdn.Request;
+import org.cloudbus.cloudsim.sdn.SDNHost;
 import org.cloudbus.cloudsim.sdn.Switch;
 import org.cloudbus.cloudsim.sdn.Transmission;
 import org.cloudbus.cloudsim.sdn.Switch.HistoryEntry;
@@ -287,6 +292,59 @@ public class LogPrinter {
 
 		Log.printLine("Average Response Time(Priority):"+(prioritySum / priorityReqNum));
 		Log.printLine("Average Response Time(Standard):"+(standardSum / standardReqNum));
+	}
+	
+	public static void printHostMetricsToFile(List<SDNHost> hostList) {
+		String fileName = "/home/ravi/Documents/Ravi Teja A.V/RnD/metrics.txt";
+		try {
+			File file = new File(fileName);
+            if (!file.exists()) {
+                file.createNewFile();
+            }
+            FileWriter fw = new FileWriter(file.getAbsoluteFile(), false);
+            for (SDNHost host: hostList) {
+    			fw.write("Host " + host.getId() + "\n");
+    			fw.write("------\n");
+    			for (FullHostStateHistoryEntry entry : host.getFullHostStateHistory()) {
+                    fw.write("Time = " + entry.getTime() + "\n" + entry.toString() + "\n");
+                    addToDataFile("Host-" + host.getId() + "-RAM", entry.getTime(), entry.getRam());
+                    addToDataFile("Host-" + host.getId() + "-Available-RAM", entry.getTime(), entry.getAvailableRam());
+                    addToDataFile("Host-" + host.getId() + "-Requested-RAM", entry.getTime(), entry.getRequestedRam());
+                    addToDataFile("Host-" + host.getId() + "-BW", entry.getTime(), entry.getBw());
+                    addToDataFile("Host-" + host.getId() + "-Available-BW", entry.getTime(), entry.getAvailableBw());
+                    addToDataFile("Host-" + host.getId() + "-Requested-BW", entry.getTime(), entry.getRequestedBw());
+                    addToDataFile("Host-" + host.getId() + "-MIPS", entry.getTime(), entry.getRam());
+                    addToDataFile("Host-" + host.getId() + "-Available-MIPS", entry.getTime(), entry.getAvailableMips());
+                    addToDataFile("Host-" + host.getId() + "-Requested-MIPS", entry.getTime(), entry.getRequestedMips());
+                    addToDataFile("Host-" + host.getId() + "-RAM-Util", entry.getTime(), entry.getRamUtil());
+                    addToDataFile("Host-" + host.getId() + "-BW-Util", entry.getTime(), entry.getBwUtil());
+                    addToDataFile("Host-" + host.getId() + "-CPU-Util", entry.getTime(), entry.getCpuUtil());
+                }
+    		}
+            fw.close();
+		} catch(Exception e) {
+			System.out.println(e);
+		}
+	}
+	
+	public static void addToDataFile(String header, double time, double value) {
+		String fileName = "/home/ravi/Documents/Ravi Teja A.V/RnD/data_files/"+header;
+		try {
+			File file = new File(fileName);
+			int nocreate = 0;
+            if (!file.exists()) {
+                file.createNewFile();
+                nocreate = 1;
+            }
+            FileWriter fw = new FileWriter(file.getAbsoluteFile(), true);
+            if (nocreate == 1) {
+            	fw.write("Time, " + header + "\n");
+            }
+            fw.write(Double.toString(time) + ", " + Double.toString(value) + "\n");
+            fw.close();
+		} catch(Exception e) {
+			System.out.println(e);
+		}
 	}
 	
 	

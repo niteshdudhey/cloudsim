@@ -132,6 +132,7 @@ public class CloudInformationService extends SimEntity {
 				processOtherEvent(ev);
 				break;
 		}
+		EventSummary.storePresentState(CloudSim.clock());
 	}
 
 	@Override

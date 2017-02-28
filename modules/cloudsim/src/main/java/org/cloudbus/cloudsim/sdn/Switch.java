@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
 
+import org.cloudbus.cloudsim.EventSummary;
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.core.SimEntity;
 import org.cloudbus.cloudsim.core.SimEvent;
@@ -87,7 +88,7 @@ public class Switch extends SimEntity implements Node{
 	@Override
 	public void processEvent(SimEvent ev) {
 		int tag = ev.getTag();
-		
+		EventSummary.storePresentState(CloudSim.clock());
 		switch(tag){
 			/*case Constants.SDN_INTERNAL_PACKAGE_PROCESS: 
 				internalPackageProcessing(); 
@@ -98,6 +99,7 @@ public class Switch extends SimEntity implements Node{
 			default: 
 				System.out.println("Unknown event received by " + super.getName() + ". Tag:" + ev.getTag());
 		}
+		EventSummary.storePresentState(CloudSim.clock());
 	}
 
 	public void addLink(Link l){
@@ -197,6 +199,11 @@ public class Switch extends SimEntity implements Node{
 		}
 		
 		return num;
+	}
+	
+	@Override
+	public void storeCurrentState(double time) {
+		
 	}
 	
 	/*

@@ -48,4 +48,6 @@ public interface Node {
 	public void addLink(Link l);
 	
 	public void updateNetworkUtilization();
+	
+	public void storeCurrentState(double time);
 }

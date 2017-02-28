@@ -175,6 +175,7 @@ public class DatacenterBroker extends SimEntity {
 				processOtherEvent(ev);
 				break;
 		}
+		EventSummary.storePresentState(CloudSim.clock());
 	}
 
 	/**

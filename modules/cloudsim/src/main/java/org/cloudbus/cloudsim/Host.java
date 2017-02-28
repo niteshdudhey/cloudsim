@@ -8,6 +8,7 @@
 package org.cloudbus.cloudsim;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -60,7 +61,7 @@ public class Host {
 	/** The datacenter where the host is placed. */
 	private Datacenter datacenter;
 	
-	private Map<Double, FullHostStateHistoryEntry> fullStateHistory;
+	private List<FullHostStateHistoryEntry> fullStateHistory;
 
 	/**
 	 * Instantiates a new host.
@@ -88,7 +89,7 @@ public class Host {
 		setPeList(peList);
 		setFailed(false);
 		
-		fullStateHistory = new TreeMap<Double, FullHostStateHistoryEntry>();
+		fullStateHistory = new LinkedList<FullHostStateHistoryEntry>();
 	}
 
 	/**
@@ -636,25 +637,13 @@ public class Host {
 		this.datacenter = datacenter;
 	}
 
-	public Map<Double, FullHostStateHistoryEntry> getFullHostStateHistory() {
+	public List<FullHostStateHistoryEntry> getFullHostStateHistory() {
 		return fullStateHistory;
 	}
 
 	public void storeCurrentState(double time) {
-		double totalAllocatedMips = 0.0;
-		double totalRequestedMips = 0.0;
-		for (Vm vm: vmList) {
-			totalAllocatedMips += getTotalAllocatedMipsForVm(vm);
-		}
-		for (Vm vm: vmList) {
-			totalRequestedMips += getTotalAllocatedMipsForVm(vm);
-		}
-		FullHostStateHistoryEntry stateHistory = new 
-				FullHostStateHistoryEntry(time, totalAllocatedMips, totalRequestedMips, true);
-		
-		/*
-		 * Add all function calls to setters of StateHistory attributes
-		 */
+				
+		FullHostStateHistoryEntry stateHistory = new FullHostStateHistoryEntry(time);
 		
 		/*
 		 * Ram related attributes
@@ -673,10 +662,14 @@ public class Host {
 		stateHistory.setMips(getTotalMips());
 		List<Double> availableMipsList = new ArrayList<Double>();
 		double availableMips = 0.0;
+		double totalRequestedMips = 0.0;
 		for (Pe pe: peList) {
 			double mips = pe.getPeProvisioner().getAvailableMips();
 			availableMips += mips;
 			availableMipsList.add(mips);
+		}
+		for (Vm vm: vmList) {
+			totalRequestedMips += getTotalAllocatedMipsForVm(vm);
 		}
 		stateHistory.setAvailableMipsList(availableMipsList);
 		stateHistory.setAvailableMips(availableMips);
@@ -729,7 +722,7 @@ public class Host {
 		/*
 		 * State History stored for the given time instant
 		 */
-		fullStateHistory.put(time, stateHistory);
+		fullStateHistory.add(stateHistory);
 //		System.out.println("Host " + getId() + " state stored at time " + time);
 		
 	}

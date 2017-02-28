@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.cloudbus.cloudsim.CloudletSchedulerTimeShared;
+import org.cloudbus.cloudsim.EventSummary;
 import org.cloudbus.cloudsim.Host;
 import org.cloudbus.cloudsim.Log;
 import org.cloudbus.cloudsim.Pe;
@@ -117,6 +118,8 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		this.datacenterIdToDatacenterMap = new HashMap<Integer, SDNDatacenter>();
 		
 		initPhysicalTopology();
+		
+		EventSummary.setSDNHostList(sdnhosts);
 	}
 
 	public static double getMinTimeBetweenNetworkEvents() {
@@ -150,7 +153,7 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	@Override
 	public void processEvent(SimEvent ev) {
 		int tag = ev.getTag();
-		
+		EventSummary.storePresentState(CloudSim.clock());
 		System.out.println("handling event in NOS. Event Tag " + tag);
 		switch(tag){
 			case Constants.SDN_INTERNAL_PACKAGE_PROCESS: 
@@ -165,6 +168,7 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 			default: 
 				System.out.println("Unknown event received by " + super.getName() + ". Tag:" + ev.getTag());
 		}
+		EventSummary.storePresentState(CloudSim.clock());
 	}
 
 	public void processVmCreateAck(SimEvent ev) {
@@ -771,6 +775,8 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 					flowIdArcTable.put(flowId, arc);
 				}
 			}
+			
+			EventSummary.setVmList(vmList);
     	
 			boolean result = deployApplication(vmList, mbList, arcList);
 			if (result){
@@ -783,5 +789,9 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		}
 		
 		return false;
+	}
+	
+	public List<SDNHost> getSDNHostList() {
+		return sdnhosts;
 	}
 }
