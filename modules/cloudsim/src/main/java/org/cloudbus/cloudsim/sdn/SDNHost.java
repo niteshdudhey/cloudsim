@@ -266,17 +266,12 @@ public class SDNHost extends SimEntity implements Node {
 //		stateHistory.setBwUtil(totalBwUtil);
 		
 		Collection<Link> allLinks = nos.getPhysicalTopology().getAllLinks();
-		Link reqdLink1 = null;
-		Link reqdLink2 = null;
+		Link reqdLink = null;
 		for (Link link: allLinks) {
 			if (link.getLowOrder() == this) {
-				reqdLink1 = link;
-				break;
-			} else if (link.getHighOrder() == this) {
-				reqdLink2 = link;
+				reqdLink = link;
 			}
 		}
-		
 		double availableBw1 = getBandwidth();
 		double availableBw2 = getBandwidth();
 //		if (sw != null) {
@@ -289,11 +284,9 @@ public class SDNHost extends SimEntity implements Node {
 //			}
 //			availableBw = linkToSwitch.get(0).getFreeBandwidth(this);
 //		}
-		if (reqdLink1 != null) {
-			availableBw1 = reqdLink1.getFreeBandwidth(this);
-		}
-		if (reqdLink2 != null) {
-			availableBw2 = reqdLink2.getFreeBandwidth(this);
+		if (reqdLink != null) {
+			availableBw1 = reqdLink.getFreeBandwidth(this);
+			availableBw2 = reqdLink.getFreeBandwidth(reqdLink.getHighOrder());
 		}
 		
 //		stateHistory.setBwUtil(1.0-(availableBw1+availableBw2)/2*getBandwidth());

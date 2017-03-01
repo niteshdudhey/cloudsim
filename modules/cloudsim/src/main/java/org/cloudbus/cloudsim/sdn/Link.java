@@ -41,6 +41,11 @@ public class Link {
 	
 	public List<LinkStateHistoryEntry> stateHistory = new LinkedList<LinkStateHistoryEntry>();
 	
+	// Added for checking BW Usage
+	public void storeCurrentState(double time) {
+		stateHistory.add(new LinkStateHistoryEntry(time, Math.min(getFreeBandwidth(highOrder), getFreeBandwidth(lowOrder))));
+	}
+	
 	public Link(Node highOrder, Node lowOrder, double latency, double bw) {
 		this.highOrder = highOrder;
 		this.lowOrder = lowOrder;

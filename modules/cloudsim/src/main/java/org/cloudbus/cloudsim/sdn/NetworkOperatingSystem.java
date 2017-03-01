@@ -140,7 +140,7 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		flowNameIdTable.put("default", -1);
 		
 		EventSummary.setSDNHostList(sdnhosts);
-		
+		EventSummary.setLinks(getPhysicalTopology().getAllLinks());
 	}
 
 	public static double getMinTimeBetweenNetworkEvents() {

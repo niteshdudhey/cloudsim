@@ -99,6 +99,8 @@ public class TimedVm extends Vm {
 		
 		stateHistory.setRamUtil(getCloudletScheduler().getCurrentRequestedUtilizationOfRam());
 		stateHistory.setCpuUtil(getCloudletScheduler().getTotalUtilizationOfCpu(time));
+		
+		// TODO
 		stateHistory.setBwUtil(getCloudletScheduler().getCurrentRequestedUtilizationOfBw());
 		
 		/*

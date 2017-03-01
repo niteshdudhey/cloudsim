@@ -1,8 +1,12 @@
 package org.cloudbus.cloudsim;
 
+import java.util.Collection;
 import java.util.List;
 
+import org.cloudbus.cloudsim.sdn.Link;
 import org.cloudbus.cloudsim.sdn.SDNHost;
+
+import com.google.common.collect.Table;
 
 public class EventSummary {
 	
@@ -11,6 +15,8 @@ public class EventSummary {
 	private static List<Host> hostList;
 	
 	private static List<SDNHost> sdnHostList;
+	
+	private static Collection<Link> links;
 		
 	public EventSummary(List<Vm> vmList, List<Host> hostList) {
 		EventSummary.vmList = vmList;
@@ -39,6 +45,11 @@ public class EventSummary {
 		if (sdnHostList != null) {
 			for (SDNHost host: sdnHostList) {
 				host.storeCurrentState(time);
+			}
+		}
+		if (links != null) {
+			for (Link link: links) {
+				link.storeCurrentState(time);
 			}
 		}
 	}
@@ -75,12 +86,25 @@ public class EventSummary {
 		EventSummary.sdnHostList = sdnHostList;
 		for (SDNHost host: sdnHostList) {
 			if (host != null) {
-				System.out.println("Host ID = " + host.getId());
+				System.out.println("Host ID = " + host.getName());
 			} else {
 				System.out.println("Null Host in vmlist");
 			}
 		}
-	}	
+	}
+	
+	public static void setLinks(Collection<Link> links) {
+		System.out.println("Event Summary Class Links");
+		System.out.println("=========================");
+		EventSummary.links = links;
+		for (Link link: links) {
+			if (link != null) {
+				System.out.println("Link ID = " + link.getName());
+			} else {
+				System.out.println("Null Host in vmlist");
+			}
+		}
+	}
 	
 	public List<? extends Vm> getVmList() {
 		return vmList;
@@ -94,4 +118,7 @@ public class EventSummary {
 		return sdnHostList;
 	}
 	
+	public Collection<Link> getLinks() {
+		return links;
+	}
 }

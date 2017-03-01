@@ -182,7 +182,7 @@ public class SDNExample {
 			List<Switch> switchList = nos.getSwitchList();
 			LogPrinter.printEnergyConsumption(hostList, switchList, finishTime);
 			
-			LogPrinter.printLinkUtilizationHistory(nos.getPhysicalTopology().getLinks());
+//			LogPrinter.printLinkUtilizationHistory(nos.getPhysicalTopology().getLinks());
 			
 			LogPrinter.printHostMetricsToFile(nos.getSDNHostList());
 			
