@@ -23,6 +23,7 @@ package org.cloudbus.cloudsim.sdn;
 public class Transmission implements Activity {
 	Package pkg;
 	long amountToBeProcessed;
+	double finishTimeBW;
 	
 	public Transmission(int origin, int destination, long size, int flowId, Request payload) {
 		this.pkg = new Package(origin, destination, size, flowId, payload);
@@ -62,4 +63,15 @@ public class Transmission implements Activity {
 	public String toString() {
 		return "Transmission:"+this.pkg.toString();
 	}
+	
+	public double getFinishTimeBW() {
+		return finishTimeBW;
+	}
+	
+	public void setFinishTimeBW(double bw) {
+		finishTimeBW = bw;
+		return;
+	}
+	
+	
 }

@@ -197,7 +197,7 @@ public class Channel {
 		return allocatedBandwidth;
 	}
 	
-	private double getAllocatedBandwidthPerTransmission() {
+	public double getAllocatedBandwidthPerTransmission() {
 		// If this channel shares a link with another channel, this channel might not get the full BW from link.
 		if(inTransmission.size() == 0) {
 			return getAllocatedBandwidth();
@@ -235,6 +235,7 @@ public class Channel {
 			if (transmission.isCompleted()){
 				completedTransmissions.add(transmission);
 				this.completed.add(transmission);
+				transmission.setFinishTimeBW(getAllocatedBandwidthPerTransmission());
 			}	
 		}
 		
@@ -332,6 +333,10 @@ public class Channel {
 		completed.removeAll(returnList);
 
 		return returnList;
+	}
+	
+	public LinkedList<Transmission> getActiveTransmissions(){
+		return inTransmission;
 	}
 	
 	public String getName(){

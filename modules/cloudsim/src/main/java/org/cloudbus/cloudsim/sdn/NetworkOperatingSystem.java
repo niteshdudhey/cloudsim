@@ -245,6 +245,13 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		}
 		
 		double eft = channel.addTransmission(new Transmission(pkg));
+		
+		double diff = channel.getAllocatedBandwidthPerTransmission();
+		TimedVm upvm = (TimedVm) findVm(pkg.getOrigin());
+		TimedVm downvm = (TimedVm) findVm(pkg.getDestination());
+		upvm.incrementCurrentUpBW(diff);
+		downvm.incrementCurrentDownBW(diff);
+		
 		Log.printLine(CloudSim.clock() + ": " + getName() + ".addPackageToChannel (" + channel + "): Transmission added:" 
 					+ NetworkOperatingSystem.debugVmIdName.get(src) + "->" 
 					+ NetworkOperatingSystem.debugVmIdName.get(dst) + ", flow=" + flowId + " / eft=" + eft);
@@ -316,6 +323,12 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 			for (Transmission tr : ch.getArrivedPackages()){
 				Package pkg = tr.getPackage();
 				
+				double diff = -1 * tr.getFinishTimeBW();
+				TimedVm upvm = (TimedVm) findVm(pkg.getOrigin());
+				TimedVm downvm = (TimedVm) findVm(pkg.getDestination());
+				upvm.incrementCurrentUpBW(diff);
+				downvm.incrementCurrentDownBW(diff);
+				
 				Log.printLine(CloudSim.clock() + ": " + getName() + ": Package completed: " + pkg + ". Send to destination:" + dest);
 				sendNow(dest.getAddress(), Constants.SDN_PACKAGE, pkg);
 			}
@@ -365,8 +378,17 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	
 	private void adjustAllChannels() {
 		for(Channel ch : this.channelTable.values()) {
+			double oldTransmissionBandwidth = ch.getAllocatedBandwidthPerTransmission();
 			if(ch.adjustDedicatedBandwidthAlongLink()) {
 				// Channel BW is changed. send event.
+				double newTransmissionBandwidth = ch.getAllocatedBandwidthPerTransmission();
+				double diff = newTransmissionBandwidth - oldTransmissionBandwidth;
+				for(Transmission transmission : ch.getActiveTransmissions()){
+					TimedVm upvm = (TimedVm) findVm(transmission.getPackage().getOrigin());
+					TimedVm downvm = (TimedVm) findVm(transmission.getPackage().getDestination());
+					upvm.incrementCurrentUpBW(diff);
+					downvm.incrementCurrentDownBW(diff);
+				}
 			}
 		}
 		

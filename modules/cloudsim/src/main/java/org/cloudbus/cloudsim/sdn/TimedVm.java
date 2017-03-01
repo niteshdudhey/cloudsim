@@ -29,12 +29,18 @@ public class TimedVm extends Vm {
 	
 	private int datacenterId;
 	
+	private double currentUpBW;
+	
+	private double currentDownBW;
+	
 	public TimedVm(String name, int id, int userId, int datacenterId, double mips, int numberOfPes, int ram,
 			long bw, long size, String vmm, CloudletScheduler cloudletScheduler) {
 		
 		super(id, userId, mips, numberOfPes, ram, bw, size, vmm, cloudletScheduler);
 		this.name = name;
 		this.datacenterId = datacenterId;
+		currentUpBW = 0;
+		currentDownBW = 0;
 	}
 	
 	public TimedVm(String name, int id, int userId, int datacenterId, double mips, int numberOfPes, int ram,
@@ -46,6 +52,8 @@ public class TimedVm extends Vm {
 		this.datacenterId = datacenterId;
 		this.startTime = startTime;
 		this.finishTime = finishTime;
+		currentUpBW = 0;
+		currentDownBW = 0;
 	}
 	
 	public String getName() {
@@ -63,6 +71,46 @@ public class TimedVm extends Vm {
 	
 	public double getFinishTime() {
 		return finishTime;
+	}
+	
+	public double getCurrentUpBW() {
+		return currentUpBW;
+	}
+	
+	private void setCurrentUpBW(double bw) {
+		currentUpBW = bw;
+		return;
+	}
+	
+	public void incrementCurrentUpBW(double diff) {
+		if (getCurrentUpBW()+diff>=0) {
+			setCurrentUpBW(getCurrentUpBW()+diff);
+		}
+		else {
+			//TODO: warn
+			setCurrentUpBW(0);
+		}
+		return;
+	}
+	
+	public double getCurrentDownBW() {
+		return currentDownBW;
+	}
+	
+	private void setCurrentDownBW(double bw) {
+		currentDownBW = bw;
+		return;
+	}
+	
+	public void incrementCurrentDownBW(double diff) {
+		if (getCurrentDownBW()+diff>=0) {
+			setCurrentDownBW(getCurrentDownBW()+diff);
+		}
+		else {
+			//TODO: warn
+			setCurrentDownBW(0);
+		}
+		return;
 	}
 	
 	@Override
@@ -101,6 +149,8 @@ public class TimedVm extends Vm {
 		stateHistory.setCpuUtil(getCloudletScheduler().getTotalUtilizationOfCpu(time));
 		
 		// TODO
+		stateHistory.setUpBwUtil(getCurrentUpBW()/getCurrentAllocatedBw());
+		stateHistory.setDownBwUtil(getCurrentDownBW()/getCurrentAllocatedBw());
 		stateHistory.setBwUtil(getCloudletScheduler().getCurrentRequestedUtilizationOfBw());
 		
 		/*
