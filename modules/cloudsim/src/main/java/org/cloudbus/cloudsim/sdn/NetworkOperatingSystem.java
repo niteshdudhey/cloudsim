@@ -393,8 +393,17 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		}
 		
 		for(Channel ch:this.channelTable.values()) {
+			double oldTransmissionBandwidth = ch.getAllocatedBandwidthPerTransmission();
 			if(ch.adjustSharedBandwidthAlongLink()) {
 				// Channel BW is changed. send event.
+				double newTransmissionBandwidth = ch.getAllocatedBandwidthPerTransmission();
+				double diff = newTransmissionBandwidth - oldTransmissionBandwidth;
+				for(Transmission transmission : ch.getActiveTransmissions()){
+					TimedVm upvm = (TimedVm) findVm(transmission.getPackage().getOrigin());
+					TimedVm downvm = (TimedVm) findVm(transmission.getPackage().getDestination());
+					upvm.incrementCurrentUpBW(diff);
+					downvm.incrementCurrentDownBW(diff);
+				}
 			}
 		}
 	}
