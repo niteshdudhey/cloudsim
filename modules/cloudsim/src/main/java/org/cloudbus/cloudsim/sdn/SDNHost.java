@@ -237,12 +237,13 @@ public class SDNHost extends SimEntity implements Node {
 				
 		/*
 		 * Utilization attributes
-		 * TODO: Need complete revamp
 		 */
 		double totalCpuUtil = 0.0;
 		for (Vm vm: host.getVmList()) {
-			totalCpuUtil += vm.getTotalUtilizationOfCpu(time);
+			totalCpuUtil += 
+					(vm.getTotalUtilizationOfCpu(time)*host.getTotalAllocatedMipsForVm(vm));
 		}
+		totalCpuUtil /= (host.getTotalMips()/host.getNumberOfPes());
 		stateHistory.setCpuUtil(totalCpuUtil);
 		
 		double totalRamUtil = 0.0;
@@ -275,8 +276,6 @@ public class SDNHost extends SimEntity implements Node {
 				reqdLink2 = link;
 			}
 		}
-		
-//		System.out.println("Free Bw in link " + reqdLink.getName() + "= " + reqdLink.getFreeBandwidth(this));
 		
 		double availableBw1 = getBandwidth();
 		double availableBw2 = getBandwidth();

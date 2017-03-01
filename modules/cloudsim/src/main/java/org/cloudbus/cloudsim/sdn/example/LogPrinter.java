@@ -305,22 +305,24 @@ public class LogPrinter {
             }
             FileWriter fw = new FileWriter(file.getAbsoluteFile(), false);
             for (SDNHost host: hostList) {
-    			fw.write("Host " + host.getId() + "\n");
-    			fw.write("------\n");
+    			fw.write("Host " + host.getName() + "\n");
+    			fw.write("-----------\n");
     			for (FullHostStateHistoryEntry entry : host.getFullHostStateHistory()) {
                     fw.write("Time = " + entry.getTime() + "\n" + entry.toString() + "\n");
-                    addToDataFile("Host-" + host.getId() + "-RAM", entry.getTime(), entry.getRam());
-                    addToDataFile("Host-" + host.getId() + "-Available-RAM", entry.getTime(), entry.getAvailableRam());
-                    addToDataFile("Host-" + host.getId() + "-Requested-RAM", entry.getTime(), entry.getRequestedRam());
-                    addToDataFile("Host-" + host.getId() + "-BW", entry.getTime(), entry.getBw());
-                    addToDataFile("Host-" + host.getId() + "-Available-BW", entry.getTime(), entry.getAvailableBw());
-                    addToDataFile("Host-" + host.getId() + "-Requested-BW", entry.getTime(), entry.getRequestedBw());
-                    addToDataFile("Host-" + host.getId() + "-MIPS", entry.getTime(), entry.getRam());
-                    addToDataFile("Host-" + host.getId() + "-Available-MIPS", entry.getTime(), entry.getAvailableMips());
-                    addToDataFile("Host-" + host.getId() + "-Requested-MIPS", entry.getTime(), entry.getRequestedMips());
-                    addToDataFile("Host-" + host.getId() + "-RAM-Util", entry.getTime(), entry.getRamUtil());
-                    addToDataFile("Host-" + host.getId() + "-BW-Util", entry.getTime(), entry.getBwUtil());
-                    addToDataFile("Host-" + host.getId() + "-CPU-Util", entry.getTime(), entry.getCpuUtil());
+                    addToDataFile("Host-" + host.getName() + "-RAM.dat", entry.getTime(), entry.getRam());
+                    addToDataFile("Host-" + host.getName() + "-Available-RAM.dat", entry.getTime(), entry.getAvailableRam());
+                    addToDataFile("Host-" + host.getName() + "-Requested-RAM.dat", entry.getTime(), entry.getRequestedRam());
+                    addToDataFile("Host-" + host.getName() + "-BW.dat", entry.getTime(), entry.getBw());
+                    addToDataFile("Host-" + host.getName() + "-Available-BW.dat", entry.getTime(), entry.getAvailableBw());
+                    addToDataFile("Host-" + host.getName() + "-Requested-BW.dat", entry.getTime(), entry.getRequestedBw());
+                    addToDataFile("Host-" + host.getName() + "-MIPS.dat", entry.getTime(), entry.getRam());
+                    addToDataFile("Host-" + host.getName() + "-Available-MIPS.dat", entry.getTime(), entry.getAvailableMips());
+                    addToDataFile("Host-" + host.getName() + "-Requested-MIPS.dat", entry.getTime(), entry.getRequestedMips());
+                    addToDataFile("Host-" + host.getName() + "-RAM-Util.dat", entry.getTime(), entry.getRamUtil());
+                    addToDataFile("Host-" + host.getName() + "-BW-Util.dat", entry.getTime(), entry.getBwUtil());
+                    addToDataFile("Host-" + host.getName() + "-Up-BW-Util.dat", entry.getTime(), entry.getUpBwUtil());
+                    addToDataFile("Host-" + host.getName() + "-Down-BW-Util.dat", entry.getTime(), entry.getDownBwUtil());
+                    addToDataFile("Host-" + host.getName() + "-CPU-Util.dat", entry.getTime(), entry.getCpuUtil());
                 }
     		}
             fw.close();
@@ -339,18 +341,46 @@ public class LogPrinter {
             FileWriter fw = new FileWriter(file.getAbsoluteFile(), false);
             for (Vm vm: vmList) {
     			fw.write("VM " + vm.getId() + "\n");
-    			fw.write("------\n");
+    			fw.write("----\n");
     			for (FullVmStateHistoryEntry entry : vm.getFullVmStateHistory()) {
     				fw.write("Time = " + entry.getTime() + "\n" + entry.toString() + "\n");
-                    addToDataFile("VM-" + vm.getId() + "-Available-RAM", entry.getTime(), entry.getAllocatedRam());
-                    addToDataFile("VM-" + vm.getId() + "-Requested-RAM", entry.getTime(), entry.getRequestedRam());
-                    addToDataFile("VM-" + vm.getId() + "-Available-BW", entry.getTime(), entry.getAllocatedBw());
-                    addToDataFile("VM-" + vm.getId() + "-Requested-BW", entry.getTime(), entry.getRequestedBw());
-                    addToDataFile("VM-" + vm.getId() + "-Available-MIPS", entry.getTime(), entry.getAllocatedMips());
-                    addToDataFile("VM-" + vm.getId() + "-Requested-MIPS", entry.getTime(), entry.getRequestedMips());
-                    addToDataFile("VM-" + vm.getId() + "-RAM-Util", entry.getTime(), entry.getRamUtil());
-                    addToDataFile("VM-" + vm.getId() + "-BW-Util", entry.getTime(), entry.getBwUtil());
-                    addToDataFile("VM-" + vm.getId() + "-CPU-Util", entry.getTime(), entry.getCpuUtil());
+    				addToDataFile("VM-" + vm.getId() + "-Available-RAM.dat", entry.getTime(), entry.getAllocatedRam());
+                    addToDataFile("VM-" + vm.getId() + "-Requested-RAM.dat", entry.getTime(), entry.getRequestedRam());
+                    addToDataFile("VM-" + vm.getId() + "-Available-BW.dat", entry.getTime(), entry.getAllocatedBw());
+                    addToDataFile("VM-" + vm.getId() + "-Requested-BW.dat", entry.getTime(), entry.getRequestedBw());
+                    addToDataFile("VM-" + vm.getId() + "-Available-MIPS.dat", entry.getTime(), entry.getAllocatedMips());
+                    addToDataFile("VM-" + vm.getId() + "-Requested-MIPS.dat", entry.getTime(), entry.getRequestedMips());
+                    addToDataFile("VM-" + vm.getId() + "-RAM-Util.dat", entry.getTime(), entry.getRamUtil());
+                    addToDataFile("VM-" + vm.getId() + "-BW-Util.dat", entry.getTime(), entry.getBwUtil());
+                    addToDataFile("VM-" + vm.getId() + "-Up-BW-Util.dat", entry.getTime(), entry.getUpBwUtil());
+                    addToDataFile("VM-" + vm.getId() + "-Down-BW-Util.dat", entry.getTime(), entry.getDownBwUtil());
+                    addToDataFile("VM-" + vm.getId() + "-CPU-Util.dat", entry.getTime(), entry.getCpuUtil());
+    			}
+    		}
+            fw.close();
+		} catch(Exception e) {
+			System.out.println(e);
+		}
+	}
+	
+	public static void printLinkMetricsToFile(Table<Integer, Integer, Link> links){
+		Collection<Link> linksList = links.values();			
+		Set<Link> linksSet = new HashSet<Link>(linksList);
+		
+		String fileName = "/home/ravi/Documents/Ravi Teja A.V/RnD/metrics_link.txt";
+		try {
+			File file = new File(fileName);
+            if (!file.exists()) {
+                file.createNewFile();
+            }
+            FileWriter fw = new FileWriter(file.getAbsoluteFile(), false);
+            for(Link link : linksSet){
+            	fw.write("Link " + link.getName() + "\n");
+    			fw.write("---------------\n");
+    			List<LinkStateHistoryEntry> stateHistory = link.stateHistory;
+    			for(LinkStateHistoryEntry entry : stateHistory){
+    				fw.write("Time = " + entry.getTime() + "\n" + entry.toString() + "\n");
+    				addToDataFile("Link-" + link.getName() + "-Available-BW.dat", entry.getTime(), entry.getAvailableBw());
     			}
     		}
             fw.close();

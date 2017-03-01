@@ -11,6 +11,13 @@ public class LinkStateHistoryEntry {
 		this.availableBw = availableBw;
 	}
 	
+	public String toString() {
+		String str = "";
+		str += "Available BW = " + Double.toString(availableBw);
+		str += "\n";
+		return str;
+	}
+	
 	public double getTime() {
 		return time;
 	}
