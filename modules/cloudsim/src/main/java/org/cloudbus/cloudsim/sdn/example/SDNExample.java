@@ -7,6 +7,7 @@
  */
 package org.cloudbus.cloudsim.sdn.example;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -184,12 +185,8 @@ public class SDNExample {
 			
 //			LogPrinter.printLinkUtilizationHistory(nos.getPhysicalTopology().getLinks());
 			
-			LogPrinter.printHostMetricsToFile(nos.getSDNHostList());
-			
-			LogPrinter.printVmMetricsToFile(nos.getVmList());
-			
-			LogPrinter.printLinkMetricsToFile(nos.getPhysicalTopology().getLinks());
-			
+			printAllMetricsToFile();
+						
 			Log.printLine("Simultanously used hosts:" + maxHostHandler.getMaxNumHostsUsed());			
 			Log.printLine("CloudSim SDN finished!");
 
@@ -197,6 +194,19 @@ public class SDNExample {
 			e.printStackTrace();
 			Log.printLine("Unwanted errors happen");
 		}
+	}
+	
+	public static void printAllMetricsToFile() {
+		File folder = new File(LogPrinter.dataFilesFolderName);
+		File[] files = folder.listFiles();
+	    for (int i = 0; i < files.length; i++) {
+	    	if (files[i].isFile()) {
+	    		files[i].delete();
+	    	}
+	    }
+		LogPrinter.printHostMetricsToFile(nos.getSDNHostList());
+		LogPrinter.printVmMetricsToFile(nos.getVmList());
+		LogPrinter.printLinkMetricsToFile(nos.getPhysicalTopology().getLinks());
 	}
 	
 	public static void submitWorkloads(SDNBroker broker) {

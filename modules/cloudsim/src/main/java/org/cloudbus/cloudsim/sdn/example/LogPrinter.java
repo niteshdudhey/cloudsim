@@ -42,6 +42,19 @@ import org.cloudbus.cloudsim.sdn.LinkStateHistoryEntry;
  * @since CloudSimSDN 1.0
  */
 public class LogPrinter {
+	
+	/*
+	 * Folder Name where all metrics summary files will be stored.
+	 * Give the folder path including the slash at the end.
+	 */
+	public static String folderName = "/home/ravi/Documents/Ravi Teja A.V/RnD/";
+	
+	/*
+	 * Folder Name where all the data files needed to generate plots will be stored.
+	 * Give the folder path including the slash at the end.
+	 */
+	public static String dataFilesFolderName = "/home/ravi/Documents/Ravi Teja A.V/RnD/data_files/";
+	
 	public static void printEnergyConsumption(List<Host> hostList, List<Switch> switchList, double finishTime) {
 		double hostEnergyConsumption = 0, switchEnergyConsumption = 0;
 		
@@ -297,7 +310,7 @@ public class LogPrinter {
 	}
 	
 	public static void printHostMetricsToFile(List<SDNHost> hostList) {
-		String fileName = "/home/ravi/Documents/Ravi Teja A.V/RnD/metrics_host.txt";
+		String fileName = folderName + "metrics_host.txt";
 		try {
 			File file = new File(fileName);
             if (!file.exists()) {
@@ -332,7 +345,7 @@ public class LogPrinter {
 	}
 	
 	public static void printVmMetricsToFile(List<? extends Vm> vmList) {
-		String fileName = "/home/ravi/Documents/Ravi Teja A.V/RnD/metrics_vm.txt";
+		String fileName = folderName + "metrics_vm.txt";
 		try {
 			File file = new File(fileName);
             if (!file.exists()) {
@@ -367,7 +380,7 @@ public class LogPrinter {
 		Collection<Link> linksList = links.values();			
 		Set<Link> linksSet = new HashSet<Link>(linksList);
 		
-		String fileName = "/home/ravi/Documents/Ravi Teja A.V/RnD/metrics_link.txt";
+		String fileName = folderName + "metrics_link.txt";
 		try {
 			File file = new File(fileName);
             if (!file.exists()) {
@@ -390,7 +403,7 @@ public class LogPrinter {
 	}
 	
 	public static void addToDataFile(String header, double time, double value) {
-		String fileName = "/home/ravi/Documents/Ravi Teja A.V/RnD/data_files/"+header;
+		String fileName = dataFilesFolderName + header;
 		try {
 			File file = new File(fileName);
 			int nocreate = 0;
