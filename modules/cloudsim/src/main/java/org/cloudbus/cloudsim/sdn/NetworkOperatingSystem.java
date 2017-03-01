@@ -87,9 +87,13 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	
 	Map<Integer, Arc> flowIdArcTable;
 	
+	Map<String, Integer> hostNameIdTable;
+	
 	Map<String, Integer> vmNameIdTable;
 	
 	Map<String, Integer> flowNameIdTable;
+	
+	Map<Integer, String> vmIdRequestedHostTable;
 	
 	public static Map<Integer, String> debugVmIdName = new HashMap<Integer, String>();
 	
@@ -317,6 +321,14 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 			}
 		}
 	}
+	
+	public Map<Integer, String> getRequestedHostTable() {
+        return this.vmIdRequestedHostTable;
+    }
+    
+	public Map<String, Integer> getHostNameIdTable() {
+    	return this.hostNameIdTable;
+    }
 	
 	public Map<String, Integer> getVmNameIdTable() {
 		return this.vmNameIdTable;
@@ -553,6 +565,8 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		this.hosts = new ArrayList<Host>();
 		this.sdnhosts = new ArrayList<SDNHost>();
 		
+		hostNameIdTable = new Hashtable<String, Integer>();
+
 		int hostId = 0;
 		Hashtable<String, Integer> nameIdTable = new Hashtable<String, Integer>();
 		
@@ -593,6 +607,7 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 						Host host = createHost(hostId, ram, bw, storage, pes, mips);
 						
 						SDNHost sdnHost = new SDNHost(nodeName2, host, this);
+						hostNameIdTable.put(nodeName2, hostId);
 						nameIdTable.put(nodeName2, sdnHost.getAddress());
 						
 						hostId++;
@@ -678,6 +693,8 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		
 		int datacenterId = brokerIdToDatacenterIdMap.get(userId);
 		
+		vmIdRequestedHostTable = new HashMap<Integer, String>();
+		
 		try {
     		JSONObject doc = (JSONObject) JSONValue.parse(new FileReader(vmsFileName));
     		
@@ -696,8 +713,13 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 				long size = (Long) node.get("size");
 				
 				long bw = 1000;
+				String hostName = "";
+				
 				if(node.get("bw") != null) {
 					bw = (Long) node.get("bw");
+				}
+				if(node.get("host") != null) {
+					hostName = (String) node.get("host");
 				}
 				
 				double starttime = 0;
@@ -732,6 +754,7 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 						NetworkOperatingSystem.debugVmIdName.put(vmId, nodeName2);
 						
 						vmList.add(vm);
+						vmIdRequestedHostTable.put(vmId, hostName);
 						vmId++;
 					}
 					else{

@@ -62,11 +62,50 @@ public class SDNDatacenter extends Datacenter {
 		
 	@Override
 	protected void processVmCreate(SimEvent ev, boolean ack) {
-		super.processVmCreate(ev, ack);
+		Vm vm = (Vm) ev.getData();
+		
+		boolean result = false;
+
+		String hostName = nos.getRequestedHostTable().get(vm.getId());
+
+		if (hostName.equals("")) {
+			result = getVmAllocationPolicy().allocateHostForVm(vm);
+		}
+		else {
+			Integer hostId = nos.getHostNameIdTable().get(hostName);
+			Host host = getHostList().get(hostId);
+			
+			result = getVmAllocationPolicy().allocateHostForVm(vm, host);
+		}
+		
+
+		if (ack) {
+			int[] data = new int[3];
+			data[0] = getId();
+			data[1] = vm.getId();
+			if (result) {
+				data[2] = CloudSimTags.TRUE;
+			} else {
+				data[2] = CloudSimTags.FALSE;
+			}
+			send(vm.getUserId(), CloudSim.getMinTimeBetweenEvents(), CloudSimTags.VM_CREATE_ACK, data);
+		}
+
+		if (result) {
+			getVmList().add(vm);
+
+			if (vm.isBeingInstantiated()) {
+				vm.setBeingInstantiated(false);
+			}
+
+			vm.updateVmProcessing(CloudSim.clock(), getVmAllocationPolicy().getHost(vm).getVmScheduler()
+					.getAllocatedMipsForVm(vm));
+		}
 		
 		if(ack) {
 			send(nos.getId(), CloudSim.getMinTimeBetweenEvents(), CloudSimTags.VM_CREATE_ACK, ev.getData());
 		}
+			
 	}
 	
 	@Override
