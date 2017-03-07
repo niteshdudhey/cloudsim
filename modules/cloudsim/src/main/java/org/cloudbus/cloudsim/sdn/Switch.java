@@ -27,7 +27,7 @@ import org.cloudbus.cloudsim.core.SimEvent;
  * @author Rodrigo N. Calheiros
  * @since CloudSimSDN 1.0
  */
-public class Switch extends SimEntity implements Node{
+public class Switch extends SimEntity implements Node {
 	
 	//private static long cont = 0;
 	//private static long MULTI = 1;
@@ -204,6 +204,10 @@ public class Switch extends SimEntity implements Node{
 	@Override
 	public void storeCurrentState(double time) {
 		
+	}
+	
+	public boolean vswitchCreate(VSwitch vswitch) {
+		return true;
 	}
 	
 	/*
