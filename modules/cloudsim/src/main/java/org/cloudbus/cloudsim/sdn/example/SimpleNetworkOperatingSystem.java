@@ -22,6 +22,7 @@ import org.cloudbus.cloudsim.sdn.Node;
 import org.cloudbus.cloudsim.sdn.SDNDatacenter;
 import org.cloudbus.cloudsim.sdn.SDNHost;
 import org.cloudbus.cloudsim.sdn.TimedVm;
+import org.cloudbus.cloudsim.sdn.VSwitch;
 
 /**
  * Simple network operating system class for the example. 
@@ -36,9 +37,10 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 	public SimpleNetworkOperatingSystem(String fileName) {
 		super(fileName);
 	}
-
+	
 	@Override
-	public boolean deployApplication(List<Vm> vms, List<Middlebox> middleboxes, List<Arc> links) {
+	protected boolean deployApplication(List<Vm> vms, List<Middlebox> middleboxes, List<Arc> links,
+			List<VSwitch> vswitchList) {
 		Log.printLine(CloudSim.clock() + ": " + getName() + ": Starting deploying application..");
 		
 		for(Vm vm : vms) {	
@@ -53,6 +55,18 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 			if(tvm.getFinishTime() != Double.POSITIVE_INFINITY) {
 				send(datacenter.getId(), tvm.getFinishTime(), CloudSimTags.VM_DESTROY, vm);
 				send(this.getId(), tvm.getFinishTime(), CloudSimTags.VM_DESTROY, vm);
+			}
+		}
+		for (VSwitch vswitch: vswitchList) {
+			SDNDatacenter datacenter = getDatacenterById(vswitch.getDatacenterId());
+			Log.printLine(CloudSim.clock() + ": " + "Trying to Create VM " + vswitch.getName() 
+			+ " in " + datacenter.getName() + ", (" + vswitch.getStartTime() + "~" + vswitch.getFinishTime() + ")");
+	
+			send(datacenter.getId(), vswitch.getStartTime(), CloudSimTags.VSWITCH_CREATE_ACK, vswitch);
+			
+			if(vswitch.getFinishTime() != Double.POSITIVE_INFINITY) {
+				send(datacenter.getId(), vswitch.getFinishTime(), CloudSimTags.VM_DESTROY, vswitch);
+				send(this.getId(), vswitch.getFinishTime(), CloudSimTags.VM_DESTROY, vswitch);
 			}
 		}
 		return true;
@@ -224,4 +238,5 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 				+ ": VM Created: " +  vm.getId() + " in " + host);
 		deployFlow(this.arcList);
 	}
+	
 }

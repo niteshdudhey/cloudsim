@@ -273,6 +273,14 @@ public class CloudSimTags {
 
 	public static final int NextCycle = BASE + 48;
 	
+	public static final int VSWITCH_CREATE = BASE + 49;
+	
+	public static final int VSWITCH_CREATE_ACK = BASE + 50;
+	
+	public static final int VSWITCH_DESTROY = BASE + 51;
+	
+	public static final int VSWITCH_DESTROY_ACK = BASE + 52;
+	
 	public static String TagText(int tagValue) {
         switch (tagValue) {
         /*
@@ -385,6 +393,14 @@ public class CloudSimTags {
             return "Network_Event_Host";
         case 48:
             return "NextCycle";
+        case 49:
+            return "VSWITCH_CREATE";
+        case 50:
+            return "VSWITCH_CREATE_ACK";
+        case 51:
+            return "VSWITCH_DESTROY";
+        case 52:
+            return "VSWITCH_DESTROY_ACK";
         default:
             return Constants.TagText(tagValue);
         }

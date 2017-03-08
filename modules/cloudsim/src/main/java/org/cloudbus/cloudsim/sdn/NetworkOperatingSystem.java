@@ -75,6 +75,8 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	
 	int vmId = 0;
 	
+	int vswitchId = 0;
+	
 	// Each broker/user is associated with one Datacenter.
 	protected Map<Integer, Integer> brokerIdToDatacenterIdMap;
 	
@@ -85,11 +87,15 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	
 	protected LinkedList<Arc> arcList;
 	
+	protected LinkedList<VSwitch> vswitchList;
+	
 	Map<Integer, Arc> flowIdArcTable;
 	
 	Map<String, Integer> hostNameIdTable;
 	
 	Map<String, Integer> vmNameIdTable;
+	
+	Map<String, Integer> vswitchNameIdTable;
 	
 	Map<String, Integer> flowNameIdTable;
 	
@@ -115,7 +121,7 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	 * 2. set channels and bws
 	 * 3. set routing tables to restrict hops to meet latency
 	 */
-	protected abstract boolean deployApplication(List<Vm> vms, List<Middlebox> middleboxes, List<Arc> links);
+	protected abstract boolean deployApplication(List<Vm> vms, List<Middlebox> middleboxes, List<Arc> links, List<VSwitch> vswitchList);
 	protected abstract Middlebox deployMiddlebox(String type, Vm vm);
 
 	public NetworkOperatingSystem(String physicalTopologyFileName) {
@@ -135,6 +141,9 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		
 		arcList = new LinkedList<Arc>();
 		flowIdArcTable = new HashMap<Integer, Arc>();
+		
+		vswitchNameIdTable = new HashMap<String, Integer>();
+		vswitchList = new LinkedList<VSwitch>();
 		
 		flowNameIdTable = new HashMap<String, Integer>();
 		flowNameIdTable.put("default", -1);
@@ -212,6 +221,14 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		}
 		
 		sendInternalEvent();
+	}
+	
+	public void processVSwitchCreateAck(SimEvent ev) {
+		
+	}
+	
+	public void processVSwitchDestroyAck(SimEvent ev) {
+		
 	}
 
 	public void addPackageToChannel(Node sender, Package pkg) {
@@ -349,6 +366,10 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	
 	public Map<String, Integer> getFlowNameIdTable() {
 		return this.flowNameIdTable;
+	}
+	
+	public Map<String, Integer> getvswitchNameIdTable() {
+		return this.vswitchNameIdTable;
 	}
 	
 	private Channel findChannel(int from, int to, int channelId) {
@@ -512,6 +533,10 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 
 	public List<Switch> getSwitchList() {
 		return this.switches;
+	}
+	
+	public List<VSwitch> getVSwitchList() {
+		return this.vswitchList;
 	}
 
 	public boolean isApplicationDeployed() {
@@ -735,68 +760,114 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 			Iterator<JSONObject> iter = nodes.iterator(); 
 			while(iter.hasNext()){
 				JSONObject node = iter.next();
-				
 				String nodeType = (String) node.get("type");
 				String nodeName = (String) node.get("name");
-				int pes = new BigDecimal((Long) node.get("pes")).intValueExact();
-				long mips = (Long) node.get("mips");
-				int ram = new BigDecimal((Long) node.get("ram")).intValueExact();
-				long size = (Long) node.get("size");
-				
-				long bw = 1000;
-				String hostName = "";
-				
-				if(node.get("bw") != null) {
-					bw = (Long) node.get("bw");
-				}
-				if(node.get("host") != null) {
-					hostName = (String) node.get("host");
-				}
-				
-				double starttime = 0;
-				if(node.get("starttime") != null) {
-					starttime = (Double) node.get("starttime");
-				}
-				
-				double endtime = Double.POSITIVE_INFINITY;
-				if(node.get("endtime") != null){
-					endtime = (Double) node.get("endtime");
-				}
-
-				// Number of nodes with same specification.
-				// Name of nodes will be <original name><number(0..n-1)>
-				long nums = 1;
-				if(node.get("nums") != null){
-					nums = (Long) node.get("nums");
-				}
-				
-				for(int n = 0 ; n < nums ; n++) {
-					String nodeName2 = nodeName;
-					if(nums > 1) {
-						// Nodename should be numbered.
-						// TODO: could be changed to nodeName_n for better understanding.
-						nodeName2 = nodeName + n;
+				if (nodeType.equalsIgnoreCase("vm") || nodeType.equalsIgnoreCase("middlebox")) {
+					int pes = new BigDecimal((Long) node.get("pes")).intValueExact();
+					long mips = (Long) node.get("mips");
+					int ram = new BigDecimal((Long) node.get("ram")).intValueExact();
+					long size = (Long) node.get("size");
+					
+					long bw = 1000;
+					String hostName = "";
+					
+					if(node.get("bw") != null) {
+						bw = (Long) node.get("bw");
+					}
+					if(node.get("host") != null) {
+						hostName = (String) node.get("host");
 					}
 					
-					if(nodeType.equalsIgnoreCase("vm")){
-						// VM
-						Vm vm = new TimedVm(nodeName2, vmId, userId, datacenterId, mips, pes, ram, bw, size, "VMM", new CloudletSchedulerTimeShared(), starttime, endtime);
-						vmNameIdTable.put(nodeName2, vmId);
-						NetworkOperatingSystem.debugVmIdName.put(vmId, nodeName2);
+					double starttime = 0;
+					if(node.get("starttime") != null) {
+						starttime = (Double) node.get("starttime");
+					}
+					
+					double endtime = Double.POSITIVE_INFINITY;
+					if(node.get("endtime") != null){
+						endtime = (Double) node.get("endtime");
+					}
+
+					// Number of nodes with same specification.
+					// Name of nodes will be <original name><number(0..n-1)>
+					long nums = 1;
+					if(node.get("nums") != null){
+						nums = (Long) node.get("nums");
+					}
+					
+					for(int n = 0 ; n < nums ; n++) {
+						String nodeName2 = nodeName;
+						if(nums > 1) {
+							// Nodename should be numbered.
+							// TODO: could be changed to nodeName_n for better understanding.
+							nodeName2 = nodeName + n;
+						}
 						
-						vmList.add(vm);
-						vmIdRequestedHostTable.put(vmId, hostName);
-						vmId++;
+						if(nodeType.equalsIgnoreCase("vm")){
+							// VM
+							Vm vm = new TimedVm(nodeName2, vmId, userId, datacenterId, mips, pes, ram, bw, size, "VMM", new CloudletSchedulerTimeShared(), starttime, endtime);
+							vmNameIdTable.put(nodeName2, vmId);
+							NetworkOperatingSystem.debugVmIdName.put(vmId, nodeName2);
+							
+							vmList.add(vm);
+							vmIdRequestedHostTable.put(vmId, hostName);
+							vmId++;
+						}
+						else{
+							// Middle box
+							Vm vm = new Vm(vmId, userId, mips, pes, ram, bw, size, "VMM", new CloudletSchedulerTimeShared());
+							Middlebox m = deployMiddlebox(nodeType, vm);
+							vmNameIdTable.put(nodeName2, vmId);
+							mbList.add(m);
+							vmId++;
+						}
 					}
-					else{
-						// Middle box
-						Vm vm = new Vm(vmId, userId, mips, pes, ram, bw, size, "VMM", new CloudletSchedulerTimeShared());
-						Middlebox m = deployMiddlebox(nodeType, vm);
-						vmNameIdTable.put(nodeName2, vmId);
-						mbList.add(m);
-						vmId++;
+				} else if (nodeType.equalsIgnoreCase("vswitch")) {
+					// VSwitch 
+					
+					int MAX_PORTS = 256;
+					
+					double startTime = 0.0;
+					if (node.get("starttime") != null) {
+						startTime = (Double) node.get("starttime");
 					}
-				}
+					
+					double finishTime = Double.POSITIVE_INFINITY;
+					if (node.get("endtime") != null) {
+						finishTime = (Double) node.get("endtime");
+					}
+					
+					int bw = (Integer)node.get("bw");
+					long iops = (Integer) node.get("iops");
+					
+					int upports = MAX_PORTS;
+					if (node.get("upports") != null) {
+						upports = (Integer) node.get("upports");
+					}
+					
+					int downports = MAX_PORTS;
+					if (node.get("downports") != null) {
+						downports = (Integer) node.get("downports");
+					}
+					
+					long nums = 1;
+					if(node.get("nums") != null){
+						nums = (Long) node.get("nums");
+					}
+					
+					for(int n = 0 ; n < nums ; n++) {
+						String nodeName2 = nodeName;
+						if(nums > 1) {
+							nodeName2 = nodeName + "_" + n;
+						}
+						
+						VSwitch vswitch = new VSwitch(nodeName, bw, iops, upports, downports, 
+								startTime, finishTime, datacenterId);
+						vswitchList.add(vswitch);
+						vswitchNameIdTable.put(nodeName2, vswitchId);
+						++vswitchId;
+					}	
+				}				
 			}
 			
 			// Adding Arcs.
@@ -848,7 +919,7 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 			
 			EventSummary.setVmList(vmList);
     	
-			boolean result = deployApplication(vmList, mbList, arcList);
+			boolean result = deployApplication(vmList, mbList, arcList, vswitchList);
 			if (result){
 				isApplicationDeployed = true;
 				return true;

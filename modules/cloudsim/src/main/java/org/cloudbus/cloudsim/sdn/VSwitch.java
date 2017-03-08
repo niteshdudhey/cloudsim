@@ -14,17 +14,17 @@ public class VSwitch {
 	
 	private long iops;
 	
-	private int currentupports = 0;
+	private int upports = 0;
 	
-	private int currentdownports = 0;
+	private int downports = 0;
 	
 	public VSwitch(String name, int bw, long iops, int upports, int downports, 
 					double startTime, double finishTime, int datacenterId) {
 		this.name = name;
 		this.bw = bw;
 		this.iops = iops;
-		this.currentupports = upports;
-		this.currentdownports = downports;
+		this.upports = upports;
+		this.downports = downports;
 		this.startTime = startTime;
 		this.finishTime = finishTime;
 		this.datacenterId = datacenterId;
@@ -54,12 +54,12 @@ public class VSwitch {
 		return iops;
 	}
 	
-	public int currentUpports(){
-		return currentupports;
+	public int getUpports(){
+		return upports;
 	}
 	
-	public int currentDownports(){
-		return currentdownports;
+	public int getDownports(){
+		return downports;
 	}
 	
 	public void storeCurrentState(double time) {

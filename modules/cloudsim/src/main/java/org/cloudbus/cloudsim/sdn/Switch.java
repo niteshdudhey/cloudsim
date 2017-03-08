@@ -61,6 +61,8 @@ public class Switch extends SimEntity implements Node {
 	
 	Hashtable<Package,Long> processingTable;
 	
+	List<VSwitch> vswitchList;
+	
 	public Switch(String name, int bw, long iops, int upports, int downports, NetworkOperatingSystem nos) {
 		super(name);
 		this.bw = bw;
@@ -206,8 +208,29 @@ public class Switch extends SimEntity implements Node {
 		
 	}
 	
+	/* 
+	 * TODO: Need to create a one-one mapping between Switch and 
+	 * VSwitch ports. This will require a lot of changes in the Switch class,
+	 * not limited to mapping the links (or nodes) to the up/down-ports.
+	 */
 	public boolean vswitchCreate(VSwitch vswitch) {
-		return true;
+		boolean flag = true;
+		if (currentupports < vswitch.getUpports()) {
+			flag = false;
+		}
+		if (currentdownports < vswitch.getDownports()) {
+			flag = false;
+		}
+		if (flag) {
+			currentupports -= vswitch.getUpports();
+			currentdownports -= vswitch.getDownports();
+			getVSwitchList().add(vswitch);
+		}
+		return flag;
+	}
+	
+	public List<VSwitch> getVSwitchList() {
+		return vswitchList;
 	}
 	
 	/*
