@@ -23,6 +23,7 @@ import org.cloudbus.cloudsim.sdn.Node;
 import org.cloudbus.cloudsim.sdn.SDNDatacenter;
 import org.cloudbus.cloudsim.sdn.SDNHost;
 import org.cloudbus.cloudsim.sdn.TimedVm;
+import org.cloudbus.cloudsim.sdn.VSwitch;
 
 public class OverbookingNetworkOperatingSystem extends NetworkOperatingSystem {
 
@@ -31,7 +32,8 @@ public class OverbookingNetworkOperatingSystem extends NetworkOperatingSystem {
 	}
 
 	@Override
-	public boolean deployApplication(List<Vm> vms, List<Middlebox> middleboxes, List<Arc> links) {
+	protected boolean deployApplication(List<Vm> vms, List<Middlebox> middleboxes, List<Arc> links,
+			List<VSwitch> vswitchList) {
 		Log.printLine(CloudSim.clock() + ": " + getName() + ": Starting deploying application..");
 		
 		for(Vm vm : vms)
@@ -166,4 +168,5 @@ public class OverbookingNetworkOperatingSystem extends NetworkOperatingSystem {
 		
 		return newHost;		
 	}
+
 }

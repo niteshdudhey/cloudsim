@@ -18,8 +18,10 @@ public class VSwitch {
 	
 	private int downports = 0;
 	
+	private Switch pswitch;
+	
 	public VSwitch(String name, int bw, long iops, int upports, int downports, 
-					double startTime, double finishTime, int datacenterId) {
+					double startTime, double finishTime, int datacenterId, Switch pswitch) {
 		this.name = name;
 		this.bw = bw;
 		this.iops = iops;
@@ -28,6 +30,7 @@ public class VSwitch {
 		this.startTime = startTime;
 		this.finishTime = finishTime;
 		this.datacenterId = datacenterId;
+		this.pswitch = pswitch;
 	}
 	
 	public String getName() {
@@ -60,6 +63,10 @@ public class VSwitch {
 	
 	public int getDownports(){
 		return downports;
+	}
+	
+	public Switch getSwitch() {
+		return pswitch;
 	}
 	
 	public void storeCurrentState(double time) {

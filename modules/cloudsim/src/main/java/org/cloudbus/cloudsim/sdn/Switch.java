@@ -229,6 +229,17 @@ public class Switch extends SimEntity implements Node {
 		return flag;
 	}
 	
+	public boolean vswitchDestroy(VSwitch vswitch) {
+		if (getVSwitchList().contains(vswitch)) {
+			currentupports += vswitch.getUpports();
+			currentdownports += vswitch.getDownports();
+			getVSwitchList().remove(vswitch);
+			return true;
+		} else {
+			return false;
+		}
+	}
+	
 	public List<VSwitch> getVSwitchList() {
 		return vswitchList;
 	}

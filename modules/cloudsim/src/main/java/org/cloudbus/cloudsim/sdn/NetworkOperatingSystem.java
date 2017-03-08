@@ -194,6 +194,12 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 			case CloudSimTags.VM_DESTROY:
 				processVmDestroyAck(ev);
 				break;
+			case CloudSimTags.VSWITCH_CREATE_ACK:
+				processVSwitchCreateAck(ev);
+				break;
+			case CloudSimTags.VSWITCH_DESTROY:
+				processVSwitchDestroyAck(ev);
+				break;
 			default: 
 				System.out.println("Unknown event received by " + super.getName() + ". Tag:" + ev.getTag());
 		}
@@ -223,12 +229,17 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		sendInternalEvent();
 	}
 	
+	// TODO: Need to handle data transfer b/w VSwitches and VMs in NOS (and/or SNOS)
 	public void processVSwitchCreateAck(SimEvent ev) {
 		
 	}
 	
 	public void processVSwitchDestroyAck(SimEvent ev) {
+		VSwitch vswitch = (VSwitch) ev.getData();
 		
+		if (getVSwitchList().contains(vswitch)) {
+			getVSwitchList().remove(vswitch);
+		}
 	}
 
 	public void addPackageToChannel(Node sender, Package pkg) {
@@ -855,14 +866,26 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 						nums = (Long) node.get("nums");
 					}
 					
+					/*
+					 *  TODO: For now, the embedding of virtual switches onto 
+					 *  physical switches is user-defined.
+					 */ 
+					
+					String pswitchName = null;
+					if (node.get("pswitch") != null) {
+						pswitchName = (String) node.get("pswitch");
+					}
+					
 					for(int n = 0 ; n < nums ; n++) {
 						String nodeName2 = nodeName;
 						if(nums > 1) {
 							nodeName2 = nodeName + "_" + n;
 						}
 						
+						Switch pswitch = getSwitchByName(pswitchName);
+						
 						VSwitch vswitch = new VSwitch(nodeName, bw, iops, upports, downports, 
-								startTime, finishTime, datacenterId);
+								startTime, finishTime, datacenterId, pswitch);
 						vswitchList.add(vswitch);
 						vswitchNameIdTable.put(nodeName2, vswitchId);
 						++vswitchId;
@@ -934,5 +957,15 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	
 	public List<SDNHost> getSDNHostList() {
 		return sdnhosts;
+	}
+	
+	public Switch getSwitchByName(String name) {
+		Switch retSwitch = null;
+		for (Switch pswitch: getSwitchList()) {
+			if (pswitch.getName().equals(name)) {
+				retSwitch = pswitch;
+			}
+		}
+		return retSwitch;
 	}
 }

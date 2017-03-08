@@ -7,6 +7,7 @@
  */
 package org.cloudbus.cloudsim.sdn;
 
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -40,10 +41,14 @@ public class SDNDatacenter extends Datacenter {
 
 	NetworkOperatingSystem nos;
 	
+	List<VSwitch> vswitchList;
+	
 	public SDNDatacenter(String name, DatacenterCharacteristics characteristics, VmAllocationPolicy vmAllocationPolicy, List<Storage> storageList, double schedulingInterval, NetworkOperatingSystem nos) throws Exception {
 		super(name, characteristics, vmAllocationPolicy, storageList, schedulingInterval);
 		
 		this.nos = nos;
+		
+		this.vswitchList = new LinkedList<VSwitch>();
 	}
 	
 	/**
@@ -117,6 +122,11 @@ public class SDNDatacenter extends Datacenter {
 			case Constants.APPLICATION_SUBMIT:
 				processApplication(ev.getSource(), (String) ev.getData());
 				break;
+			case CloudSimTags.VSWITCH_CREATE_ACK:
+				processVSwitchCreate(ev, true);
+				break;
+			case CloudSimTags.VSWITCH_DESTROY:
+				processVSwitchDestroy(ev, false);
 			default: 
 				System.out.println("Unknown event recevied by SdnDatacenter. Tag:" + ev.getTag());
 		}
@@ -175,5 +185,35 @@ public class SDNDatacenter extends Datacenter {
 	
 	public Map<String, Integer> getFlowNameIdTable() {
 		return this.nos.getFlowNameIdTable();
+	}
+	
+	public List<VSwitch> getVSwitchList() {
+		return this.vswitchList;
+	}
+	
+	public void processVSwitchCreate(SimEvent ev, boolean ack) {
+		VSwitch vswitch = (VSwitch) ev.getData();
+		Switch pswitch = vswitch.getSwitch();
+		if (pswitch.vswitchCreate(vswitch)) {
+			getVSwitchList().add(vswitch);
+		}
+		if (ack) {
+			send(nos.getId(), CloudSim.getMinTimeBetweenEvents(), CloudSimTags.VSWITCH_CREATE_ACK, ev.getData());
+		}
+	}
+	
+	public void processVSwitchDestroy(SimEvent ev, boolean ack) {
+		VSwitch vswitch = (VSwitch) ev.getData();
+		Switch pswitch = vswitch.getSwitch();
+		
+		if (pswitch.vswitchDestroy(vswitch)) {
+			getVSwitchList().remove(vswitch);
+		}
+		
+		if (ack) {
+			/*
+			 * TODO: Do we need to send an ack to Broker, this todo applies even to VSWITCH_CREATE_ACK. 
+			 */ 
+		}
 	}
 }

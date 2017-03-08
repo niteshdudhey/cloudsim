@@ -65,8 +65,8 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 			send(datacenter.getId(), vswitch.getStartTime(), CloudSimTags.VSWITCH_CREATE_ACK, vswitch);
 			
 			if(vswitch.getFinishTime() != Double.POSITIVE_INFINITY) {
-				send(datacenter.getId(), vswitch.getFinishTime(), CloudSimTags.VM_DESTROY, vswitch);
-				send(this.getId(), vswitch.getFinishTime(), CloudSimTags.VM_DESTROY, vswitch);
+				send(datacenter.getId(), vswitch.getFinishTime(), CloudSimTags.VSWITCH_DESTROY, vswitch);
+				send(this.getId(), vswitch.getFinishTime(), CloudSimTags.VSWITCH_DESTROY, vswitch);
 			}
 		}
 		return true;
