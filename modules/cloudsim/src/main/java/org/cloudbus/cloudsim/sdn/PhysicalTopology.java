@@ -91,7 +91,8 @@ public class PhysicalTopology {
 				Collection<Link> links = getAdjacentLinks(sdnhost);
 				for(Link l : links) {
 					if(l.getLowOrder().equals(sdnhost)) {
-						sdnhost.addRoute(null, l);
+						if (!(l.getHighOrder().equals(sdnhost)))
+							sdnhost.addRoute(null, l);
 						Node edge = l.getHighOrder();
 						edge.addRoute(sdnhost, l);
 					}
@@ -199,6 +200,28 @@ public class PhysicalTopology {
 		
 		fromNode.addLink(l);
 		toNode.addLink(l);
+	}
+	
+	public void addSelfLink(int from, long bw, double latency){
+		Node fromNode = nodesTable.get(from);
+			
+		if(!nodesTable.containsKey(from)) {
+			throw new IllegalArgumentException("Unknown node on link:" + nodesTable.get(from).getAddress() + "->" + nodesTable.get(from).getAddress());
+		}
+		
+		if(links.contains(fromNode.getAddress(), fromNode.getAddress())) {
+			throw new IllegalArgumentException("Link added twice:" + fromNode.getAddress() + "->" + fromNode.getAddress());
+		}
+		
+		Link l = new Link(fromNode, fromNode, latency, bw);
+		
+		// Two way links (From -> to, To -> from).
+		links.put(from, from, l);
+		
+		nodeLinks.put(fromNode, l);
+		
+		fromNode.addLink(l);
+		
 	}
 	
 	public Collection<Link> getAdjacentLinks(Node node) {

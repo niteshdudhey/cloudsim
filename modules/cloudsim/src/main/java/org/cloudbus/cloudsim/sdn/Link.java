@@ -235,4 +235,8 @@ public class Link {
 		return false;
 		
 	}
+	
+	public boolean isInternal() {
+		return highOrder==lowOrder;
+	}
 }

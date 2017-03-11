@@ -219,12 +219,12 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		int dst = pkg.getDestination();
 		int flowId = pkg.getFlowId();
 					
-		if(sender.equals(sender.getVMRoute(src, dst, flowId))) {
-			// For loopback packet (when src and dst is on the same host).
-			sendNow(sender.getAddress(), Constants.SDN_PACKAGE, pkg);
-			
-			return;
-		}
+//		if(sender.equals(sender.getVMRoute(src, dst, flowId))) {
+//			// For loopback packet (when src and dst is on the same host).
+//			sendNow(sender.getAddress(), Constants.SDN_PACKAGE, pkg);
+//			
+//			return;
+//		}
 		
 		updatePackageProcessing();
 		
@@ -436,7 +436,7 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 			link = this.topology.getLink(origin.getAddress(), dest.getAddress());
 			links.add(link);
 			nodes.add(dest);
-			
+
 			if(lowestBw > link.getFreeBandwidth(origin)) {
 				lowestBw = link.getFreeBandwidth(origin);
 			}
@@ -620,10 +620,16 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 					int ram = new BigDecimal((Long)node.get("ram")).intValueExact();
 					long storage = (Long) node.get("storage");
 					long bw = new BigDecimal((Long)node.get("bw")).intValueExact();
+					long loopbw = new BigDecimal((Long)node.get("loopbw")).intValueExact();
 					
 					int num = 1;
 					if (node.get("nums")!= null) {
 						num = new BigDecimal((Long)node.get("nums")).intValueExact();
+					}
+					
+					double looplat = 1.0;
+					if (node.get("latency")!= null) {
+						looplat = (Double) node.get("latency");
 					}
 					
 					// Number of hosts with same specification.
@@ -646,6 +652,9 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 						topology.addNode(sdnHost);
 						this.hosts.add(host);
 						this.sdnhosts.add(sdnHost);
+						
+//						topology.addLink(sdnHost.getAddress(), sdnHost.getAddress(), looplat);
+						topology.addSelfLink(sdnHost.getAddress(), loopbw, looplat);
 					}
 					
 				} 
