@@ -1,12 +1,12 @@
 package org.cloudbus.cloudsim.sdn;
 
-public class SwitchStateHistoryEntry {
+public class VSwitchStateHistoryEntry {
 
 	double time;
 	
 	long numPackets;
 	
-	public SwitchStateHistoryEntry(double time, long numPackets) {
+	public VSwitchStateHistoryEntry(double time, long numPackets) {
 		this.time = time;
 		this.numPackets = numPackets;
 	}

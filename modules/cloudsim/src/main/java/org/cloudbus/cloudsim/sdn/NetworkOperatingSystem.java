@@ -73,10 +73,8 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	
 	protected List<Switch> switches = new ArrayList<Switch>();
 	
-	int vmId = 0;
-	
-	int vswitchId = 0;
-	
+	int virtualNodeId = 0;
+		
 	// Each broker/user is associated with one Datacenter.
 	protected Map<Integer, Integer> brokerIdToDatacenterIdMap;
 	
@@ -100,6 +98,8 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	Map<String, Integer> flowNameIdTable;
 	
 	Map<Integer, String> vmIdRequestedHostTable;
+	
+	Map<Integer, List<VSwitch> > flowIdVSwitchListTable;
 	
 	public static Map<Integer, String> debugVmIdName = new HashMap<Integer, String>();
 	
@@ -383,6 +383,10 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		return this.vswitchNameIdTable;
 	}
 	
+	public Map<Integer, List<VSwitch> > getFlowIdVSwitchListTable() {
+		return this.flowIdVSwitchListTable;
+	}
+	
 	private Channel findChannel(int from, int to, int channelId) {
 		// Check if there is a pre-configured channel for this application.
 		Channel channel = channelTable.get(getKey(from, to, channelId));
@@ -487,7 +491,9 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 			Log.printLine(CloudSim.clock() + ": " + getName() + ": Free bandwidth is less than required.(" + getKey(src, dst, flowId) + "): ReqBW=" + reqBw + "/ Free=" + lowestBw);
 		}
 		
-		Channel channel = new Channel(chName, flowId, src, dst, nodes, links, reqBw, debugVmIdName.get(src), debugVmIdName.get(dst));
+		List<VSwitch> vswitchList = getFlowIdVSwitchListTable().get(flowId);
+		
+		Channel channel = new Channel(chName, flowId, src, dst, nodes, links, vswitchList, reqBw, debugVmIdName.get(src), debugVmIdName.get(dst));
 
 		return channel;
 	}
@@ -816,21 +822,21 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 						
 						if(nodeType.equalsIgnoreCase("vm")){
 							// VM
-							Vm vm = new TimedVm(nodeName2, vmId, userId, datacenterId, mips, pes, ram, bw, size, "VMM", new CloudletSchedulerTimeShared(), starttime, endtime);
-							vmNameIdTable.put(nodeName2, vmId);
-							NetworkOperatingSystem.debugVmIdName.put(vmId, nodeName2);
+							Vm vm = new TimedVm(nodeName2, virtualNodeId, userId, datacenterId, mips, pes, ram, bw, size, "VMM", new CloudletSchedulerTimeShared(), starttime, endtime);
+							vmNameIdTable.put(nodeName2, virtualNodeId);
+							NetworkOperatingSystem.debugVmIdName.put(virtualNodeId, nodeName2);
 							
 							vmList.add(vm);
-							vmIdRequestedHostTable.put(vmId, hostName);
-							vmId++;
+							vmIdRequestedHostTable.put(virtualNodeId, hostName);
+							virtualNodeId++;
 						}
 						else{
 							// Middle box
-							Vm vm = new Vm(vmId, userId, mips, pes, ram, bw, size, "VMM", new CloudletSchedulerTimeShared());
+							Vm vm = new Vm(virtualNodeId, userId, mips, pes, ram, bw, size, "VMM", new CloudletSchedulerTimeShared());
 							Middlebox m = deployMiddlebox(nodeType, vm);
-							vmNameIdTable.put(nodeName2, vmId);
+							vmNameIdTable.put(nodeName2, virtualNodeId);
 							mbList.add(m);
-							vmId++;
+							virtualNodeId++;
 						}
 					}
 				} else if (nodeType.equalsIgnoreCase("vswitch")) {
@@ -887,8 +893,11 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 						VSwitch vswitch = new VSwitch(nodeName, bw, iops, upports, downports, 
 								startTime, finishTime, datacenterId, pswitch);
 						vswitchList.add(vswitch);
-						vswitchNameIdTable.put(nodeName2, vswitchId);
-						++vswitchId;
+						// We use virtualNodeId to represent a virtual node Id. Since Arcs can 
+						// contain both VMs and VSwitches, we need to use distinct Ids for 
+						// VMs and VSwitches.
+						vswitchNameIdTable.put(nodeName2, virtualNodeId);
+						++virtualNodeId;
 					}	
 				}				
 			}
@@ -918,8 +927,15 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 					bw = (Long) reqBw;
 				}
 				
-				int srcId = vmNameIdTable.get(src);
-				int dstId = vmNameIdTable.get(dst);
+				Integer srcId = vmNameIdTable.get(src);
+				Integer dstId = vmNameIdTable.get(dst);
+				
+				if (srcId == null) {
+					srcId = vswitchNameIdTable.get(src);
+				}
+				if (dstId == null) {
+					dstId = vswitchNameIdTable.get(dst);
+				}
 				
 				int flowId = -1;
 				

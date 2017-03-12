@@ -31,6 +31,7 @@ import org.cloudbus.cloudsim.core.CloudSim;
 public class Channel {
 	private List<Node> nodes;
 	private List<Link> links;
+	private List<VSwitch> vswitches;
 
 	private double allocatedBandwidth; // Actual bandwidth allocated to the channel
 	private double previousTime;
@@ -56,6 +57,22 @@ public class Channel {
 		this.dstId = dstId;
 		this.nodes = nodes;
 		this.links = links;
+		this.allocatedBandwidth = bandwidth;
+		this.requestedBandwidth = bandwidth;
+		this.inTransmission = new LinkedList<Transmission>();
+		this.completed = new LinkedList<Transmission>();
+	}
+	
+	public Channel(String name, int chId, int srcId, int dstId, List<Node> nodes, List<Link> links, List<VSwitch> vswitchList, double bandwidth, String srcName, String dstName) {
+		this.name = name;
+		this.srcName = srcName;
+		this.dstName = dstName;
+		this.chId = chId;
+		this.srcId = srcId;
+		this.dstId = dstId;
+		this.nodes = nodes;
+		this.links = links;
+		this.vswitches = vswitchList;
 		this.allocatedBandwidth = bandwidth;
 		this.requestedBandwidth = bandwidth;
 		this.inTransmission = new LinkedList<Transmission>();
@@ -307,7 +324,19 @@ public class Channel {
 		
 		this.inTransmission.add(transmission);
 		double eft = estimateFinishTime(transmission);
-
+		
+		for (int i = 0; i < nodes.size() - 1; ++i) {
+			Node from = nodes.get(i);
+			if (from instanceof Switch || from instanceof EdgeSwitch 
+					|| from instanceof AggregationSwitch || from instanceof CoreSwitch) {
+				((Switch)from).incrementNumPacketsTransferred(1);
+			}
+		}
+		
+		for (VSwitch vswitch: vswitches) {
+			vswitch.incrementNumPacketsTransferred(1);
+		}
+		
 		return eft;
 	}
 

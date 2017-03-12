@@ -9,6 +9,7 @@ package org.cloudbus.cloudsim.sdn;
 
 import java.util.ArrayList;
 import java.util.Hashtable;
+import java.util.LinkedList;
 import java.util.List;
 
 import org.cloudbus.cloudsim.EventSummary;
@@ -40,7 +41,13 @@ public class Switch extends SimEntity implements Node {
 	
 	long iops;
 	
+	int currentBw;
+	
+	long currentIops;
+	
 	double previousTime;
+	
+	long numPackets;
 	
 	int rank = -1;
 	
@@ -63,10 +70,15 @@ public class Switch extends SimEntity implements Node {
 	
 	List<VSwitch> vswitchList;
 	
+	private List<SwitchStateHistoryEntry> stateHistory;
+	
 	public Switch(String name, int bw, long iops, int upports, int downports, NetworkOperatingSystem nos) {
 		super(name);
 		this.bw = bw;
+		this.currentBw = bw;
 		this.iops = iops;
+		this.numPackets = 0;
+		this.currentIops = iops;
 		this.previousTime = 0.0;
 		this.nos = nos;
 		
@@ -79,6 +91,11 @@ public class Switch extends SimEntity implements Node {
 		this.forwardingTable = new ForwardingRule();
 		this.processingTable = new Hashtable<Package,Long>();
 		this.routingTable = new RoutingTable();
+		
+		this.currentdownports = downports;
+		this.currentupports = upports;
+		
+		this.stateHistory = new LinkedList<SwitchStateHistoryEntry>();
 	}
 	
 	@Override
@@ -108,6 +125,23 @@ public class Switch extends SimEntity implements Node {
 		this.links.add(l);
 	}
 	
+	public void incrementNumPacketsTransferred(long num) {
+		this.numPackets += num;
+	}
+	
+	public long getNumPacketsTransferred() {
+		return numPackets;
+	}
+	
+	public List<SwitchStateHistoryEntry> getSwitchStateHistory() {
+		return stateHistory;
+	}
+	
+	@Override
+	public void storeCurrentState(double time) {
+		SwitchStateHistoryEntry stateHistory = new SwitchStateHistoryEntry(time, getNumPacketsTransferred());
+		getSwitchStateHistory().add(stateHistory);
+	}
 	
 	/************************************************
 	 *  Calculate Utilization history
@@ -203,11 +237,6 @@ public class Switch extends SimEntity implements Node {
 		return num;
 	}
 	
-	@Override
-	public void storeCurrentState(double time) {
-		
-	}
-	
 	/* 
 	 * TODO: Need to create a one-one mapping between Switch and 
 	 * VSwitch ports. This will require a lot of changes in the Switch class,
@@ -221,9 +250,17 @@ public class Switch extends SimEntity implements Node {
 		if (currentdownports < vswitch.getDownports()) {
 			flag = false;
 		}
+		if (currentBw < vswitch.getBw()) {
+			flag = false;
+		}
+		if (currentIops < vswitch.getIops()) {
+			flag = false;
+		}
 		if (flag) {
 			currentupports -= vswitch.getUpports();
 			currentdownports -= vswitch.getDownports();
+			currentBw -= vswitch.getBw();
+			currentIops -= vswitch.getIops(); 
 			getVSwitchList().add(vswitch);
 		}
 		return flag;
@@ -233,6 +270,8 @@ public class Switch extends SimEntity implements Node {
 		if (getVSwitchList().contains(vswitch)) {
 			currentupports += vswitch.getUpports();
 			currentdownports += vswitch.getDownports();
+			currentBw += vswitch.getBw();
+			currentIops += vswitch.getIops();
 			getVSwitchList().remove(vswitch);
 			return true;
 		} else {
