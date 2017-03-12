@@ -333,10 +333,12 @@ public class Channel {
 			}
 		}
 		
-		for (VSwitch vswitch: vswitches) {
-			vswitch.incrementNumPacketsTransferred(1);
+		if (vswitches != null) {
+			for (VSwitch vswitch: vswitches) {
+				vswitch.incrementNumPacketsTransferred(1);
+			}
 		}
-		
+
 		return eft;
 	}
 

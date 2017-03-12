@@ -148,6 +148,8 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		flowNameIdTable = new HashMap<String, Integer>();
 		flowNameIdTable.put("default", -1);
 		
+		flowIdVSwitchListTable = new HashMap<Integer, List<VSwitch> >();
+		
 		EventSummary.setSDNHostList(sdnhosts);
 		EventSummary.setLinks(getPhysicalTopology().getAllLinks());
 	}
