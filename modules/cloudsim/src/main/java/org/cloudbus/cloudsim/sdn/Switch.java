@@ -96,6 +96,8 @@ public class Switch extends SimEntity implements Node {
 		this.currentupports = upports;
 		
 		this.stateHistory = new LinkedList<SwitchStateHistoryEntry>();
+		
+		this.vswitchList = new LinkedList<VSwitch>();
 	}
 	
 	@Override

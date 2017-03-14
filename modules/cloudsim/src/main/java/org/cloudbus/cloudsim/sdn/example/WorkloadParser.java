@@ -128,10 +128,11 @@ public class WorkloadParser {
 			
 			String linkName = lineitems.poll();
 			Integer flowId = this.flowNames.get(linkName);
+			flowId = 1;
 			
-			if(flowId == null) {
-				throw new IllegalArgumentException("No such link name in virtual.json:"+linkName);
-			}
+//			if(flowId == null) {
+//				throw new IllegalArgumentException("No such link name in virtual.json:"+linkName);
+//			}
 			
 			String vmName = lineitems.poll();
 			int toVmId = getVmId(vmName);

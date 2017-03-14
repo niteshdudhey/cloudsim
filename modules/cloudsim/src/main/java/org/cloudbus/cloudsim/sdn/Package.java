@@ -57,6 +57,10 @@ public class Package {
 		return flowId;
 	}
 	
+	public void setFlowId(int flowId) {
+		this.flowId = flowId;
+	}
+	
 	public String toString() {
 		return "PKG:"+origin + "->" + destination + " - " + payload.toString();
 	}

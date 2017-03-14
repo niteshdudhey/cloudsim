@@ -7,6 +7,7 @@
  */
 package org.cloudbus.cloudsim.sdn.example;
 
+import java.util.LinkedList;
 import java.util.List;
 
 import org.cloudbus.cloudsim.Log;
@@ -21,6 +22,7 @@ import org.cloudbus.cloudsim.sdn.NetworkOperatingSystem;
 import org.cloudbus.cloudsim.sdn.Node;
 import org.cloudbus.cloudsim.sdn.SDNDatacenter;
 import org.cloudbus.cloudsim.sdn.SDNHost;
+import org.cloudbus.cloudsim.sdn.Switch;
 import org.cloudbus.cloudsim.sdn.TimedVm;
 import org.cloudbus.cloudsim.sdn.VSwitch;
 
@@ -33,7 +35,7 @@ import org.cloudbus.cloudsim.sdn.VSwitch;
  * @since CloudSimSDN 1.0
  */
 public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
-
+	
 	public SimpleNetworkOperatingSystem(String fileName) {
 		super(fileName);
 	}
@@ -59,7 +61,7 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 		}
 		for (VSwitch vswitch: vswitchList) {
 			SDNDatacenter datacenter = getDatacenterById(vswitch.getDatacenterId());
-			Log.printLine(CloudSim.clock() + ": " + "Trying to Create VM " + vswitch.getName() 
+			Log.printLine(CloudSim.clock() + ": " + "Trying to Create VSwitch " + vswitch.getName() 
 			+ " in " + datacenter.getName() + ", (" + vswitch.getStartTime() + "~" + vswitch.getFinishTime() + ")");
 	
 			send(datacenter.getId(), vswitch.getStartTime(), CloudSimTags.VSWITCH_CREATE_ACK, vswitch);
@@ -111,6 +113,57 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 		return true;
 	}
 	
+	public boolean deployFlowVms(List<Arc> links) {
+		for(Arc link : links) {
+			int src = link.getSrcId();
+			int dst = link.getDstId();
+			int flowId = link.getFlowId();
+			
+			SDNHost srchost = findSDNHost(src);
+			SDNHost dsthost = findSDNHost(dst);
+			
+			Switch srcSwitch = findSwitch(src);
+			Switch dstSwitch = findSwitch(dst); 
+			
+			if (srchost == null && srcSwitch == null) {
+				continue;
+			}
+			
+			if (dsthost == null && dstSwitch == null) {
+				continue;
+			}
+			
+			if(srchost != null && dsthost != null && srchost.equals(dsthost)) {
+				Log.printLine(CloudSim.clock() + ": " + getName() + ": Source SDN Host is same as Destination. Go loopback");
+				
+				srchost.addVMRoute(src, dst, flowId, dsthost);
+			}
+			else {
+				Log.printLine(CloudSim.clock() + ": " + getName() + ": VMs are in different hosts. Create entire routing table (hosts, switches)");
+				
+				boolean findRoute = false;
+				if (srchost != null) {
+					findRoute = buildNewForwardingTables(srchost, src, dst, flowId, null);
+				} else {
+					findRoute = buildNewForwardingTables(srcSwitch, src, dst, flowId, null);
+				}
+				
+				if(!findRoute) {
+					System.err.println("SimpleNetworkOperatingSystem.deployFlow: Could not find route!!" 
+							+ NetworkOperatingSystem.debugVmIdName.get(src) + "->" 
+							+ NetworkOperatingSystem.debugVmIdName.get(dst));
+				}
+			}
+		}
+		
+		// Print all routing tables.
+		for(Node node : this.topology.getAllNodes()) {
+			node.printVMRoute();
+		}
+		
+		return true;
+	}
+	
 	private Link selectLinkFirst(List<Link> links) {
 		return links.get(0);
 	}
@@ -147,7 +200,92 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 		Link link = links.get(linkid);
 		return link;
 	}
+	
+	private void createNewFlows() {
+		int flowId, srcId, dstId;
+		for (Vm vm1: vmList) {
+			for (Vm vm2: vmList) {
+				srcId = vm1.getId();
+				dstId = vm2.getId();
+				if (checkFlowExists(srcId, dstId)) {
+					continue;
+				}
+				flowNumbers++;
+				flowId = flowNumbers;
+				SDNHost srcHost = findSDNHost(srcId);
+				SDNHost dstHost = findSDNHost(dstId);
+				if (srcHost.equals(dstHost)) {
+					srcHost.addVMRoute(srcId, dstId, flowId, dstHost);
+				} else {
+					buildForwardingTables(srcHost, srcId, dstId, flowId, null);
+				}
+				System.out.println("New flow with FlowId = " + flowId + " between " + srcId + " " + dstId + " created");
+				updateVSwitchesInFlow(srcHost, srcId, dstId, flowId);
+				Arc arc = new Arc(Integer.toString(flowId), srcId, dstId, flowId, 0, 0);
+				newFlows.add(arc);
+				this.flowIdArcTable.put(flowId, arc);
+			}
+		}
+	}
+	
+	private void updateVSwitchesInFlow(Node node, int srcId, int dstId, int flowId) {
+		SDNHost destHost = findSDNHost(dstId);
+		if (node.equals(destHost)) {
+			return;
+		}
+		if (getFlowIdVSwitchListTable().get(flowId) == null) {
+			getFlowIdVSwitchListTable().put(flowId, new LinkedList<VSwitch>());
+		}
+		Node next = node.getVMRoute(srcId, dstId, flowId);
+		if (next instanceof Switch) {
+			if (!((Switch)next).getVSwitchList().isEmpty()) {
+				VSwitch vswitch = ((Switch) next).getVSwitchList().get(0);
+				getFlowIdVSwitchListTable().get(flowId).add(vswitch);
+			}
+		}
+		updateVSwitchesInFlow(next, srcId, dstId, flowId);
+	}
+	
+	private boolean checkFlowExists(int srcId, int dstId) {
+		for (Arc arc: newFlows) {
+			if (arc.getSrcId() == srcId && arc.getDstId() == dstId) {
+				return true;
+			}
+		}
+		for (Arc arc: arcList) {
+			if (arc.getSrcId() == srcId && arc.getDstId() == dstId) {
+				return true;
+			}
+		}
+		return false;
+	}
 
+	private boolean buildNewForwardingTables(Node node, int src, int dst, int flowId, Node prevNode) {
+		SDNHost destHost = findSDNHost(dst);
+		Switch destSwitch = findSwitch(dst);
+		
+		Node dest = null;
+		if (destHost == null) {
+			dest = destSwitch;
+		} else {
+			dest = destHost;
+		}
+		
+		if (node.equals(dest)) {
+			return true;
+		}
+		
+		List<Link> nextLinks = node.getRoute(dest);
+		
+		Link nextLink = selectLinkByFlow(nextLinks, flowId);
+		Node nextHop = nextLink.getOtherNode(node);
+				
+		node.addVMRoute(src, dst, flowId, nextHop);
+		buildNewForwardingTables(nextHop, src, dst, flowId, null);
+		
+		return true;
+	}
+	
 	private boolean buildForwardingTables(Node node, int srcVm, int dstVm, int flowId, Node prevNode) {
 		// There are many links. Determine which hop to go.
 		SDNHost desthost = findSDNHost(dstVm);
@@ -236,7 +374,8 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 		
 		Log.printLine(CloudSim.clock() + ": " + getName() 
 				+ ": VM Created: " +  vm.getId() + " in " + host);
-		deployFlow(this.arcList);
+		deployFlowVms(this.arcList);
+		createNewFlows();
 	}
-	
+		
 }

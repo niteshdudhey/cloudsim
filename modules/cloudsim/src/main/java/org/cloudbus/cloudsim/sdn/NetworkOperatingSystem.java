@@ -87,11 +87,13 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	
 	protected LinkedList<VSwitch> vswitchList;
 	
-	Map<Integer, Arc> flowIdArcTable;
+	protected Map<Integer, Arc> flowIdArcTable;
 	
 	Map<String, Integer> hostNameIdTable;
 	
 	Map<String, Integer> vmNameIdTable;
+	
+	Map<Integer, String> vswitchIdNameTable;
 	
 	Map<String, Integer> vswitchNameIdTable;
 	
@@ -99,7 +101,9 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	
 	Map<Integer, String> vmIdRequestedHostTable;
 	
-	Map<Integer, List<VSwitch> > flowIdVSwitchListTable;
+	protected Map<Integer, List<VSwitch> > flowIdVSwitchListTable;
+	
+	protected List<Arc> newFlows;
 	
 	public static Map<Integer, String> debugVmIdName = new HashMap<Integer, String>();
 	
@@ -142,8 +146,11 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		arcList = new LinkedList<Arc>();
 		flowIdArcTable = new HashMap<Integer, Arc>();
 		
+		vswitchIdNameTable = new HashMap<Integer, String>();
 		vswitchNameIdTable = new HashMap<String, Integer>();
 		vswitchList = new LinkedList<VSwitch>();
+		
+		newFlows = new LinkedList<Arc>();
 		
 		flowNameIdTable = new HashMap<String, Integer>();
 		flowNameIdTable.put("default", -1);
@@ -247,7 +254,8 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	public void addPackageToChannel(Node sender, Package pkg) {
 		int src = pkg.getOrigin();
 		int dst = pkg.getDestination();
-		int flowId = pkg.getFlowId();
+		int flowId = getFlowIdForVms(src, dst);
+		pkg.setFlowId(flowId);
 					
 		if(sender.equals(sender.getVMRoute(src, dst, flowId))) {
 			// For loopback packet (when src and dst is on the same host).
@@ -379,6 +387,10 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	
 	public Map<String, Integer> getFlowNameIdTable() {
 		return this.flowNameIdTable;
+	}
+	
+	public Map<Integer, String> getvswitchIdNameTable() {
+		return this.vswitchIdNameTable;
 	}
 	
 	public Map<String, Integer> getvswitchNameIdTable() {
@@ -572,6 +584,27 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		return null;
 	}
 	
+	protected VSwitch findVSwitch(int vswitchId) {
+		String name = getvswitchIdNameTable().get(vswitchId);
+		for(VSwitch vswitch : vswitchList) {
+			if (vswitch.getName().equals(name)) {
+				return vswitch;
+			}
+		}
+		
+		return null;
+	}
+	
+	protected Switch findSwitch(int vswitchId) {
+		VSwitch vswitch = findVSwitch(vswitchId);
+		for (Switch pswitch: switches) {
+			if (pswitch.getVSwitchList().contains(vswitch)) {
+				return pswitch;
+			}
+		}
+		return null;
+	}
+	
 	protected SDNHost findSDNHost(Host host) {
 		for(SDNHost sdnhost : sdnhosts) {
 			if(sdnhost.getHost().equals(host)) {
@@ -759,7 +792,7 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	
 	// Used to assign flow Ids to Arcs.
 	// TOCHECK: whether it should necessarily be static.
-	private static int flowNumbers = 0;
+	protected static int flowNumbers = 0;
 	
 	
 	public boolean deployApplication(int userId, String vmsFileName){
@@ -856,17 +889,17 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 						finishTime = (Double) node.get("endtime");
 					}
 					
-					int bw = (Integer)node.get("bw");
-					long iops = (Integer) node.get("iops");
+					int bw = new BigDecimal((Long)node.get("bw")).intValueExact();
+					long iops = (Long) node.get("iops");
 					
 					int upports = MAX_PORTS;
 					if (node.get("upports") != null) {
-						upports = (Integer) node.get("upports");
+						upports = new BigDecimal((Long)node.get("upports")).intValueExact();
 					}
 					
 					int downports = MAX_PORTS;
 					if (node.get("downports") != null) {
-						downports = (Integer) node.get("downports");
+						downports = new BigDecimal((Long)node.get("downports")).intValueExact();
 					}
 					
 					long nums = 1;
@@ -898,7 +931,9 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 						// We use virtualNodeId to represent a virtual node Id. Since Arcs can 
 						// contain both VMs and VSwitches, we need to use distinct Ids for 
 						// VMs and VSwitches.
+						vswitchIdNameTable.put(virtualNodeId, nodeName2);
 						vswitchNameIdTable.put(nodeName2, virtualNodeId);
+						NetworkOperatingSystem.debugVmIdName.put(virtualNodeId, nodeName2);
 						++virtualNodeId;
 					}	
 				}				
@@ -986,4 +1021,14 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		}
 		return retSwitch;
 	}
+	
+	public int getFlowIdForVms(int srcId, int dstId) {
+		for (Arc arc: newFlows) {
+			if (arc.getSrcId() == srcId && arc.getDstId() == dstId) {
+				return arc.getFlowId();
+			}
+		}
+		return -2;
+	}
+	
 }
