@@ -8,6 +8,7 @@
 package org.cloudbus.cloudsim.sdn;
 
 import org.cloudbus.cloudsim.CloudletScheduler;
+import org.cloudbus.cloudsim.Host;
 import org.cloudbus.cloudsim.Vm;
 
 /**
@@ -19,14 +20,30 @@ import org.cloudbus.cloudsim.Vm;
  * @author Rodrigo N. Calheiros
  * @since CloudSimSDN 1.0
  */
+
+/**
+ * The TimedVm could later be changed to a SimEntity and then all the nodes in the both Physical
+ * and Virtual Networks will be derived from class Node and Nod will be a SimEntity.
+ * 
+ * @author Nitesh Dudhey
+ *
+ */
 public class TimedVm extends Vm {
 
 	private double startTime;
+	
 	private double finishTime;
 	
 	private String name;
 	
 	private int datacenterId;
+	
+	/**
+	 * The candidate host on which this VM could be hosted.
+	 */
+	// Not using the Host member of the Vm class because it represents 
+	// the host after the allocation of Vm.
+	private SDNHost candidateHost;
 	
 	public TimedVm(String name, int id, int userId, int datacenterId, double mips, int numberOfPes, int ram,
 			long bw, long size, String vmm, CloudletScheduler cloudletScheduler) {
@@ -41,6 +58,7 @@ public class TimedVm extends Vm {
 			double startTime, double finishTime) {
 		
 		super(id, userId, mips, numberOfPes, ram, bw, size, vmm, cloudletScheduler);
+		
 		this.name = name;
 		this.datacenterId = datacenterId;
 		this.startTime = startTime;
@@ -62,5 +80,13 @@ public class TimedVm extends Vm {
 	
 	public double getFinishTime() {
 		return finishTime;
+	}
+	
+	public SDNHost getCandidateHost() {
+		return candidateHost;
+	}
+
+	public void setCandidateHost(SDNHost candidateHost) {
+		this.candidateHost = candidateHost;
 	}
 }

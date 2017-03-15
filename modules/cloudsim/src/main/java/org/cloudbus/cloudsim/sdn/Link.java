@@ -25,7 +25,8 @@ import org.cloudbus.cloudsim.Log;
  * @since CloudSimSDN 1.0
  */
 public class Link {
-	// bi-directional link (one link = both ways)
+	// Bi-directional link (one link = both ways).
+	
 	Node highOrder;
 	Node lowOrder;
 	double upBW;	// low -> high
@@ -74,8 +75,9 @@ public class Link {
 	}
 	
 	public Node getOtherNode(Node from) {
-		if(highOrder.equals(from))
+		if(highOrder.equals(from)) {
 			return lowOrder;
+		}
 		
 		return highOrder;
 	}
@@ -84,11 +86,13 @@ public class Link {
 		if(from.equals(lowOrder)) {
 			return true;
 		}
+		
 		else if(from.equals(highOrder)) {
 			return false;
 		}
+		
 		else {
-			throw new IllegalArgumentException("Link.isUplink(): from("+from+") Node is wrong!!");			
+			throw new IllegalArgumentException("Link.isUplink(): from(" + from + ") Node is wrong!!");			
 		}
 	}
 	
@@ -100,6 +104,7 @@ public class Link {
 		if(isUplink(from)) {
 			return upBW;
 		}
+		
 		else {
 			return downBW;
 		}
@@ -109,6 +114,7 @@ public class Link {
 		if(upBW != downBW) {
 			throw new IllegalArgumentException("Downlink/Uplink BW are different!");
 		}
+		
 		return upBW;
 	}
 
@@ -118,9 +124,11 @@ public class Link {
 	
 	private List<Channel> getChannels(Node from) {
 		List<Channel> channels;
+		
 		if(isUplink(from)) {
 			channels = this.upChannels;
 		}
+		
 		else {
 			channels = this.downChannels;
 		}
@@ -134,67 +142,80 @@ public class Link {
 		
 		if(totalRequested > this.getBw()) {
 			Log.printLine("Link.getDedicatedChannelAdjustFactor() Exceeds link bandwidth. Reduce requested bandwidth");
+			
 			factor = this.getBw() / totalRequested;
 		}
+		
 		return factor;
 	}
 	
 	public boolean addChannel(Node from, Channel ch) {
 		getChannels(from).add(ch);
+		
 		return true;
 	}
 	
 	public boolean removeChannel(Channel ch) {
 		boolean ret = this.upChannels.remove(ch);
+		
 		if(!ret) {
-			// the channel is down link
+			// The channel is down link.
 			ret = this.downChannels.remove(ch);
 		}
+		
 		return ret;
 	}
 	
 	public double getAllocatedBandwidthForDedicatedChannels(Node from) {
 		
-		double bw=0;
-		for(Channel ch: getChannels(from)) {
+		double bw = 0;
+		
+		for(Channel ch : getChannels(from)) {
 			if(ch.getChId() != -1) {
-				// chId == -1 : default channel
+				// chId == -1 => default channel.
 				bw += ch.getAllocatedBandwidth();
 			}
 		}
+		
 		return bw;
 	}
 
 	public double getRequestedBandwidthForDedicatedChannels(Node from) {
 		
-		double bw=0;
-		for(Channel ch: getChannels(from)) {
+		double bw = 0;
+		
+		for(Channel ch : getChannels(from)) {
 			if(ch.getChId() != -1) {
-				// chId == -1 : default channel
+				// chId == -1 => default channel.
 				bw += ch.getRequestedBandwidth();
 			}
 		}
+		
 		return bw;
 	}
 
 	public int getChannelCount(Node from) {
 		List<Channel> channels =  getChannels(from);
+		
 		return channels.size();
 	}
 	
 	public int getDedicatedChannelCount(Node from) {
-		int num=0;
-		for(Channel ch: getChannels(from)) {
+		int num = 0;
+		
+		for(Channel ch : getChannels(from)) {
 			if(ch.getChId() != -1) {
-				// chId == -1 : default channel
+				// chId == -1 => default channel.
 				num ++;
 			}
 		}
+		
 		return num;
 	}
 	
 	public int getSharedChannelCount(Node from) {
 		int num =  getChannels(from).size() - getDedicatedChannelCount(from);
+		
 		return num;
 	}
 	
@@ -202,14 +223,14 @@ public class Link {
 		double bw = this.getBw(from);
 		double dedicatedBw = getAllocatedBandwidthForDedicatedChannels(from);
 		
-		return bw-dedicatedBw;
+		return bw - dedicatedBw;
 	}
 
 	public double getFreeBandwidthForDedicatedChannel(Node from) {
 		double bw = this.getBw(from);
 		double dedicatedBw = getRequestedBandwidthForDedicatedChannels(from);
 		
-		return bw-dedicatedBw;
+		return bw - dedicatedBw;
 	}
 
 	public double getSharedBandwidthPerChannel(Node from, Node to) {
@@ -220,14 +241,27 @@ public class Link {
 	}
 
 	public String toString() {
-		return "Link:"+this.highOrder.toString() + " <-> "+this.lowOrder.toString() + ", upBW:" + upBW + ", Latency:"+ latency;
+		StringBuilder ret = new StringBuilder();
+		
+		ret.append("Link:");
+		ret.append(this.highOrder.toString());
+		ret.append(" <-> ");
+		ret.append(this.lowOrder.toString());
+		
+		ret.append(", upBW:");
+		ret.append(upBW);
+		
+		ret.append(", Latency:");
+		ret.append(latency);
+		
+		return ret.toString();
 	}
 	
 	public boolean isActive() {
-		if(this.upChannels.size() >0 || this.downChannels.size() >0)
+		if(this.upChannels.size() > 0 || this.downChannels.size() > 0) {
 			return true;
+		}
 
 		return false;
-		
 	}
 }

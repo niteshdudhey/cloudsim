@@ -26,7 +26,8 @@ public class BwProvisionerOverbooking extends BwProvisioner {
 
 	/** The bw table. */
 	private Map<String, Long> bwTable;
-	public static final double overbookingRatioBw = 1.0;	// 20% overbooking allowed for BW
+	
+	public static final double overbookingRatioBw = 1.0;	// 20% overbooking allowed for BW.
 
 	/**
 	 * Instantiates a new bw provisioner simple.
@@ -35,7 +36,7 @@ public class BwProvisionerOverbooking extends BwProvisioner {
 	 */
 	public BwProvisionerOverbooking(long bw) {
 		super(bw);
-		setAvailableBw((long) getOverbookedBw(bw));	//overwrite available BW to overbookable BW
+		setAvailableBw((long) getOverbookedBw(bw));	// Overwrite available BW to overbookable BW.
 		
 		setBwTable(new HashMap<String, Long>());
 	}
@@ -52,6 +53,7 @@ public class BwProvisionerOverbooking extends BwProvisioner {
 			setAvailableBw(getAvailableBw() - bw);
 			getBwTable().put(vm.getUid(), bw);
 			vm.setCurrentAllocatedBw(getAllocatedBwForVm(vm));
+			
 			return true;
 		}
 
@@ -68,6 +70,7 @@ public class BwProvisionerOverbooking extends BwProvisioner {
 		if (getBwTable().containsKey(vm.getUid())) {
 			return getBwTable().get(vm.getUid());
 		}
+		
 		return 0;
 	}
 
@@ -92,7 +95,7 @@ public class BwProvisionerOverbooking extends BwProvisioner {
 	public void deallocateBwForAllVms() {
 		super.deallocateBwForAllVms();
 		
-		setAvailableBw((long) getOverbookedBw(getBw()));	//Overbooking
+		setAvailableBw((long) getOverbookedBw(getBw()));	// Overbooking.
 		getBwTable().clear();
 	}
 
@@ -107,9 +110,11 @@ public class BwProvisionerOverbooking extends BwProvisioner {
 		long allocatedBw = getAllocatedBwForVm(vm);
 		boolean result = allocateBwForVm(vm, bw);
 		deallocateBwForVm(vm);
+		
 		if (allocatedBw > 0) {
 			allocateBwForVm(vm, allocatedBw);
 		}
+		
 		return result;
 	}
 

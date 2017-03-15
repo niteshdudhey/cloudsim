@@ -22,14 +22,14 @@ import org.cloudbus.cloudsim.core.CloudSimTags;
  */
 public abstract class Middlebox {
 	
-	Vm vm;
+	Vm vm;	
 	int mipsPerOp;
 	SDNHost host;
-	static int id=0;
+	static int id = 0;
 	
 	public Middlebox(Vm vm, int misPerOperation){
-		this.vm=vm;
-		this.mipsPerOp=misPerOperation;
+		this.vm = vm;
+		this.mipsPerOp = misPerOperation;
 	}
 	
 	public abstract void editRequest(Request req);
@@ -43,14 +43,14 @@ public abstract class Middlebox {
 	}
 	
 	public void setHost(SDNHost host){
-		this.host=host;
+		this.host = host;
 	}
 	
 	public void submitRequest(Request req){
-		Cloudlet cl = new Cloudlet(id++,mipsPerOp,1,0,0,new UtilizationModelFull(),new UtilizationModelFull(),new UtilizationModelFull());
+		Cloudlet cl = new Cloudlet(id++, mipsPerOp, 1, 0, 0, new UtilizationModelFull(), new UtilizationModelFull(), new UtilizationModelFull());
+		
 		cl.setVmId(vm.getId());
 		
 		host.schedule(host.getHost().getDatacenter().getId(), 0.0, CloudSimTags.CLOUDLET_SUBMIT, cl);
 	}
-
 }

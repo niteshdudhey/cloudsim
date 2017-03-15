@@ -36,11 +36,13 @@ public class RoutingTable {
 	
 	public void addRoute(Node destHost, Link to){
 		List<Link> links = table.get(destHost);
-		if(links == null)
-		{
+		
+		if(links == null) {
 			links = new ArrayList<Link>();
 		}
+		
 		links.add(to);
+		
 		table.put(destHost, links);
 	}
 	
@@ -50,8 +52,11 @@ public class RoutingTable {
 
 	public List<Link> getRoute(Node destHost) {
 		List<Link> links = table.get(destHost);
-		if(links == null)
+		
+		if(links == null) {
 			links = table.get(null);
+		}
+		
 		return links;
 	}
 	
@@ -60,9 +65,9 @@ public class RoutingTable {
 	}
 	
 	public void printRoutingTable() {
-		for(Node key:table.keySet()) {
-			for(Link l: table.get(key)) {
-				System.out.println("dst:"+key+" : "+l);
+		for(Node key : table.keySet()) {
+			for(Link l : table.get(key)) {
+				System.out.println("dst:" + key + " : " + l);
 			}
 		}
 	}

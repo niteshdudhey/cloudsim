@@ -9,7 +9,7 @@
 package org.cloudbus.cloudsim.sdn;
 
 /**
- * Represent edge switch
+ * Represent edge switch.
  * 
  * @author Jungmin Son
  * @author Rodrigo N. Calheiros

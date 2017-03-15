@@ -62,7 +62,40 @@ public class SDNDatacenter extends Datacenter {
 		
 	@Override
 	protected void processVmCreate(SimEvent ev, boolean ack) {
-		super.processVmCreate(ev, ack);
+		
+		Vm vm = (Vm) ev.getData();
+		
+		TimedVm tvm = (TimedVm) vm;
+		
+		// Used only to check the creation time.
+		System.out.println(CloudSim.clock() + " Creating VM " + vm.getUid() + " , Id " + vm.getId());
+		
+		boolean result = getVmAllocationPolicy().allocateHostForVm(vm, tvm.getCandidateHost().getHost());
+
+		if (ack) {
+			int[] data = new int[3];
+			data[0] = getId();
+			data[1] = vm.getId();
+
+			if (result) {
+				data[2] = CloudSimTags.TRUE;
+			}
+			else {
+				data[2] = CloudSimTags.FALSE;
+			}
+			
+			send(vm.getUserId(), CloudSim.getMinTimeBetweenEvents(), CloudSimTags.VM_CREATE_ACK, data);
+		}
+
+		if (result) {
+			getVmList().add(vm);
+
+			if (vm.isBeingInstantiated()) {
+				vm.setBeingInstantiated(false);
+			}
+
+			vm.updateVmProcessing(CloudSim.clock(), getVmAllocationPolicy().getHost(vm).getVmScheduler().getAllocatedMipsForVm(vm));
+		}
 		
 		if(ack) {
 			send(nos.getId(), CloudSim.getMinTimeBetweenEvents(), CloudSimTags.VM_CREATE_ACK, ev.getData());
@@ -71,6 +104,7 @@ public class SDNDatacenter extends Datacenter {
 	
 	@Override
 	public void processOtherEvent(SimEvent ev){
+		
 		switch(ev.getTag()){
 			case Constants.REQUEST_SUBMIT:
 				processRequest((Request) ev.getData());
@@ -107,7 +141,7 @@ public class SDNDatacenter extends Datacenter {
 			}
 		}
 	}
-	
+		
 	private void processRequest(Request req) {
 		// Request received from user. Send to SdnHost.
 		Activity ac = req.getNextActivity();

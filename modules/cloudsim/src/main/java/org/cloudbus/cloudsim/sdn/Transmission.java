@@ -22,16 +22,17 @@ package org.cloudbus.cloudsim.sdn;
  */
 public class Transmission implements Activity {
 	Package pkg;
+	
 	long amountToBeProcessed;
 	
 	public Transmission(int origin, int destination, long size, int flowId, Request payload) {
 		this.pkg = new Package(origin, destination, size, flowId, payload);
-		this.amountToBeProcessed=pkg.getSize();
+		this.amountToBeProcessed = pkg.getSize();
 	}
 	
 	public Transmission(Package pkg){
 		this.pkg = pkg;
-		this.amountToBeProcessed=pkg.getSize();
+		this.amountToBeProcessed = pkg.getSize();
 	}
 	
 	public long getSize(){
@@ -47,8 +48,11 @@ public class Transmission implements Activity {
 	 * @param completed amount of data completed since last update
 	 */
 	public void addCompletedLength(long completed){
-		amountToBeProcessed-=completed;
-		if (amountToBeProcessed<=0) amountToBeProcessed = 0;
+		amountToBeProcessed -= completed;
+		
+		if (amountToBeProcessed <= 0) {
+			amountToBeProcessed = 0;
+		}
 	}
 	
 	/**
@@ -56,10 +60,10 @@ public class Transmission implements Activity {
 	 * @return true if transmission finished; false otherwise
 	 */
 	public boolean isCompleted(){
-		return amountToBeProcessed==0;
+		return amountToBeProcessed == 0;
 	}
 	
 	public String toString() {
-		return "Transmission:"+this.pkg.toString();
+		return "Transmission:" + this.pkg.toString();
 	}
 }

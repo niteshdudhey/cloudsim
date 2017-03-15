@@ -16,5 +16,6 @@ package org.cloudbus.cloudsim.sdn.power;
  */
 public interface PowerUtilizationMaxHostInterface {
 	void logMaxNumHostsUsed();
+	
 	int getMaxNumHostsUsed();
 }

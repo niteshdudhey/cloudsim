@@ -62,6 +62,16 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	
 	protected PhysicalTopology topology;
 	
+	protected List<VirtualTopology> virtualTopologies;
+	
+	protected VdcEmbedder embedder;
+	
+	// Each broker/user is associated with one Datacenter.
+	protected Map<Integer, Integer> brokerIdToDatacenterIdMap;
+	
+	// Multiple Datacenters on one NOS.
+	protected Map<Integer, SDNDatacenter> datacenterIdToDatacenterMap;
+	
 	Hashtable<Package, Node> pkgTable;
 	
 	Hashtable<String, Channel> channelTable;
@@ -72,13 +82,10 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	
 	protected List<Switch> switches = new ArrayList<Switch>();
 	
+	// Some of these members could be redundant due to the introduction of VirtualTopologies.
+	// Could be removed later.
+	
 	int vmId = 0;
-	
-	// Each broker/user is associated with one Datacenter.
-	protected Map<Integer, Integer> brokerIdToDatacenterIdMap;
-	
-	// Multiple Datacenters on one NOS.
-	protected Map<Integer, SDNDatacenter> datacenterIdToDatacenterMap;
 	
 	protected LinkedList<Vm> vmList;
 	
@@ -97,26 +104,17 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	boolean isApplicationDeployed = false;
 	
 	// Resolution of the result.
-	public static double minTimeBetweenEvents = 0.001;	// in sec
+	public static double minTimeBetweenEvents = 0.001;		// in sec
 	public static int resolutionPlaces = 5;
-	public static int timeUnit = 1;	// 1: sec, 1000: msec
+	public static int timeUnit = 1;							// 1: sec, 1000: msec
 	
-	public PhysicalTopology getPhysicalTopology(){
-		return topology;
-	}
-
-	/**
-	 * 1. map VMs and middleboxes to hosts, add the new vm/mb to the vmHostTable, advise host, advise dc
-	 * 2. set channels and bws
-	 * 3. set routing tables to restrict hops to meet latency
-	 */
-	protected abstract boolean deployApplication(List<Vm> vms, List<Middlebox> middleboxes, List<Arc> links);
-	protected abstract Middlebox deployMiddlebox(String type, Vm vm);
-
-	public NetworkOperatingSystem(String physicalTopologyFileName) {
+	
+	public NetworkOperatingSystem(String physicalTopologyFileName, VdcEmbedder embedder) {
 		super("NOS");
 		
 		this.physicalTopologyFileName = physicalTopologyFileName;
+		this.embedder = embedder;
+		
 		this.pkgTable = new Hashtable<Package, Node>();
 		this.channelTable = new Hashtable<String, Channel>();
 		
@@ -124,6 +122,8 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		this.datacenterIdToDatacenterMap = new HashMap<Integer, SDNDatacenter>();
 		
 		initPhysicalTopology();
+		
+		virtualTopologies = new ArrayList<VirtualTopology>();
 		
 		vmNameIdTable = new HashMap<String, Integer>();
 		vmList = new LinkedList<Vm>();
@@ -136,6 +136,20 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		
 	}
 
+	public PhysicalTopology getPhysicalTopology(){
+		return topology;
+	}
+
+	/**
+	 * 1. map VMs and middleboxes to hosts, add the new vm/mb to the vmHostTable, advise host, advise dc
+	 * 2. set channels and bws
+	 * 3. set routing tables to restrict hops to meet latency
+	 */
+	// TODO: Need to remove the arguments that are redundant.
+	protected abstract boolean deployApplication(List<Vm> vms, List<Middlebox> middleboxes, List<Arc> links, VirtualTopology virtualTopology);
+	protected abstract Middlebox deployMiddlebox(String type, Vm vm);
+
+	
 	public static double getMinTimeBetweenNetworkEvents() {
 	    return minTimeBetweenEvents* timeUnit;
 	}
@@ -167,7 +181,6 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	public void processEvent(SimEvent ev) {
 		int tag = ev.getTag();
 		
-		System.out.println("handling event in NOS. Event Tag " + tag);
 		switch(tag){
 			case Constants.SDN_INTERNAL_PACKAGE_PROCESS: 
 				internalPackageProcess(); 
@@ -664,11 +677,15 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	private static int flowNumbers = 0;
 	
 	
+	// TODO: Change this to use Deserializer.
 	public boolean deployApplication(int userId, String vmsFileName){
 
-		LinkedList<Middlebox> mbList = new LinkedList<Middlebox>();
-		
 		int datacenterId = brokerIdToDatacenterIdMap.get(userId);
+		String datacenterName = datacenterIdToDatacenterMap.get(datacenterId).getName();
+		
+		VirtualTopology virtualTopology = new VirtualTopology(datacenterId, datacenterName);
+		
+		LinkedList<Middlebox> mbList = new LinkedList<Middlebox>();
 		
 		try {
     		JSONObject doc = (JSONObject) JSONValue.parse(new FileReader(vmsFileName));
@@ -721,9 +738,13 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 						// VM
 						Vm vm = new TimedVm(nodeName2, vmId, userId, datacenterId, mips, pes, ram, bw, size, "VMM", new CloudletSchedulerTimeShared(), starttime, endtime);
 						vmNameIdTable.put(nodeName2, vmId);
+						
 						NetworkOperatingSystem.debugVmIdName.put(vmId, nodeName2);
 						
 						vmList.add(vm);
+						
+						virtualTopology.addVm(vm);
+						
 						vmId++;
 					}
 					else{
@@ -784,7 +805,10 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 				}
 			}
     	
-			boolean result = deployApplication(vmList, mbList, arcList);
+			virtualTopologies.add(virtualTopology);
+			
+			boolean result = deployApplication(vmList, mbList, arcList, virtualTopology);
+			
 			if (result){
 				isApplicationDeployed = true;
 				return true;

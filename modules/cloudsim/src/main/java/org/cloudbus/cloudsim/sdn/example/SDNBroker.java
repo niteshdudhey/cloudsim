@@ -56,6 +56,8 @@ public class SDNBroker extends SimEntity {
 	@Override
 	public void startEntity() {
 		System.out.println("Starting Broker:" + this.getId());
+		// Replace the below line with the schedule() to schedule it to start at some different time.
+		// This will enable the datacenter to come up at a given time.
 		sendNow(this.datacenter.getId(), Constants.APPLICATION_SUBMIT, this.applicationFileName);
 	}
 	

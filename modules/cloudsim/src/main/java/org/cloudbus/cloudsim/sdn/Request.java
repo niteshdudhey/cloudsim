@@ -26,11 +26,11 @@ public class Request {
 	int userId;
 	LinkedList<Activity> activities;
 	
-	private LinkedList<Activity> removedActivites;	//Logging purpose only
+	private LinkedList<Activity> removedActivites;	// Logging purpose only.
 
 	public Request(long requestId, int userId){
-		this.requestId=requestId;
-		this.userId=userId;
+		this.requestId = requestId;
+		this.userId = userId;
 		this.activities = new LinkedList<Activity>();
 		
 		this.removedActivites = new LinkedList<Activity>();
@@ -46,7 +46,7 @@ public class Request {
 	}
 		
 	public boolean isFinished(){
-		return activities.size()==0;
+		return activities.size() == 0;
 	}
 	
 	public void addActivity(Activity act){
@@ -59,10 +59,13 @@ public class Request {
 	}
 	
 	public Transmission getNextTransmission() {
-		for(Activity act:activities) {
-			if(act instanceof Transmission)
+		for(Activity act : activities) {
+			
+			if(act instanceof Transmission) {
 				return (Transmission) act;
+			}
 		}
+		
 		return null;
 	}
 	
@@ -73,8 +76,17 @@ public class Request {
 
 		return act;
 	}
+	
 	public String toString() {
-		return "Request. UserID:"+ this.userId + ",Req ID:"+this.requestId;
+		StringBuilder ret = new StringBuilder();
+		
+		ret.append("Request. UserID:");
+		ret.append(this.userId);
+		
+		ret.append(", Req ID:");
+		ret.append(this.requestId);
+				
+		return ret.toString();
 	}
 	
 	public List<Activity> getRemovedActivities() {
