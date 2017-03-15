@@ -4,7 +4,9 @@
 package org.cloudbus.cloudsim.sdn;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.cloudbus.cloudsim.Host;
 import org.cloudbus.cloudsim.Log;
@@ -18,19 +20,43 @@ import org.cloudbus.cloudsim.Vm;
  */
 
 public class VdcEmbedderSimple implements VdcEmbedder {
+	
+	/** The map between each VM and its allocated host.
+     * The map key is a VM UID and the value is the allocated host for that VM. */
+	private Map<String, SDNHost> vmTable;
+
+	/** The map between each VM and the number of Pes used. 
+ 	* The map key is a VM UID and the value is the number of used Pes for that VM. */
+	private Map<String, Integer> usedPes;
+
+	/** The number of free Pes for each host from {@link #getHostList() }. */
+	private List<Integer> freePes;
+
+	@Override
+	public void init(PhysicalTopology topology){
 		
+		setFreePes(new ArrayList<Integer>());
+		
+		for (SDNHost sdnHost : topology.getHostList()) {
+			getFreePes().add(sdnHost.getHost().getNumberOfPes());
+		}
+
+		setVmTable(new HashMap<String, SDNHost>());
+		setUsedPes(new HashMap<String, Integer>());
+	}
+
+	// TODO: Handle case when VDC cannot be embedded.
 	@Override
 	public VdcEmbedding embed(PhysicalTopology physicalTopology, VirtualTopology virtualTopology) {
 		
-		System.out.println("In Embed function");
 		// The embedding to be returned.
 		VdcEmbedding embedding = new VdcEmbedding();
 		
-		List<Integer> freePes = new ArrayList<Integer>();
+		/*List<Integer> freePes = new ArrayList<Integer>();
 		
 		for(SDNHost host : physicalTopology.getHostList()){
 			freePes.add(host.getHost().getNumberOfFreePes());
-		}
+		}*/
 		
 		// Setting embeddings for VMs.
 		for(Vm vm : virtualTopology.getVms()){
@@ -60,7 +86,8 @@ public class VdcEmbedderSimple implements VdcEmbedder {
 					}
 				}
 
-				Host host = physicalTopology.getHostList().get(idx).getHost();
+				SDNHost sdnHost = physicalTopology.getHostList().get(idx);
+				Host host = sdnHost.getHost();
 				
 				if (host.getStorage() < vm.getSize()) {
 					System.out.println("Allocation of VM #" + vm.getId() + " to Host #" + host.getId() + 
@@ -79,8 +106,6 @@ public class VdcEmbedderSimple implements VdcEmbedder {
 					System.out.println("Allocation of VM #" + vm.getId() + " to Host #" + host.getId() +
 							" failed by BW");
 					
-					host.getRamProvisioner().deallocateRamForVm(vm);
-					
 					result = false;
 				}
 
@@ -88,19 +113,18 @@ public class VdcEmbedderSimple implements VdcEmbedder {
 					System.out.println("Allocation of VM #" + vm.getId() + " to Host #" + host.getId() +
 							" failed by MIPS");
 					
-					host.getRamProvisioner().deallocateRamForVm(vm);
-					host.getBwProvisioner().deallocateBwForVm(vm);
-					
 					result = false;
 				}
 				
 				// If VM were successfully created in the host.
 				if (result) {
-					freePes.set(idx, freePes.get(idx) - requiredPes);
+					
+					getVmTable().put(vm.getUid(), sdnHost);
+					getUsedPes().put(vm.getUid(), requiredPes);
+					getFreePes().set(idx, freePes.get(idx) - requiredPes);
 					
 					System.out.println("Allocating vm:" + vm.getId() + " to host:" + host.getId());
 					
-					SDNHost sdnHost = physicalTopology.getHostList().get(idx);
 					embedding.allocateVmToHost(vm.getId(), sdnHost.getId());
 					
 					break;
@@ -114,9 +138,46 @@ public class VdcEmbedderSimple implements VdcEmbedder {
 			} while (!result && tries < freePes.size());
 		}
 		
-		System.out.println("Embedding is as follows:");
-		System.out.println(embedding.toString());
+		//System.out.println("Embedding is as follows:");
+		//System.out.println(embedding.toString());
 		
 		return embedding;
+	}
+	
+	@Override
+	public void deallocateVm(PhysicalTopology topology, TimedVm tvm){
+
+		SDNHost sdnHost = getVmTable().remove(tvm.getUid());
+		
+		int idx = topology.getHostList().indexOf(sdnHost);
+		int pes = getUsedPes().remove(tvm.getUid());
+		
+		if (sdnHost != null) {
+			getFreePes().set(idx, getFreePes().get(idx) + pes);
+		}
+	}
+	
+	protected Map<String, SDNHost> getVmTable() {
+		return vmTable;
+	}
+
+	protected void setVmTable(Map<String, SDNHost> vmTable) {
+		this.vmTable = vmTable;
+	}
+
+	protected Map<String, Integer> getUsedPes() {
+		return usedPes;
+	}
+
+	protected void setUsedPes(Map<String, Integer> usedPes) {
+		this.usedPes = usedPes;
+	}
+
+	protected List<Integer> getFreePes() {
+		return freePes;
+	}
+
+	protected void setFreePes(List<Integer> freePes) {
+		this.freePes = freePes;
 	}
 }

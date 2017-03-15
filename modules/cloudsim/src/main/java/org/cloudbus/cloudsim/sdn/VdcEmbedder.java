@@ -9,6 +9,22 @@ package org.cloudbus.cloudsim.sdn;
  *
  */
 public interface VdcEmbedder {
-	// The method returns a VDCEmbedding of a VDC to a physical network.
+	
+	/**
+	 * The method initializes the embedder.
+	 */
+	public void init(PhysicalTopology topology);
+	
+	
+	/**
+	 * The method returns a VDCEmbedding of a VDC to a physical network.
+	 *  
+	 * @param physicalTopology
+	 * @param virtualTopology
+	 * @return
+	 */
 	public VdcEmbedding embed(PhysicalTopology physicalTopology, VirtualTopology virtualTopology);
+	
+	public void deallocateVm(PhysicalTopology topology, TimedVm tvm);
+	
 }

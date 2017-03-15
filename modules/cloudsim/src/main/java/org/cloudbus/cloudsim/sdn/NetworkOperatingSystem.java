@@ -190,6 +190,7 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 				break;
 			case CloudSimTags.VM_DESTROY:
 				processVmDestroyAck(ev);
+				embedder.deallocateVm(topology, (TimedVm) ev.getData());
 				break;
 			default: 
 				System.out.println("Unknown event received by " + super.getName() + ". Tag:" + ev.getTag());
@@ -670,6 +671,9 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		}
 		
 		topology.buildDefaultRouting();
+		
+		// Initialize the embedder to get ready to serve VDC requests.
+		embedder.init(topology);
 	}
 	
 	// Used to assign flow Ids to Arcs.
