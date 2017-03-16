@@ -31,6 +31,8 @@ import org.cloudbus.cloudsim.core.CloudSim;
 public class Channel {
 	private List<Node> nodes;
 	private List<Link> links;
+	private TimedVm src;
+	private TimedVm dst;
 
 	private double allocatedBandwidth; // Actual bandwidth allocated to the channel
 	private double previousTime;
@@ -47,16 +49,21 @@ public class Channel {
 	private final int chId;
 	private final double requestedBandwidth;	// Requested by user
 	
-	public Channel(String name, int chId, int srcId, int dstId, List<Node> nodes, List<Link> links, double bandwidth, String srcName, String dstName) {
+	public Channel(String name, int chId, int srcId, TimedVm src, int dstId, TimedVm dst, List<Node> nodes, List<Link> links, double bandwidth, String srcName, String dstName) {
 		this.name = name;
 		this.srcName = srcName;
 		this.dstName = dstName;
 		this.chId = chId;
 		this.srcId = srcId;
+		this.src = src;
+		this.dst = dst;
 		this.dstId = dstId;
 		this.nodes = nodes;
 		this.links = links;
-		this.allocatedBandwidth = bandwidth;
+		this.inTransmission = new LinkedList<Transmission>();
+		this.completed = new LinkedList<Transmission>();
+		updateTransmissionCPU(0, bandwidth);
+//		this.allocatedBandwidth = bandwidth;
 		this.requestedBandwidth = bandwidth;
 		this.inTransmission = new LinkedList<Transmission>();
 		this.completed = new LinkedList<Transmission>();
@@ -188,7 +195,8 @@ public class Channel {
 		}
 		
 		boolean isChanged = this.updatePackageProcessing();
-		this.allocatedBandwidth=newBandwidth;
+		updateTransmissionCPU(allocatedBandwidth, newBandwidth);
+//		this.allocatedBandwidth=newBandwidth;
 		
 		return isChanged;
 	}
@@ -208,6 +216,17 @@ public class Channel {
 	
 	public int getActiveTransmissionNum() {
 		return inTransmission.size();
+	}
+	
+	public void updateTransmissionCPU(double oldbw, double newbw) {
+		
+		allocatedBandwidth = newbw;
+		if (getActiveTransmissionNum()>0) {
+			newbw = Math.min(newbw, Math.min(src.getPossibleSendBWFromCPU(), dst.getPossibleRecvBWFromCPU()));
+			allocatedBandwidth = newbw;
+			src.updateSendCPU(oldbw, allocatedBandwidth);
+			dst.updateRecvCPU(oldbw, allocatedBandwidth);
+		}
 	}
 	
 	/**
@@ -240,6 +259,12 @@ public class Channel {
 		}
 		
 		this.inTransmission.removeAll(completedTransmissions);
+		
+		if(this.inTransmission.isEmpty()) {
+			src.updateSendCPU(allocatedBandwidth, 0);
+			dst.updateRecvCPU(allocatedBandwidth, 0);
+		}
+		
 		previousTime = currentTime;
 
 		Log.printLine(CloudSim.clock() + ": Channel.updatePackageProcessing() (" + this.toString() + "):Time spent:" + timeSpent + 
@@ -301,11 +326,18 @@ public class Channel {
 	 * 
 	 */
 	public double addTransmission(Transmission transmission){
+		boolean first = false;
 		if(this.inTransmission.isEmpty()) {
 			previousTime=CloudSim.clock();
+			first = true;
 		}
 		
 		this.inTransmission.add(transmission);
+		
+		if (first) {
+			updateTransmissionCPU(0, allocatedBandwidth);
+		}
+		
 		double eft = estimateFinishTime(transmission);
 
 		return eft;
@@ -318,6 +350,10 @@ public class Channel {
 	 */
 	public void removeTransmission(Transmission transmission){
 		inTransmission.remove(transmission);
+		if(this.inTransmission.isEmpty()) {
+			src.updateSendCPU(allocatedBandwidth, 0);
+			dst.updateRecvCPU(allocatedBandwidth, 0);
+		}
 	}
 
 	/**

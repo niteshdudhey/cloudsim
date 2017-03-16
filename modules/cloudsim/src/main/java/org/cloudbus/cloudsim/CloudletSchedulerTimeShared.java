@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.cloudbus.cloudsim.core.CloudSim;
+import org.cloudbus.cloudsim.core.CloudSimTags;
 
 /**
  * CloudletSchedulerTimeShared implements a policy of scheduling performed by a virtual machine
@@ -27,6 +28,9 @@ public class CloudletSchedulerTimeShared extends CloudletScheduler {
          * according to the mips share provided to it by
          * {@link #updateVmProcessing(double, java.util.List)} method. */
 	protected int currentCPUs;
+	
+	protected double sendCPU;
+	protected double recvCPU;
 
 	/**
 	 * Creates a new CloudletSchedulerTimeShared object. This method must be invoked before starting
@@ -38,6 +42,8 @@ public class CloudletSchedulerTimeShared extends CloudletScheduler {
 	public CloudletSchedulerTimeShared() {
 		super();
 		currentCPUs = 0;
+		sendCPU = 0.0;
+		recvCPU = 0.0;
 	}
 
 	@Override
@@ -105,6 +111,14 @@ public class CloudletSchedulerTimeShared extends CloudletScheduler {
 		int pesInUse = 0;
 		for (ResCloudlet rcl : getCloudletExecList()) {
 			pesInUse += rcl.getNumberOfPes();
+		}
+		
+		if (capacity-sendCPU-recvCPU >= 0) {
+			capacity = capacity-sendCPU-recvCPU;
+		}
+		else {
+			System.err.println("CloudletSchedulerTimeShared.getCapacity: PEs overloaded with transmission");
+			capacity = 0; 
 		}
 
 		if (pesInUse > currentCPUs) {
@@ -291,7 +305,18 @@ public class CloudletSchedulerTimeShared extends CloudletScheduler {
 		if (cloudletExecList.size() > 0) {
 			return 1.0;
 		} else {
+			if (getCurrentMipsShare()!=null) {
+				double totalAllocatedMips = 0.0;
+				for (double mips: getCurrentMipsShare()) {
+					totalAllocatedMips += mips;
+				}
+				if (totalAllocatedMips==0) {
+					return 0.0;
+				}
+				return (sendCPU+recvCPU)/totalAllocatedMips;
+			}
 			return 0.0;
+			
 		}
 	}
 
@@ -366,6 +391,43 @@ public class CloudletSchedulerTimeShared extends CloudletScheduler {
 			bw += cloudlet.getCloudlet().getUtilizationOfBw(CloudSim.clock());
 		}
 		return bw;
+	}
+	
+	public double getSendCPU() {
+		return sendCPU;
+	}
+	
+	public double getRecvCPU() {
+		return recvCPU;
+	}
+	
+	public void setSendCPU(double mips, int id) {
+		if (getCurrentMipsShare()!=null) {
+			double nextTime = updateVmProcessing(CloudSim.clock(), getCurrentMipsShare());
+			if (CloudSim.running() && nextTime != 0.0 && nextTime != Double.MAX_VALUE) {
+				CloudSim.send(id, id, (nextTime - CloudSim.clock()), CloudSimTags.VM_DATACENTER_EVENT, null);
+			}
+		}
+		sendCPU = mips;
+		return;
+	}
+	
+	public void setRecvCPU(double mips, int id) {
+		if (getCurrentMipsShare()!=null) {
+			double nextTime = updateVmProcessing(CloudSim.clock(), getCurrentMipsShare());
+			if (CloudSim.running() && nextTime != 0.0 && nextTime != Double.MAX_VALUE) {
+				CloudSim.send(id, id, (nextTime - CloudSim.clock()), CloudSimTags.VM_DATACENTER_EVENT, null);
+			}
+		}
+		recvCPU = mips;
+		return;
+	}
+	
+	public double getProcessingCPU() {
+		if (getCurrentMipsShare()!=null) {
+			return getCapacity(getCurrentMipsShare())*currentCPUs;
+		}
+		return 0.0;
 	}
 
 }

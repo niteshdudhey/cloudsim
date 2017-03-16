@@ -230,6 +230,8 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 		// Print the created VM info.
 		TimedVm vm = (TimedVm) ev.getData();
 		SDNHost host = this.findSDNHost(vm.getId());
+		vm.setMipsPerSendBW(host.getMipsPerSendBW());
+		vm.setMipsPerRecvBW(host.getMipsPerRecvBW());
 		
 		Log.printLine(CloudSim.clock() + ": " + getName() 
 				+ ": VM Created: " +  vm.getId() + " in " + host);

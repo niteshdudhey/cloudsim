@@ -58,6 +58,10 @@ public class SDNHost extends SimEntity implements Node {
 	NetworkOperatingSystem nos;
 
 	private List<FullHostStateHistoryEntry> fullStateHistory;
+	
+	private double mipsPerSendBW;
+	
+	private double mipsPerRecvBW;
 
 	SDNHost(String name, Host host, NetworkOperatingSystem nos){
 		//super("Host" + host.getId());
@@ -72,6 +76,8 @@ public class SDNHost extends SimEntity implements Node {
 		this.forwardingTable = new ForwardingRule();
 		this.routingTable = new RoutingTable();
 		this.fullStateHistory = new LinkedList<FullHostStateHistoryEntry>();
+		mipsPerSendBW = 0.0;
+		mipsPerRecvBW = 0.0;
 	}
 	
 	public Host getHost(){
@@ -395,5 +401,23 @@ public class SDNHost extends SimEntity implements Node {
 	@Override
 	public RoutingTable getRoutingTable() {
 		return this.routingTable;
+	}
+	
+	public double getMipsPerSendBW() {
+		return mipsPerSendBW;
+	}
+	
+	public double getMipsPerRecvBW() {
+		return mipsPerRecvBW;
+	}
+	
+	public void setMipsPerSendBW(double mips) {
+		mipsPerSendBW = mips;
+		return;
+	}
+	
+	public void setMipsPerRecvBW(double mips) {
+		mipsPerRecvBW = mips;
+		return;
 	}
 }

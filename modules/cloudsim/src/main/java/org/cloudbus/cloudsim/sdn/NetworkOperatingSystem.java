@@ -455,7 +455,10 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 			Log.printLine(CloudSim.clock() + ": " + getName() + ": Free bandwidth is less than required.(" + getKey(src, dst, flowId) + "): ReqBW=" + reqBw + "/ Free=" + lowestBw);
 		}
 		
-		Channel channel = new Channel(chName, flowId, src, dst, nodes, links, reqBw, debugVmIdName.get(src), debugVmIdName.get(dst));
+		TimedVm upvm = (TimedVm) findVm(src);
+		TimedVm downvm = (TimedVm) findVm(dst);
+		
+		Channel channel = new Channel(chName, flowId, src, upvm, dst, downvm, nodes, links, reqBw, debugVmIdName.get(src), debugVmIdName.get(dst));
 
 		return channel;
 	}
@@ -632,6 +635,16 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 						looplat = (Double) node.get("latency");
 					}
 					
+					double mipsForSend = 0;
+					if (node.get("sendmips")!= null) {
+						mipsForSend = new BigDecimal((Long)node.get("sendmips")).intValueExact();
+					}
+					
+					double mipsForRecv = 0;
+					if (node.get("recvmips")!= null) {
+						mipsForRecv = new BigDecimal((Long)node.get("recvmips")).intValueExact();
+					}
+					
 					// Number of hosts with same specification.
 					// Name of hosts will be <original name><number(0..n-1)>
 					for(int n = 0 ; n < num ; n++) {
@@ -644,6 +657,9 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 						Host host = createHost(hostId, ram, bw, storage, pes, mips);
 						
 						SDNHost sdnHost = new SDNHost(nodeName2, host, this);
+						sdnHost.setMipsPerSendBW(mipsForSend/bw);
+						sdnHost.setMipsPerRecvBW(mipsForRecv/bw);
+						
 						hostNameIdTable.put(nodeName2, hostId);
 						nameIdTable.put(nodeName2, sdnHost.getAddress());
 						
