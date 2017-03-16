@@ -117,6 +117,8 @@ public class PhysicalTopology {
 								higherNode.addRoute(destination, l);
 							}
 						}
+						
+						higherNode.addRoute(lowerNode, l);
 					}
 				}
 			}
@@ -140,6 +142,8 @@ public class PhysicalTopology {
 								core.addRoute(destination, l);
 							}
 						}
+						
+						core.addRoute(agg, l);
 					}
 				}
 			}

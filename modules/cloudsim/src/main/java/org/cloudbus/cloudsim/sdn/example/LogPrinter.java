@@ -28,7 +28,10 @@ import org.cloudbus.cloudsim.sdn.Request;
 import org.cloudbus.cloudsim.sdn.SDNHost;
 import org.cloudbus.cloudsim.sdn.Switch;
 import org.cloudbus.cloudsim.sdn.Transmission;
+import org.cloudbus.cloudsim.sdn.VSwitch;
+import org.cloudbus.cloudsim.sdn.VSwitchStateHistoryEntry;
 import org.cloudbus.cloudsim.sdn.Switch.HistoryEntry;
+import org.cloudbus.cloudsim.sdn.SwitchStateHistoryEntry;
 import org.cloudbus.cloudsim.sdn.power.PowerUtilizationHistoryEntry;
 import org.cloudbus.cloudsim.sdn.power.PowerUtilizationInterface;
 import com.google.common.collect.Table;
@@ -332,7 +335,7 @@ public class LogPrinter {
                     addToDataFile("Host-" + host.getName() + "-Available-MIPS.dat", entry.getTime(), entry.getAvailableMips());
                     addToDataFile("Host-" + host.getName() + "-Requested-MIPS.dat", entry.getTime(), entry.getRequestedMips());
                     addToDataFile("Host-" + host.getName() + "-RAM-Util.dat", entry.getTime(), entry.getRamUtil());
-                    addToDataFile("Host-" + host.getName() + "-BW-Util.dat", entry.getTime(), entry.getBwUtil());
+//                    addToDataFile("Host-" + host.getName() + "-BW-Util.dat", entry.getTime(), entry.getBwUtil());
                     addToDataFile("Host-" + host.getName() + "-Up-BW-Util.dat", entry.getTime(), entry.getUpBwUtil());
                     addToDataFile("Host-" + host.getName() + "-Down-BW-Util.dat", entry.getTime(), entry.getDownBwUtil());
                     addToDataFile("Host-" + host.getName() + "-CPU-Util.dat", entry.getTime(), entry.getCpuUtil());
@@ -364,7 +367,7 @@ public class LogPrinter {
                     addToDataFile("VM-" + vm.getId() + "-Available-MIPS.dat", entry.getTime(), entry.getAllocatedMips());
                     addToDataFile("VM-" + vm.getId() + "-Requested-MIPS.dat", entry.getTime(), entry.getRequestedMips());
                     addToDataFile("VM-" + vm.getId() + "-RAM-Util.dat", entry.getTime(), entry.getRamUtil());
-                    addToDataFile("VM-" + vm.getId() + "-BW-Util.dat", entry.getTime(), entry.getBwUtil());
+//                    addToDataFile("VM-" + vm.getId() + "-BW-Util.dat", entry.getTime(), entry.getBwUtil());
                     addToDataFile("VM-" + vm.getId() + "-Up-BW-Util.dat", entry.getTime(), entry.getUpBwUtil());
                     addToDataFile("VM-" + vm.getId() + "-Down-BW-Util.dat", entry.getTime(), entry.getDownBwUtil());
                     addToDataFile("VM-" + vm.getId() + "-CPU-Util.dat", entry.getTime(), entry.getCpuUtil());
@@ -394,6 +397,50 @@ public class LogPrinter {
     			for(LinkStateHistoryEntry entry : stateHistory){
     				fw.write("Time = " + entry.getTime() + "\n" + entry.toString() + "\n");
     				addToDataFile("Link-" + link.getName() + "-Available-BW.dat", entry.getTime(), entry.getAvailableBw());
+    			}
+    		}
+            fw.close();
+		} catch(Exception e) {
+			System.out.println(e);
+		}
+	}
+	
+	public static void printSwitchMetricsToFile(List<Switch> switchList) {
+		String fileName = folderName + "metrics_switch.txt";
+		try {
+			File file = new File(fileName);
+            if (!file.exists()) {
+                file.createNewFile();
+            }
+            FileWriter fw = new FileWriter(file.getAbsoluteFile(), false);
+            for (Switch pswitch: switchList) {
+    			fw.write("Switch " + pswitch.getName() + "\n");
+    			fw.write("--------\n");
+    			for (SwitchStateHistoryEntry entry : pswitch.getSwitchStateHistory()) {
+    				fw.write("Time = " + entry.getTime() + "\n" + entry.toString() + "\n");
+    				addToDataFile("Switch-" + pswitch.getName() + "-Num-Packets.dat", entry.getTime(), entry.getPacketsTransferred());                    
+    			}
+    		}
+            fw.close();
+		} catch(Exception e) {
+			System.out.println(e);
+		}
+	}
+	
+	public static void printVSwitchMetricsToFile(List<VSwitch> vswitchList) {
+		String fileName = folderName + "metrics_vswitch.txt";
+		try {
+			File file = new File(fileName);
+            if (!file.exists()) {
+                file.createNewFile();
+            }
+            FileWriter fw = new FileWriter(file.getAbsoluteFile(), false);
+            for (VSwitch vswitch: vswitchList) {
+    			fw.write("VSwitch " + vswitch.getName() + "\n");
+    			fw.write("--------\n");
+    			for (VSwitchStateHistoryEntry entry : vswitch.getVSwitchStateHistory()) {
+    				fw.write("Time = " + entry.getTime() + "\n" + entry.toString() + "\n");
+    				addToDataFile("VSwitch-" + vswitch.getName() + "-Num-Packets.dat", entry.getTime(), entry.getPacketsTransferred());                    
     			}
     		}
             fw.close();

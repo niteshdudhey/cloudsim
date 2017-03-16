@@ -207,6 +207,8 @@ public class SDNExample {
 		LogPrinter.printHostMetricsToFile(nos.getSDNHostList());
 		LogPrinter.printVmMetricsToFile(nos.getVmList());
 		LogPrinter.printLinkMetricsToFile(nos.getPhysicalTopology().getLinks());
+		LogPrinter.printSwitchMetricsToFile(nos.getSwitchList());
+		LogPrinter.printVSwitchMetricsToFile(nos.getVSwitchList());
 	}
 	
 	public static void submitWorkloads(SDNBroker broker) {

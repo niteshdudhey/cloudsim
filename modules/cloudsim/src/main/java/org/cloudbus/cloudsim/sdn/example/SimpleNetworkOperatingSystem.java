@@ -114,16 +114,24 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 	}
 	
 	public boolean deployFlowVms(List<Arc> links) {
+		System.out.println("Reached deployFlowVms()");
 		for(Arc link : links) {
 			int src = link.getSrcId();
 			int dst = link.getDstId();
 			int flowId = link.getFlowId();
 			
+			System.out.println(src + " " + dst + " " + flowId);
+			
 			SDNHost srchost = findSDNHost(src);
 			SDNHost dsthost = findSDNHost(dst);
 			
 			Switch srcSwitch = findSwitch(src);
-			Switch dstSwitch = findSwitch(dst); 
+			Switch dstSwitch = findSwitch(dst);
+			
+			System.out.println(srchost);
+			System.out.println(dsthost);
+			System.out.println(srcSwitch);
+			System.out.println(dstSwitch);
 			
 			if (srchost == null && srcSwitch == null) {
 				continue;
@@ -132,7 +140,7 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 			if (dsthost == null && dstSwitch == null) {
 				continue;
 			}
-			
+						
 			if(srchost != null && dsthost != null && srchost.equals(dsthost)) {
 				Log.printLine(CloudSim.clock() + ": " + getName() + ": Source SDN Host is same as Destination. Go loopback");
 				
@@ -210,10 +218,14 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 				if (checkFlowExists(srcId, dstId)) {
 					continue;
 				}
-				flowNumbers++;
-				flowId = flowNumbers;
 				SDNHost srcHost = findSDNHost(srcId);
 				SDNHost dstHost = findSDNHost(dstId);
+				if (srcHost == null || dstHost == null) {
+					continue;
+				}
+				System.out.println("Creating flow b/w " + srcId + " " + dstId);
+				flowNumbers++;
+				flowId = flowNumbers;
 				if (srcHost.equals(dstHost)) {
 					srcHost.addVMRoute(srcId, dstId, flowId, dstHost);
 				} else {
@@ -277,6 +289,8 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 		
 		List<Link> nextLinks = node.getRoute(dest);
 		
+		System.out.println(node.toString());
+		System.out.println(dest.toString());
 		Link nextLink = selectLinkByFlow(nextLinks, flowId);
 		Node nextHop = nextLink.getOtherNode(node);
 				
@@ -374,7 +388,19 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 		
 		Log.printLine(CloudSim.clock() + ": " + getName() 
 				+ ": VM Created: " +  vm.getId() + " in " + host);
+		
 		deployFlowVms(this.arcList);
+		createNewFlows();
+	}
+	
+	@Override
+	public void processVSwitchCreateAck(SimEvent ev) {
+		VSwitch vswitch = (VSwitch) ev.getData();
+		Switch pswitch = vswitch.getSwitch();
+		
+		Log.printLine(CloudSim.clock() + ": " + getName() 
+				+ ": VSwitch Created: " +  vswitch.getName() + " in " + pswitch.getName());
+
 		createNewFlows();
 	}
 		

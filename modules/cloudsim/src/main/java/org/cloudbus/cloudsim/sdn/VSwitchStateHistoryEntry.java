@@ -11,6 +11,13 @@ public class VSwitchStateHistoryEntry {
 		this.numPackets = numPackets;
 	}
 	
+	public String toString() {
+		String str = "";
+		str += "Num Packets = " + Long.toString(getPacketsTransferred());
+		str += "\n";
+		return str;
+	}
+	
 	public double getTime() {
 		return time;
 	}

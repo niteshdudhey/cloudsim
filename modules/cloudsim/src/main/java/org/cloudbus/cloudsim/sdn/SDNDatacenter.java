@@ -127,8 +127,9 @@ public class SDNDatacenter extends Datacenter {
 				break;
 			case CloudSimTags.VSWITCH_DESTROY:
 				processVSwitchDestroy(ev, false);
+				break;
 			default: 
-				System.out.println("Unknown event recevied by SdnDatacenter. Tag:" + ev.getTag());
+				System.out.println("Unknown event received by SdnDatacenter. Tag:" + ev.getTag());
 		}
 	}
 

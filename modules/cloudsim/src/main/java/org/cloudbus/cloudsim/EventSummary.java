@@ -5,6 +5,8 @@ import java.util.List;
 
 import org.cloudbus.cloudsim.sdn.Link;
 import org.cloudbus.cloudsim.sdn.SDNHost;
+import org.cloudbus.cloudsim.sdn.Switch;
+import org.cloudbus.cloudsim.sdn.VSwitch;
 
 import com.google.common.collect.Table;
 
@@ -17,6 +19,10 @@ public class EventSummary {
 	private static List<SDNHost> sdnHostList;
 	
 	private static Collection<Link> links;
+	
+	private static List<Switch> switchList;
+	
+	private static List<VSwitch> vswitchList;
 		
 	public EventSummary(List<Vm> vmList, List<Host> hostList) {
 		EventSummary.vmList = vmList;
@@ -50,6 +56,16 @@ public class EventSummary {
 		if (links != null) {
 			for (Link link: links) {
 				link.storeCurrentState(time);
+			}
+		}
+		if (switchList != null) {
+			for (Switch pswitch: switchList) {
+				pswitch.storeCurrentState(time);
+			}
+		}
+		if (vswitchList != null) {
+			for (VSwitch vswitch: vswitchList) {
+				vswitch.storeCurrentState(time);
 			}
 		}
 	}
@@ -106,6 +122,32 @@ public class EventSummary {
 		}
 	}
 	
+	public static void setSwitchList(List<Switch> switchList) {
+		System.out.println("Event Summary Class Switches");
+		System.out.println("============================");
+		EventSummary.switchList = switchList;
+		for (Switch pswitch: switchList) {
+			if (pswitch != null) {
+				System.out.println("Host ID = " + pswitch.getName());
+			} else {
+				System.out.println("Null VSwitch in vmlist");
+			}
+		}
+	}
+	
+	public static void setVSwitchList(List<VSwitch> vswitchList) {
+		System.out.println("Event Summary Class VSwitches");
+		System.out.println("=============================");
+		EventSummary.vswitchList = vswitchList;
+		for (VSwitch vswitch: vswitchList) {
+			if (vswitch != null) {
+				System.out.println("Host ID = " + vswitch.getName());
+			} else {
+				System.out.println("Null VSwitch in vmlist");
+			}
+		}
+	}
+	
 	public List<? extends Vm> getVmList() {
 		return vmList;
 	}
@@ -121,4 +163,13 @@ public class EventSummary {
 	public Collection<Link> getLinks() {
 		return links;
 	}
+	
+	public List<Switch> getSwitchList() {
+		return switchList;
+	}
+	
+	public List<VSwitch> getVSwitchList() {
+		return vswitchList;
+	}
+	
 }

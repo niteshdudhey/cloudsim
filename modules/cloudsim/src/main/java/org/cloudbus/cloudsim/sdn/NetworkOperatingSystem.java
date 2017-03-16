@@ -159,6 +159,7 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		
 		EventSummary.setSDNHostList(sdnhosts);
 		EventSummary.setLinks(getPhysicalTopology().getAllLinks());
+		EventSummary.setSwitchList(switches);
 	}
 
 	public static double getMinTimeBetweenNetworkEvents() {
@@ -243,12 +244,26 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		
 	}
 	
+	// Important TODO: Need to remove all channels that are transmitting 
+	// through the given virtual switch
 	public void processVSwitchDestroyAck(SimEvent ev) {
-		VSwitch vswitch = (VSwitch) ev.getData();
+		VSwitch destroyedVSwitch = (VSwitch) ev.getData();
 		
-		if (getVSwitchList().contains(vswitch)) {
-			getVSwitchList().remove(vswitch);
+		// Remove all channels transferring data from or to this VSwitch.
+		for(VSwitch vswitch : this.vswitchList) {
+//			Channel ch = this.findChannel(vm.getId(), destroyedVm.getId(), -1);
+//			
+//			if(ch != null) {
+//				this.removeChannel(getKey(vm.getId(), destroyedVm.getId(), -1));
+//			}
+//
+//			ch = this.findChannel(destroyedVm.getId(), vm.getId(), -1);
+//			if(ch != null) {
+//				this.removeChannel(getKey(destroyedVm.getId(), vm.getId(), -1));
+//			}
 		}
+		
+//		sendInternalEvent();
 	}
 
 	public void addPackageToChannel(Node sender, Package pkg) {
@@ -994,6 +1009,7 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 			}
 			
 			EventSummary.setVmList(vmList);
+			EventSummary.setVSwitchList(vswitchList);
     	
 			boolean result = deployApplication(vmList, mbList, arcList, vswitchList);
 			if (result){
@@ -1024,6 +1040,11 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	
 	public int getFlowIdForVms(int srcId, int dstId) {
 		for (Arc arc: newFlows) {
+			if (arc.getSrcId() == srcId && arc.getDstId() == dstId) {
+				return arc.getFlowId();
+			}
+		}
+		for (Arc arc: arcList) {
 			if (arc.getSrcId() == srcId && arc.getDstId() == dstId) {
 				return arc.getFlowId();
 			}
