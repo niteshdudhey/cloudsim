@@ -45,10 +45,18 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 	}
 
 	@Override
-	public boolean deployApplication(List<Vm> vms, List<Middlebox> middleboxes, List<Arc> links, VirtualTopology virtualTopology) {
+	public boolean deployApplication(
+			List<Vm> vms, List<Middlebox> middleboxes, List<Arc> links, 
+			VirtualTopology virtualTopology) {
+		
 		Log.printLine(CloudSim.clock() + ": " + getName() + ": Starting deploying application..");
 		
 		VdcEmbedding embedding = embedder.embed(topology, virtualTopology);
+		
+		if(!isValidEmbedding(embedding, virtualTopology)){
+			System.out.println("Embedding Failed!!!");
+			return false;
+		}
 		
 		HashMap<Integer, Vm> vms1 = virtualTopology.getVmsTable();
 		
@@ -90,6 +98,21 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 		}*/
 		
 		return true;
+	}
+	
+	/**
+	 * Returns true if each VM is allocated to some host.
+	 * 
+	 * @param embedding
+	 * @param virtualTopology
+	 * @return
+	 */
+	private boolean isValidEmbedding(VdcEmbedding embedding, VirtualTopology virtualTopology){
+		if (embedding.getVmToHostMappings().size() == virtualTopology.getVms().size()) {
+			return true;
+		}
+		
+		return false;
 	}
 	
 	public boolean deployFlow(List<Arc> links) {

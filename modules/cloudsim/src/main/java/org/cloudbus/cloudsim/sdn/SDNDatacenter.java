@@ -160,8 +160,15 @@ public class SDNDatacenter extends Datacenter {
 	}
 	
 	private void processApplication(int userId, String filename) {
-		nos.deployApplication(userId, filename);
-		send(userId, CloudSim.getMinTimeBetweenEvents(), Constants.APPLICATION_SUBMIT_ACK, filename);
+		boolean result = nos.deployApplication(userId, filename);
+		
+		if (result) {
+			// Deploying workload.
+			send(userId, CloudSim.getMinTimeBetweenEvents(), Constants.APPLICATION_SUBMIT_ACK, filename);
+		}
+		else {
+			System.out.println("Could not deploy Virtual Datacenter");
+		}
 	}
 	
 	public Map<String, Integer> getVmNameIdTable() {
