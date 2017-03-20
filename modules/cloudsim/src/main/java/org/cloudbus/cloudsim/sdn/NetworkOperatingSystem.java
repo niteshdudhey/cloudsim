@@ -8,8 +8,11 @@
 
 package org.cloudbus.cloudsim.sdn;
 
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
@@ -36,10 +39,22 @@ import org.cloudbus.cloudsim.provisioners.BwProvisionerSimple;
 import org.cloudbus.cloudsim.provisioners.PeProvisionerSimple;
 import org.cloudbus.cloudsim.provisioners.RamProvisioner;
 import org.cloudbus.cloudsim.provisioners.RamProvisionerSimple;
+import org.cloudbus.cloudsim.sdn.datacenterSpecifications.HostSpec;
+import org.cloudbus.cloudsim.sdn.datacenterSpecifications.LinkSpec;
+import org.cloudbus.cloudsim.sdn.datacenterSpecifications.PdcSpec;
+import org.cloudbus.cloudsim.sdn.datacenterSpecifications.SwitchSpec;
+import org.cloudbus.cloudsim.sdn.datacenterSpecifications.VLinkSpec;
+import org.cloudbus.cloudsim.sdn.datacenterSpecifications.VdcSpec;
+import org.cloudbus.cloudsim.sdn.datacenterSpecifications.VmSpec;
 import org.cloudbus.cloudsim.sdn.example.policies.VmSchedulerTimeSharedEnergy;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonIOException;
+import com.google.gson.JsonSyntaxException;
 
 /**
  * NOS calculates and estimates network behaviour. It also mimics SDN Controller functions.  
@@ -58,6 +73,8 @@ import org.json.simple.JSONValue;
  */
 public abstract class NetworkOperatingSystem extends SimEntity {
 
+	static final int MAX_PORTS = 256;
+	
 	String physicalTopologyFileName; 
 	
 	protected PhysicalTopology topology;
@@ -537,6 +554,25 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		return sdnhost.getAddress();
 	}
 	
+	protected Host createHost(int hostId, HostSpec hostSpec) {
+		LinkedList<Pe> peList = new LinkedList<Pe>();
+		int peId = 0;
+		
+		for(int i = 0 ; i < hostSpec.getPes() ; i++) {
+			peList.add(new Pe(peId++, new PeProvisionerSimple(hostSpec.getMips())));
+		}
+		
+		RamProvisioner ramPro = new RamProvisionerSimple(hostSpec.getRam());
+		BwProvisioner bwPro = new BwProvisionerSimple(hostSpec.getBw());
+		VmScheduler vmScheduler = new VmSchedulerTimeSharedEnergy(peList);		
+		
+		Host newHost = new Host(hostId, ramPro, bwPro, hostSpec.getStorage(), peList, vmScheduler);
+		
+		return newHost;		
+	}
+	
+	// Depricated.
+	// Not removed because it is overloaded in OverbookingNetworkOperating System.
 	protected Host createHost(int hostId, int ram, long bw, long storage, long pes, double mips) {
 		LinkedList<Pe> peList = new LinkedList<Pe>();
 		int peId = 0;
@@ -554,6 +590,26 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		return newHost;		
 	}
 	
+	protected Switch createSwitch(SwitchSpec switchSpec){
+		Switch sw = null;
+		
+		switch(switchSpec.getType()){
+		case "core":
+			sw = new CoreSwitch(switchSpec.getName(), switchSpec.getBw(), switchSpec.getIops(), switchSpec.getUpports(), switchSpec.getDownports(), this);
+			break;
+		case "aggregate":
+			sw = new AggregationSwitch(switchSpec.getName(), switchSpec.getBw(), switchSpec.getIops(), switchSpec.getUpports(), switchSpec.getDownports(), this);
+			break;
+		case "edge":
+			sw = new EdgeSwitch(switchSpec.getName(), switchSpec.getBw(), switchSpec.getIops(), switchSpec.getUpports(), switchSpec.getDownports(), this);
+			break;
+		default:
+			System.err.println("No switch found!");
+			//throw new IllegalArgumentException("No switch found!");
+		}
+		
+		return sw;
+	}
 	protected void initPhysicalTopology() {
 		this.topology = new PhysicalTopology();
 		this.hosts = new ArrayList<Host>();
@@ -562,117 +618,95 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		int hostId = 0;
 		Hashtable<String, Integer> nameIdTable = new Hashtable<String, Integer>();
 		
+		Gson gson = new Gson();
+		PdcSpec pdc = null;
+		
 		try {
-    		JSONObject doc = (JSONObject) JSONValue.parse(new FileReader(this.physicalTopologyFileName));
-    		
-    		JSONArray nodes = (JSONArray) doc.get("nodes");
-    		@SuppressWarnings("unchecked")
-			Iterator<JSONObject> iter =nodes.iterator(); 
-			
-    		while(iter.hasNext()){
-				JSONObject node = iter.next();
-				String nodeType = (String) node.get("type");
-				String nodeName = (String) node.get("name");
-				
-				if(nodeType.equalsIgnoreCase("host")){
-					// Host.
-					long pes = (Long) node.get("pes");
-					long mips = (Long) node.get("mips");
-					int ram = new BigDecimal((Long)node.get("ram")).intValueExact();
-					long storage = (Long) node.get("storage");
-					long bw = new BigDecimal((Long)node.get("bw")).intValueExact();
-					
-					int num = 1;
-					if (node.get("nums")!= null) {
-						num = new BigDecimal((Long)node.get("nums")).intValueExact();
-					}
-					
-					// Number of hosts with same specification.
-					// Name of hosts will be <original name><number(0..n-1)>
-					for(int n = 0 ; n < num ; n++) {
-						String nodeName2 = nodeName;
-						if(num > 1) {
-							// TODO: could be changed to nodeName_n for better understanding.
-							nodeName2 = nodeName + n;
-						}
-						
-						Host host = createHost(hostId, ram, bw, storage, pes, mips);
-						
-						SDNHost sdnHost = new SDNHost(nodeName2, host, this);
-						nameIdTable.put(nodeName2, sdnHost.getAddress());
-						
-						hostId++;
-						
-						topology.addNode(sdnHost);
-						this.hosts.add(host);
-						this.sdnhosts.add(sdnHost);
-					}
-					
-				} 
-				else {
-					// Switch.
-					
-					int MAX_PORTS = 256;
-							
-					int bw = new BigDecimal((Long)node.get("bw")).intValueExact();
-					long iops = (Long) node.get("iops");
-					
-					int upports = MAX_PORTS;
-					if (node.get("upports") != null) {
-						upports = new BigDecimal((Long)node.get("upports")).intValueExact();
-					}
-					
-					int downports = MAX_PORTS;
-					if (node.get("downports")!= null) {
-						downports = new BigDecimal((Long)node.get("downports")).intValueExact();
-					}
-					
-					Switch sw = null;
-					
-					if(nodeType.equalsIgnoreCase("core")) {
-						sw = new CoreSwitch(nodeName, bw, iops, upports, downports, this);
-					} 
-					else if (nodeType.equalsIgnoreCase("aggregate")) {
-						sw = new AggregationSwitch(nodeName, bw, iops, upports, downports, this);
-					} 
-					else if (nodeType.equalsIgnoreCase("edge")) {
-						sw = new EdgeSwitch(nodeName, bw, iops, upports, downports, this);
-					} 
-					else {
-						throw new IllegalArgumentException("No switch found!");
-					}
-					
-					if(sw != null) {
-						nameIdTable.put(nodeName, sw.getAddress());
-						topology.addNode(sw);
-						this.switches.add(sw);
-					}
-				}
-			}
-				
-			JSONArray links = (JSONArray) doc.get("links");
-			@SuppressWarnings("unchecked")
-			Iterator<JSONObject> linksIter = links.iterator(); 
-			
-			while(linksIter.hasNext()){
-				JSONObject link = linksIter.next();
-				String src = (String) link.get("source");  
-				String dst = (String) link.get("destination");
-				double lat = (Double) link.get("latency");
-				
-				int srcAddress = nameIdTable.get(src);
-				int dstAddress = nameIdTable.get(dst);
-				topology.addLink(srcAddress, dstAddress, lat);
-			}
-    		
+			pdc = gson.fromJson(new FileReader(this.physicalTopologyFileName), PdcSpec.class);
 		} 
-		catch (FileNotFoundException e) {
-			e.printStackTrace();
+		catch (JsonSyntaxException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		} 
+		catch (JsonIOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		} 
+		catch (FileNotFoundException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
 		}
 		
+		for(HostSpec hostSpec : pdc.getHosts()){
+			
+			if(hostSpec.getNums() == 0){
+				// nums not specified => one host.
+				
+				Host host = createHost(hostId, hostSpec);
+				
+				String nodeName2 = hostSpec.getName();
+				
+				SDNHost sdnHost = new SDNHost(nodeName2, host, this);
+				nameIdTable.put(nodeName2, sdnHost.getAddress());
+				
+				hostId++;
+				
+				topology.addNode(sdnHost);
+				this.hosts.add(host);
+				this.sdnhosts.add(sdnHost);
+				
+			}
+			else{
+				String nodeName = hostSpec.getName();
+				String nodeName2 = nodeName;
+				
+				for(int n = 0 ; n < hostSpec.getNums() ; n++){
+					nodeName2 = nodeName + n;
+					
+					Host host = createHost(hostId, hostSpec);					
+					
+					SDNHost sdnHost = new SDNHost(nodeName2, host, this);
+					nameIdTable.put(nodeName2, sdnHost.getAddress());
+					
+					hostId++;
+					
+					topology.addNode(sdnHost);
+					this.hosts.add(host);
+					this.sdnhosts.add(sdnHost);
+					
+				}
+			}
+		}
+		
+		for(SwitchSpec switchSpec : pdc.getSwitches()){
+			if(switchSpec.getUpports() == 0){
+				switchSpec.setUpports(MAX_PORTS);
+			}
+			
+			if(switchSpec.getDownports() == 0){
+				switchSpec.setDownports(MAX_PORTS);
+			}
+			
+			Switch sw = createSwitch(switchSpec);
+			
+			if(sw != null) {
+				nameIdTable.put(switchSpec.getName(), sw.getAddress());
+				topology.addNode(sw);
+				this.switches.add(sw);
+			}
+		}	
+			
+		for(LinkSpec linkSpec : pdc.getLinks()){
+			
+			int srcAddress = nameIdTable.get(linkSpec.getSource());
+			int dstAddress = nameIdTable.get(linkSpec.getDestination());
+			
+			topology.addLink(srcAddress, dstAddress, linkSpec.getLatency());
+		}
+				
 		topology.buildDefaultRouting();
 		
-		// Initialize the embedder to get ready to serve VDC requests.
+		// Initialize the Embedder to get ready to serve VDC requests.
 		embedder.init(topology);
 	}
 	
@@ -680,8 +714,6 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	// TOCHECK: whether it should necessarily be static.
 	private static int flowNumbers = 0;
 	
-	
-	// TODO: Change this to use Deserializer.
 	public boolean deployApplication(int userId, String vmsFileName){
 
 		int datacenterId = brokerIdToDatacenterIdMap.get(userId);
@@ -691,135 +723,95 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		
 		LinkedList<Middlebox> mbList = new LinkedList<Middlebox>();
 		
+		Gson gson = new Gson();
+		VdcSpec vdc = null;
+		
 		try {
-    		JSONObject doc = (JSONObject) JSONValue.parse(new FileReader(vmsFileName));
-    		
-    		JSONArray nodes = (JSONArray) doc.get("nodes");
-    		
-    		@SuppressWarnings("unchecked")
-			Iterator<JSONObject> iter = nodes.iterator(); 
-			while(iter.hasNext()){
-				JSONObject node = iter.next();
+			vdc = gson.fromJson(new FileReader(vmsFileName), VdcSpec.class);
+		} 
+		catch (JsonSyntaxException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		} 
+		catch (JsonIOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		} 
+		catch (FileNotFoundException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		
+		for(VmSpec vmSpec : vdc.getVms()){
+			
+			if(vmSpec.getBw() == 0){
+				vmSpec.setBw(1000);
+			}
+			
+			if(vmSpec.getEndtime() == 0){
+				vmSpec.setEndtime(Double.POSITIVE_INFINITY);
+			}
+			
+			if(vmSpec.getNums() == 0){
+				Vm vm = new TimedVm(vmId, vmSpec, userId, datacenterId, "VMM", new CloudletSchedulerTimeShared());
 				
-				String nodeType = (String) node.get("type");
-				String nodeName = (String) node.get("name");
-				int pes = new BigDecimal((Long) node.get("pes")).intValueExact();
-				long mips = (Long) node.get("mips");
-				int ram = new BigDecimal((Long) node.get("ram")).intValueExact();
-				long size = (Long) node.get("size");
+				String nodeName2 = vmSpec.getName();
 				
-				long bw = 1000;
-				if(node.get("bw") != null) {
-					bw = (Long) node.get("bw");
-				}
-				
-				double starttime = 0;
-				if(node.get("starttime") != null) {
-					starttime = (Double) node.get("starttime");
-				}
-				
-				double endtime = Double.POSITIVE_INFINITY;
-				if(node.get("endtime") != null){
-					endtime = (Double) node.get("endtime");
-				}
-
-				// Number of nodes with same specification.
-				// Name of nodes will be <original name><number(0..n-1)>
-				long nums = 1;
-				if(node.get("nums") != null){
-					nums = (Long) node.get("nums");
-				}
-				
-				for(int n = 0 ; n < nums ; n++) {
-					String nodeName2 = nodeName;
-					if(nums > 1) {
-						// Nodename should be numbered.
-						// TODO: could be changed to nodeName_n for better understanding.
-						nodeName2 = nodeName + n;
-					}
+				vmNameIdTable.put(nodeName2, vmId);
+				NetworkOperatingSystem.debugVmIdName.put(vmId, nodeName2);
+				vmList.add(vm);
+				virtualTopology.addVm(vm);
+				vmId++;
+			}
+			else{
+				String nodeName = vmSpec.getName();
+				String nodeName2 = nodeName;
+				for(int n = 0 ; n < vmSpec.getNums() ; n++){
+					nodeName2 = nodeName + n;
 					
-					if(nodeType.equalsIgnoreCase("vm")){
-						// VM
-						Vm vm = new TimedVm(nodeName2, vmId, userId, datacenterId, mips, pes, ram, bw, size, "VMM", new CloudletSchedulerTimeShared(), starttime, endtime);
-						vmNameIdTable.put(nodeName2, vmId);
-						
-						NetworkOperatingSystem.debugVmIdName.put(vmId, nodeName2);
-						
-						vmList.add(vm);
-						
-						virtualTopology.addVm(vm);
-						
-						vmId++;
-					}
-					else{
-						// Middle box
-						Vm vm = new Vm(vmId, userId, mips, pes, ram, bw, size, "VMM", new CloudletSchedulerTimeShared());
-						Middlebox m = deployMiddlebox(nodeType, vm);
-						vmNameIdTable.put(nodeName2, vmId);
-						mbList.add(m);
-						vmId++;
-					}
+					Vm vm = new TimedVm(vmId, nodeName2, vmSpec, userId, datacenterId, "VMM", new CloudletSchedulerTimeShared());
+					
+					vmNameIdTable.put(nodeName2, vmId);
+					NetworkOperatingSystem.debugVmIdName.put(vmId, nodeName2);
+					vmList.add(vm);
+					virtualTopology.addVm(vm);
+					vmId++;
 				}
 			}
+		}		
+		
+		for(VLinkSpec vLinkSpec : vdc.getLinks()){
 			
-			// Adding Arcs.
-			JSONArray links = (JSONArray) doc.get("links");
+			int srcId = vmNameIdTable.get(vLinkSpec.getSource());
+			int dstId = vmNameIdTable.get(vLinkSpec.getDestination());
 			
-			@SuppressWarnings("unchecked")
-			Iterator<JSONObject> linksIter = links.iterator();
+			int flowId = -1;
 			
-			while(linksIter.hasNext()){
-				JSONObject link = linksIter.next();
-				
-				String name = (String) link.get("name");
-				String src = (String) link.get("source");
-				String dst = (String) link.get("destination");
-				Object reqLat = link.get("latency");
-				Object reqBw = link.get("bandwidth");
-				
-				double lat = 0.0;
-				if(reqLat != null){
-					lat = (Double) reqLat;
-				}
-				
-				long bw = 0;
-				if(reqBw != null){
-					bw = (Long) reqBw;
-				}
-				
-				int srcId = vmNameIdTable.get(src);
-				int dstId = vmNameIdTable.get(dst);
-				
-				int flowId = -1;
-				
-				if(name == null || "default".equalsIgnoreCase(name)) {
-					// Default flow.
-					flowId = -1;
-				}
-				else {
-					flowId = flowNumbers++;
-					flowNameIdTable.put(name, flowId);
-				}
-				
-				Arc arc = new Arc(name, srcId, dstId, flowId, bw, lat);
-				arcList.add(arc);
-				
-				if(flowId != -1) {
+			if(vLinkSpec.getName() == null || "default".equalsIgnoreCase(vLinkSpec.getName())) {
+				// Default flow.
+				flowId = -1;
+			}
+			else {
+				flowId = flowNumbers++;
+				flowNameIdTable.put(vLinkSpec.getName(), flowId);
+			}
+			
+			Arc arc = new Arc(vLinkSpec, srcId, dstId, flowId);
+			
+			arcList.add(arc);
+			
+			if(flowId != -1) {
 					flowIdArcTable.put(flowId, arc);
-				}
-			}
-    	
-			virtualTopologies.add(virtualTopology);
-			
-			boolean result = deployApplication(vmList, mbList, arcList, virtualTopology);
-			
-			if (result){
-				isApplicationDeployed = true;
-				return true;
 			}
 		}
-		catch (FileNotFoundException e) {
-			e.printStackTrace();
+		
+		virtualTopologies.add(virtualTopology);
+		
+		boolean result = deployApplication(vmList, mbList, arcList, virtualTopology);
+		
+		if (result){
+			isApplicationDeployed = true;
+			return true;
 		}
 		
 		return false;

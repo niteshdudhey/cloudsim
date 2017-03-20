@@ -10,6 +10,7 @@ package org.cloudbus.cloudsim.sdn;
 import org.cloudbus.cloudsim.CloudletScheduler;
 import org.cloudbus.cloudsim.Host;
 import org.cloudbus.cloudsim.Vm;
+import org.cloudbus.cloudsim.sdn.datacenterSpecifications.VmSpec;
 
 /**
  * Extension of VM that supports to set start and terminate time of VM in VM creation request.
@@ -63,6 +64,26 @@ public class TimedVm extends Vm {
 		this.datacenterId = datacenterId;
 		this.startTime = startTime;
 		this.finishTime = finishTime;
+	}
+	
+	public TimedVm(int id, VmSpec vmSpec, int userId, int datacenterId, String vmm, CloudletScheduler cloudletScheduler) {
+		
+		super(id, userId, vmSpec.getMips(), vmSpec.getPes(), vmSpec.getRam(), vmSpec.getBw(), vmSpec.getSize(), vmm, cloudletScheduler);
+		
+		this.name = vmSpec.getName();
+		this.datacenterId = datacenterId;
+		this.startTime = vmSpec.getStarttime();
+		this.finishTime = vmSpec.getEndtime();
+	}
+	
+	public TimedVm(int id, String name, VmSpec vmSpec, int userId, int datacenterId, String vmm, CloudletScheduler cloudletScheduler) {
+		
+		super(id, userId, vmSpec.getMips(), vmSpec.getPes(), vmSpec.getRam(), vmSpec.getBw(), vmSpec.getSize(), vmm, cloudletScheduler);
+		
+		this.name = name;
+		this.datacenterId = datacenterId;
+		this.startTime = vmSpec.getStarttime();
+		this.finishTime = vmSpec.getEndtime();
 	}
 	
 	public String getName() {

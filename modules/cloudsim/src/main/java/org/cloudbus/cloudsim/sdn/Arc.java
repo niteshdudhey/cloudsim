@@ -8,6 +8,10 @@
 
 package org.cloudbus.cloudsim.sdn;
 
+import org.cloudbus.cloudsim.sdn.datacenterSpecifications.VLinkSpec;
+
+import com.google.gson.Gson;
+
 /**
  * Traffic requirements between two VMs
  * 
@@ -39,6 +43,17 @@ public class Arc {
 		this.requiredLatency = reqLatency;
 	}
 
+	public Arc(VLinkSpec vLinkSpec, int srcId, int dstId, int flowId) {
+		super();
+		this.name = vLinkSpec.getName();
+		this.srcId = srcId;
+		this.dstId = dstId;
+		this.flowId = flowId;
+		// TODO: whether Bw is long or double ?
+		this.requiredBandwidth = (long) vLinkSpec.getBw();
+		this.requiredLatency = vLinkSpec.getLatency();
+	}
+	
 	public String getName(){
 		return name;
 	}
@@ -60,5 +75,10 @@ public class Arc {
 
 	public double getLatency() {
 		return requiredLatency;
+	}
+	
+	public String toString() {
+		Gson gson = new Gson();
+		return gson.toJson(this);
 	}
 }
