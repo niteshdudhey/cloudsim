@@ -32,6 +32,9 @@ public class Constants {
 	
 	public static final int APPLICATION_SUBMIT_ACK = SDN_BASE + 21;
 	
+	// Deploy application at SDNDatacenter.
+	public static final int DEPLOY_APPLICATION = SDN_BASE + 22;
+	
 	public static String TagText(int tagValue) {
 		tagValue = tagValue - SDN_BASE;
         String ret = "";

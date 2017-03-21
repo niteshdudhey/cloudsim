@@ -32,6 +32,12 @@ public class OverbookingNetworkOperatingSystem extends NetworkOperatingSystem {
 		super(fileName, embedder);
 	}
 
+	// Depricated.
+	@Override
+	public boolean deployApplication(VirtualTopology virtualTopology) {
+		return false;
+	}
+	
 	@Override
 	public boolean deployApplication(List<Vm> vms, List<Middlebox> middleboxes, List<Arc> links, VirtualTopology virtualTopology) {
 		Log.printLine(CloudSim.clock() + ": " + getName() + ": Starting deploying application..");

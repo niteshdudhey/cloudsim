@@ -32,12 +32,17 @@ import org.cloudbus.cloudsim.core.SimEvent;
  */
 
 /**
+ * Modified to add the support of start time.
  * 
  * @author Nitesh Dudhey
  *
  */
 public class SDNDatacenter extends Datacenter {
 
+	double startTime;
+	
+	double endTime;
+	
 	NetworkOperatingSystem nos;
 	
 	public SDNDatacenter(String name, DatacenterCharacteristics characteristics, VmAllocationPolicy vmAllocationPolicy, List<Storage> storageList, double schedulingInterval, NetworkOperatingSystem nos) throws Exception {
@@ -46,6 +51,26 @@ public class SDNDatacenter extends Datacenter {
 		this.nos = nos;
 	}
 	
+	public double getStartTime() {
+		return startTime;
+	}
+
+
+	public void setStartTime(double startTime) {
+		this.startTime = startTime;
+	}
+
+
+	public double getEndTime() {
+		return endTime;
+	}
+
+
+	public void setEndTime(double endTime) {
+		this.endTime = endTime;
+	}
+
+
 	/**
 	 * Adds a VM to the datacenter.
 	 * @param vm
@@ -112,6 +137,9 @@ public class SDNDatacenter extends Datacenter {
 			case Constants.APPLICATION_SUBMIT:
 				processApplication(ev.getSource(), (String) ev.getData());
 				break;
+			case Constants.DEPLOY_APPLICATION:
+				String []data = (String [])ev.getData();
+				deployApplication(Integer.parseInt(data[0]), data[1]);
 			default: 
 				System.out.println("Unknown event recevied by SdnDatacenter. Tag:" + ev.getTag());
 		}
@@ -159,8 +187,28 @@ public class SDNDatacenter extends Datacenter {
 		}
 	}
 	
+	/**
+	 * Processes application request and schedules the deployment at the start time of the datacenter.
+	 * @param userId
+	 * @param filename
+	 */
 	private void processApplication(int userId, String filename) {
-		boolean result = nos.deployApplication(userId, filename);
+		
+		nos.readVirtualNetwork(userId, filename);
+		
+		String []sendData = {Integer.toString(userId), filename};
+		
+		send(this.getId(), this.getStartTime() + CloudSim.getMinTimeBetweenEvents(), 
+				Constants.DEPLOY_APPLICATION, sendData);
+	}
+	
+	/**
+	 * Deploys the virtual datacenter and its workload if it succeeds.
+	 * @param userId
+	 * @param filename
+	 */
+	private void deployApplication(int userId, String filename){
+		boolean result = nos.deployApplication(userId);
 		
 		if (result) {
 			// Deploying workload.

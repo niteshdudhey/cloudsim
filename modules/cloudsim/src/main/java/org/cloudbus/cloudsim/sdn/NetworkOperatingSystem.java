@@ -8,17 +8,13 @@
 
 package org.cloudbus.cloudsim.sdn;
 
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -47,12 +43,8 @@ import org.cloudbus.cloudsim.sdn.datacenterSpecifications.VLinkSpec;
 import org.cloudbus.cloudsim.sdn.datacenterSpecifications.VdcSpec;
 import org.cloudbus.cloudsim.sdn.datacenterSpecifications.VmSpec;
 import org.cloudbus.cloudsim.sdn.example.policies.VmSchedulerTimeSharedEnergy;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.JSONValue;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 
@@ -68,6 +60,7 @@ import com.google.gson.JsonSyntaxException;
 
 /**
  * Modified to handle multiple Datacenters simultaneously.
+ * 
  * @author Nitesh Dudhey
  *
  */
@@ -75,11 +68,16 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 
 	static final int MAX_PORTS = 256;
 	
+	// Used to assign flow Ids to Arcs.
+	// TOCHECK: whether it should necessarily be static.
+	private static int flowNumbers = 0;
+		
 	String physicalTopologyFileName; 
 	
 	protected PhysicalTopology topology;
 	
-	protected List<VirtualTopology> virtualTopologies;
+	// UserId -> VirtualTopology.
+	protected Map<Integer, VirtualTopology> virtualTopologies;
 	
 	protected VdcEmbedder embedder;
 	
@@ -140,7 +138,7 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		
 		initPhysicalTopology();
 		
-		virtualTopologies = new ArrayList<VirtualTopology>();
+		virtualTopologies = new HashMap<Integer, VirtualTopology>();
 		
 		vmNameIdTable = new HashMap<String, Integer>();
 		vmList = new LinkedList<Vm>();
@@ -153,20 +151,22 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		
 	}
 
-	public PhysicalTopology getPhysicalTopology(){
-		return topology;
-	}
-
 	/**
 	 * 1. map VMs and middleboxes to hosts, add the new vm/mb to the vmHostTable, advise host, advise dc
 	 * 2. set channels and bws
 	 * 3. set routing tables to restrict hops to meet latency
 	 */
 	// TODO: Need to remove the arguments that are redundant.
+	protected abstract boolean deployApplication(VirtualTopology virtualTopology);
+	// Depricated.
 	protected abstract boolean deployApplication(List<Vm> vms, List<Middlebox> middleboxes, List<Arc> links, VirtualTopology virtualTopology);
+	
 	protected abstract Middlebox deployMiddlebox(String type, Vm vm);
 
-	
+	public PhysicalTopology getPhysicalTopology(){
+		return topology;
+	}
+
 	public static double getMinTimeBetweenNetworkEvents() {
 	    return minTimeBetweenEvents* timeUnit;
 	}
@@ -554,6 +554,13 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		return sdnhost.getAddress();
 	}
 	
+	/**
+	 * Creates a host by reading host specifications.
+	 * 
+	 * @param hostId
+	 * @param hostSpec
+	 * @return
+	 */
 	protected Host createHost(int hostId, HostSpec hostSpec) {
 		LinkedList<Pe> peList = new LinkedList<Pe>();
 		int peId = 0;
@@ -590,6 +597,12 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		return newHost;		
 	}
 	
+	/**
+	 * Creates a switch by reading switch specifications.
+	 * 
+	 * @param switchSpec
+	 * @return
+	 */
 	protected Switch createSwitch(SwitchSpec switchSpec){
 		Switch sw = null;
 		
@@ -610,6 +623,11 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		
 		return sw;
 	}
+	
+	/**
+	 * Initializes the physical topology by reading the physical topology file.
+	 * 
+	 */
 	protected void initPhysicalTopology() {
 		this.topology = new PhysicalTopology();
 		this.hosts = new ArrayList<Host>();
@@ -625,21 +643,18 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 			pdc = gson.fromJson(new FileReader(this.physicalTopologyFileName), PdcSpec.class);
 		} 
 		catch (JsonSyntaxException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		} 
 		catch (JsonIOException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		} 
 		catch (FileNotFoundException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
 		
-		for(HostSpec hostSpec : pdc.getHosts()){
+		for(HostSpec hostSpec : pdc.getHosts()) {
 			
-			if(hostSpec.getNums() == 0){
+			if(hostSpec.getNums() == 0) {
 				// nums not specified => one host.
 				
 				Host host = createHost(hostId, hostSpec);
@@ -660,7 +675,7 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 				String nodeName = hostSpec.getName();
 				String nodeName2 = nodeName;
 				
-				for(int n = 0 ; n < hostSpec.getNums() ; n++){
+				for(int n = 0 ; n < hostSpec.getNums() ; n++) {
 					nodeName2 = nodeName + n;
 					
 					Host host = createHost(hostId, hostSpec);					
@@ -678,12 +693,12 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 			}
 		}
 		
-		for(SwitchSpec switchSpec : pdc.getSwitches()){
-			if(switchSpec.getUpports() == 0){
+		for(SwitchSpec switchSpec : pdc.getSwitches()) {
+			if(switchSpec.getUpports() == 0) {
 				switchSpec.setUpports(MAX_PORTS);
 			}
 			
-			if(switchSpec.getDownports() == 0){
+			if(switchSpec.getDownports() == 0) {
 				switchSpec.setDownports(MAX_PORTS);
 			}
 			
@@ -696,7 +711,7 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 			}
 		}	
 			
-		for(LinkSpec linkSpec : pdc.getLinks()){
+		for(LinkSpec linkSpec : pdc.getLinks()) {
 			
 			int srcAddress = nameIdTable.get(linkSpec.getSource());
 			int dstAddress = nameIdTable.get(linkSpec.getDestination());
@@ -710,19 +725,14 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		embedder.init(topology);
 	}
 	
-	// Used to assign flow Ids to Arcs.
-	// TOCHECK: whether it should necessarily be static.
-	private static int flowNumbers = 0;
-	
-	public boolean deployApplication(int userId, String vmsFileName){
+	/**
+	 * Reads the virtual network from the file and stores in the required data in their respective memebers.
+	 *  
+	 * @param userId
+	 * @param vmsFileName
+	 */
+	public void readVirtualNetwork(int userId, String vmsFileName) {
 
-		int datacenterId = brokerIdToDatacenterIdMap.get(userId);
-		String datacenterName = datacenterIdToDatacenterMap.get(datacenterId).getName();
-		
-		VirtualTopology virtualTopology = new VirtualTopology(datacenterId, datacenterName);
-		
-		LinkedList<Middlebox> mbList = new LinkedList<Middlebox>();
-		
 		Gson gson = new Gson();
 		VdcSpec vdc = null;
 		
@@ -730,29 +740,35 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 			vdc = gson.fromJson(new FileReader(vmsFileName), VdcSpec.class);
 		} 
 		catch (JsonSyntaxException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		} 
 		catch (JsonIOException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		} 
 		catch (FileNotFoundException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
+
+		int datacenterId = brokerIdToDatacenterIdMap.get(userId);
+		String datacenterName = datacenterIdToDatacenterMap.get(datacenterId).getName();
 		
-		for(VmSpec vmSpec : vdc.getVms()){
+		VirtualTopology virtualTopology = new VirtualTopology(datacenterId, datacenterName);
+		
+		datacenterIdToDatacenterMap.get(datacenterId).setStartTime(vdc.getStarttime());
+		datacenterIdToDatacenterMap.get(datacenterId).setEndTime(vdc.getEndtime());
+		
+		for(VmSpec vmSpec : vdc.getVms()) {
 			
-			if(vmSpec.getBw() == 0){
+			if(vmSpec.getBw() == 0) {
 				vmSpec.setBw(1000);
 			}
 			
-			if(vmSpec.getEndtime() == 0){
+			if(vmSpec.getEndtime() == 0) {
 				vmSpec.setEndtime(Double.POSITIVE_INFINITY);
 			}
 			
 			if(vmSpec.getNums() == 0){
+				// nums not specified => one VM.
 				Vm vm = new TimedVm(vmId, vmSpec, userId, datacenterId, "VMM", new CloudletSchedulerTimeShared());
 				
 				String nodeName2 = vmSpec.getName();
@@ -766,6 +782,7 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 			else{
 				String nodeName = vmSpec.getName();
 				String nodeName2 = nodeName;
+				
 				for(int n = 0 ; n < vmSpec.getNums() ; n++){
 					nodeName2 = nodeName + n;
 					
@@ -785,36 +802,39 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 			int srcId = vmNameIdTable.get(vLinkSpec.getSource());
 			int dstId = vmNameIdTable.get(vLinkSpec.getDestination());
 			
+			// Default flow.
 			int flowId = -1;
 			
-			if(vLinkSpec.getName() == null || "default".equalsIgnoreCase(vLinkSpec.getName())) {
-				// Default flow.
-				flowId = -1;
-			}
-			else {
+			if(vLinkSpec.getName() != null && !"default".equalsIgnoreCase(vLinkSpec.getName())) {
 				flowId = flowNumbers++;
 				flowNameIdTable.put(vLinkSpec.getName(), flowId);
 			}
 			
 			Arc arc = new Arc(vLinkSpec, srcId, dstId, flowId);
-			
 			arcList.add(arc);
 			
 			if(flowId != -1) {
-					flowIdArcTable.put(flowId, arc);
+				flowIdArcTable.put(flowId, arc);
 			}
 		}
 		
-		virtualTopologies.add(virtualTopology);
+		virtualTopologies.put(userId,  virtualTopology);
+	}
+	
+	/**
+	 * Deploys the VDC (if possible according to the Embedding Policy).
+	 * 
+	 * @param userId
+	 * @return
+	 */
+	public boolean deployApplication(int userId) {
+		boolean result = deployApplication(virtualTopologies.get(userId));
 		
-		boolean result = deployApplication(vmList, mbList, arcList, virtualTopology);
-		
-		if (result){
+		if (result) {
 			isApplicationDeployed = true;
 			return true;
 		}
 		
 		return false;
 	}
-	
 }

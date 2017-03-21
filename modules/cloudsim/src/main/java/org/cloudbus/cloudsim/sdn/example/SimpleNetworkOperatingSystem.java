@@ -9,10 +9,8 @@ package org.cloudbus.cloudsim.sdn.example;
 
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 
-import org.cloudbus.cloudsim.Host;
 import org.cloudbus.cloudsim.Log;
 import org.cloudbus.cloudsim.Vm;
 import org.cloudbus.cloudsim.core.CloudSim;
@@ -44,10 +42,14 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 		super(fileName, embedder);
 	}
 
+	// Depricated.
 	@Override
-	public boolean deployApplication(
-			List<Vm> vms, List<Middlebox> middleboxes, List<Arc> links, 
-			VirtualTopology virtualTopology) {
+	public boolean deployApplication(List<Vm> vms, List<Middlebox> middleboxes, List<Arc> links, VirtualTopology virtualTopology) {
+		return false;
+	}
+	
+	@Override
+	public boolean deployApplication(VirtualTopology virtualTopology) {
 		
 		Log.printLine(CloudSim.clock() + ": " + getName() + ": Starting deploying application..");
 		
@@ -81,21 +83,6 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 				send(this.getId(), tvm.getFinishTime(), CloudSimTags.VM_DESTROY, tvm);
 			}
 		}
-		
-		/*for(Vm vm : vms) {	
-			TimedVm tvm = (TimedVm) vm;
-			SDNDatacenter datacenter = getDatacenterById(tvm.getDatacenterId());
-			
-			Log.printLine(CloudSim.clock() + ": " + getName() + ": Trying to Create VM #" + vm.getId() 
-					+ " in " + datacenter.getName() + ", (" + tvm.getStartTime() + "~" + tvm.getFinishTime() + ")");
-			
-			send(datacenter.getId(), tvm.getStartTime(), CloudSimTags.VM_CREATE_ACK, vm);
-			
-			if(tvm.getFinishTime() != Double.POSITIVE_INFINITY) {
-				send(datacenter.getId(), tvm.getFinishTime(), CloudSimTags.VM_DESTROY, vm);
-				send(this.getId(), tvm.getFinishTime(), CloudSimTags.VM_DESTROY, vm);
-			}
-		}*/
 		
 		return true;
 	}
