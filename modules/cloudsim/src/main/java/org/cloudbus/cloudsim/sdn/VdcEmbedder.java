@@ -25,6 +25,14 @@ public interface VdcEmbedder {
 	 */
 	public VdcEmbedding embed(PhysicalTopology physicalTopology, VirtualTopology virtualTopology);
 	
+	/**
+	 * The method rolls back the embedding by releasing partial allocations to resources.
+	 *  
+	 * @param physicalTopology
+	 * @param embedding
+	 */
+	public void rollbackEmbedding(PhysicalTopology physicalTopology, VdcEmbedding embedding);
+	
 	public void deallocateVm(PhysicalTopology topology, TimedVm tvm);
 	
 }

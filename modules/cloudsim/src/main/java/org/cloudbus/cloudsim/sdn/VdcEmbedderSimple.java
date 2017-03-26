@@ -157,6 +157,11 @@ public class VdcEmbedderSimple implements VdcEmbedder {
 		}
 	}
 	
+	@Override
+	public void rollbackEmbedding(PhysicalTopology physicalTopology, VdcEmbedding embedding){
+		
+	}
+	
 	protected Map<String, SDNHost> getVmTable() {
 		return vmTable;
 	}
