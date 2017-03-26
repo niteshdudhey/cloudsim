@@ -48,6 +48,7 @@ public class VmAllocationPolicySimple extends VmAllocationPolicy {
 		super(list);
 
 		setFreePes(new ArrayList<Integer>());
+
 		for (Host host : getHostList()) {
 			getFreePes().add(host.getNumberOfPes());
 
@@ -67,21 +68,26 @@ public class VmAllocationPolicySimple extends VmAllocationPolicy {
 	 */
 	@Override
 	public boolean allocateHostForVm(Vm vm) {
+		
 		int requiredPes = vm.getNumberOfPes();
 		boolean result = false;
 		int tries = 0;
 		List<Integer> freePesTmp = new ArrayList<Integer>();
+		
 		for (Integer freePes : getFreePes()) {
 			freePesTmp.add(freePes);
 		}
 
-		if (!getVmTable().containsKey(vm.getUid())) { // if this vm was not created
-			do {// we still trying until we find a host or until we try all of them
+		if (!getVmTable().containsKey(vm.getUid())) { 
+			// If this vm was not created.
+			
+			do {
+				// We still trying until we find a host or until we try all of them.
 				int moreFree = Integer.MIN_VALUE;
 				int idx = -1;
 
-				// we want the host with less pes in use
-				for (int i = 0; i < freePesTmp.size(); i++) {
+				// We want the host with less pes in use.
+				for (int i = 0 ; i < freePesTmp.size() ; i++) {
 					if (freePesTmp.get(i) > moreFree) {
 						moreFree = freePesTmp.get(i);
 						idx = i;
@@ -91,15 +97,20 @@ public class VmAllocationPolicySimple extends VmAllocationPolicy {
 				Host host = getHostList().get(idx);
 				result = host.vmCreate(vm);
 
-				if (result) { // if vm were succesfully created in the host
+				if (result) { 
+					// If vm were succesfully created in the host.
+					
 					getVmTable().put(vm.getUid(), host);
 					getUsedPes().put(vm.getUid(), requiredPes);
 					getFreePes().set(idx, getFreePes().get(idx) - requiredPes);
 					result = true;
+					
 					break;
-				} else {
+				} 
+				else {
 					freePesTmp.set(idx, Integer.MIN_VALUE);
 				}
+				
 				tries++;
 			} while (!result && tries < getFreePes().size());
 
@@ -113,6 +124,7 @@ public class VmAllocationPolicySimple extends VmAllocationPolicy {
 		Host host = getVmTable().remove(vm.getUid());
 		int idx = getHostList().indexOf(host);
 		int pes = getUsedPes().remove(vm.getUid());
+		
 		if (host != null) {
 			host.vmDestroy(vm);
 			getFreePes().set(idx, getFreePes().get(idx) + pes);
@@ -191,17 +203,18 @@ public class VmAllocationPolicySimple extends VmAllocationPolicy {
 
 	@Override
 	public boolean allocateHostForVm(Vm vm, Host host) {
-		if (host.vmCreate(vm)) { // if vm has been succesfully created in the host
+		if (host.vmCreate(vm)) { 
+			// If VM has been successfully created in the host.
 			getVmTable().put(vm.getUid(), host);
 
 			int requiredPes = vm.getNumberOfPes();
 			int idx = getHostList().indexOf(host);
+			
 			getUsedPes().put(vm.getUid(), requiredPes);
 			getFreePes().set(idx, getFreePes().get(idx) - requiredPes);
 
-			Log.formatLine(
-					"%.2f: VM #" + vm.getId() + " has been allocated to the host #" + host.getId(),
-					CloudSim.clock());
+			Log.formatLine("%.2f: VM #" + vm.getId() + " has been allocated to the host #" + host.getId(), CloudSim.clock());
+			
 			return true;
 		}
 

@@ -40,11 +40,12 @@ public class VmSchedulerTimeSharedOverbookingEnergy extends VmSchedulerTimeShare
 	}
 	
 	private List<PowerUtilizationHistoryEntry> utilizationHistories = null;
-	private static double powerOffDuration = 0; //if host is idle for 1 hours, it's turned off.
+	private static double powerOffDuration = 0; // If host is idle for 1 hours, it's turned off.
 	
 	public void addUtilizationEntryTermination(double terminatedTime) {
-		if(this.utilizationHistories != null)
+		if(this.utilizationHistories != null) {
 			this.utilizationHistories.add(new PowerUtilizationHistoryEntry(terminatedTime, 0));
+		}
 	}
 	
 	public List<PowerUtilizationHistoryEntry> getUtilizationHisotry() {
@@ -53,11 +54,12 @@ public class VmSchedulerTimeSharedOverbookingEnergy extends VmSchedulerTimeShare
 
 	public double getUtilizationEnergyConsumption() {
 		
-		double total=0;
-		double lastTime=0;
-		double lastMips=0;
-		if(this.utilizationHistories == null)
+		double total = 0;
+		double lastTime = 0;
+		double lastMips = 0;
+		if(this.utilizationHistories == null) {
 			return 0;
+		}
 		
 		for(PowerUtilizationHistoryEntry h:this.utilizationHistories) {
 			double duration = h.startTime - lastTime;
@@ -65,9 +67,10 @@ public class VmSchedulerTimeSharedOverbookingEnergy extends VmSchedulerTimeShare
 			double power = calculatePower(utilPercentage);
 			double energyConsumption = power * duration;
 			
-			// Assume that the host is turned off when duration is long enough
-			if(duration > powerOffDuration && lastMips == 0)
+			// Assume that the host is turned off when duration is long enough.
+			if(duration > powerOffDuration && lastMips == 0) {
 				energyConsumption = 0;
+			}
 			
 			total += energyConsumption;
 			lastTime = h.startTime;
@@ -85,11 +88,15 @@ public class VmSchedulerTimeSharedOverbookingEnergy extends VmSchedulerTimeShare
 		double time = CloudSim.clock();
 		double totalMips = getTotalMips();
 		double usingMips = totalMips - this.getAvailableMips();
+		
 		if(usingMips < 0) {
 			System.err.println("addUtilizationEntry : using mips is negative, No way!");
 		}
-		if(utilizationHistories == null)
+		
+		if(utilizationHistories == null) {
 			utilizationHistories = new ArrayList<PowerUtilizationHistoryEntry>();
+		}
+		
 		this.utilizationHistories.add(new PowerUtilizationHistoryEntry(time, usingMips));
 	}
 	

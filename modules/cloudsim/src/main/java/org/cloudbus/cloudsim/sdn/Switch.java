@@ -30,9 +30,6 @@ import org.cloudbus.cloudsim.core.SimEvent;
  */
 public class Switch extends SimEntity implements Node {
 	
-	//private static long cont = 0;
-	//private static long MULTI = 1;
-	
 	private static double POWER_CONSUMPTION_IDLE = 66.7;
 	private static double POWER_CONSUMPTION_PER_ACTIVE_PORT = 1; 
 	/* based on CARPO: Correlation-Aware Power Optimization in Data Center Networks by Xiaodong Wang et al. */
@@ -149,7 +146,7 @@ public class Switch extends SimEntity implements Node {
 	 *  Calculate Utilization history
 	 ************************************************/
 	private List<HistoryEntry> utilizationHistories = null;
-	private static double powerOffDuration = 0; //if switch was idle for 1 hours, it's turned off.
+	private static double powerOffDuration = 0; // If switch was idle for 1 hours, it's turned off.
 
 	public class HistoryEntry {
 		public double startTime;
@@ -170,6 +167,7 @@ public class Switch extends SimEntity implements Node {
 		double total = 0;
 		double lastTime = 0;
 		int lastPort = 0;
+		
 		if(this.utilizationHistories == null) {
 			return 0;
 		}
@@ -179,7 +177,7 @@ public class Switch extends SimEntity implements Node {
 			double power = calculatePower(lastPort);
 			double energyConsumption = power * duration;
 			
-			// Assume that the host is turned off when duration is long enough
+			// Assume that the host is turned off when duration is long enough.
 			if(duration > powerOffDuration && lastPort == 0) {
 				energyConsumption = 0;
 			}
@@ -188,7 +186,7 @@ public class Switch extends SimEntity implements Node {
 			lastTime = h.startTime;
 			lastPort = h.numActivePorts;
 		}
-		return total / 3600;	// transform to Whatt*hour from What*seconds
+		return total / 3600;	// transform to Whatt*hour from Whatt*seconds.
 	}
 	
 	public void updateNetworkUtilization() {
@@ -202,8 +200,9 @@ public class Switch extends SimEntity implements Node {
 	}
 
 	public void addUtilizationEntryTermination(double finishTime) {
-		if(this.utilizationHistories != null)
+		if(this.utilizationHistories != null) {
 			this.utilizationHistories.add(new HistoryEntry(finishTime, 0));		
+		}
 	}
 
 	private void addUtilizationEntry() {
@@ -215,6 +214,7 @@ public class Switch extends SimEntity implements Node {
 		}
 		else {
 			HistoryEntry hist = this.utilizationHistories.get(this.utilizationHistories.size() - 1);
+			
 			if(hist.numActivePorts == totalActivePorts) {
 				return;
 			}
@@ -230,6 +230,7 @@ public class Switch extends SimEntity implements Node {
 	
 	private int getTotalActivePorts() {
 		int num = 0;
+		
 		for(Link l : this.links) {
 			if(l.isActive()) {
 				num++;
@@ -424,6 +425,7 @@ public class Switch extends SimEntity implements Node {
 	@Override
 	public Node getVMRoute(int src, int dest, int flowId){
 		Node route= this.forwardingTable.getRoute(src, dest, flowId);
+		
 		if(route == null) {
 			this.printVMRoute();
 			System.err.println("SDNSwitch.getRoute() ERROR: Cannot find route:" + 
@@ -435,7 +437,7 @@ public class Switch extends SimEntity implements Node {
 	}
 	
 	@Override
-	public void removeVMRoute(int src, int dest, int flowId){
+	public void removeVMRoute(int src, int dest, int flowId) {
 		forwardingTable.removeRule(src, dest, flowId);
 	}
 
@@ -463,10 +465,12 @@ public class Switch extends SimEntity implements Node {
 		this.routingTable.addRoute(destHost, to);
 		
 	}
+	
 	@Override
 	public List<Link> getRoute(Node destHost) {
 		return this.routingTable.getRoute(destHost);
 	}
+	
 	@Override
 	public RoutingTable getRoutingTable() {
 		return this.routingTable;

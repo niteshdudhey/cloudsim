@@ -22,7 +22,7 @@ public class Processing implements Activity {
 	Cloudlet cl;
 	
 	public Processing(Cloudlet cl){
-		this.cl=cl;
+		this.cl = cl;
 	}
 	
 	public Cloudlet getCloudlet(){

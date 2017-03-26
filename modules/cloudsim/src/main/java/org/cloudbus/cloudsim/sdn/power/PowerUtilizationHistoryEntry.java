@@ -16,6 +16,11 @@ package org.cloudbus.cloudsim.sdn.power;
  */
 public class PowerUtilizationHistoryEntry {
 	public double startTime;
+	
 	public double usedMips;
-	public PowerUtilizationHistoryEntry(double t, double m) { startTime=t; usedMips=m;}
+	
+	public PowerUtilizationHistoryEntry(double startTime, double usedMips) { 
+		this.startTime = startTime; 
+		this.usedMips = usedMips;
+	}
 }

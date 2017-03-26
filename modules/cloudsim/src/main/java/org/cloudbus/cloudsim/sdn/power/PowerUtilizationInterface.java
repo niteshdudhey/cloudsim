@@ -19,7 +19,9 @@ import java.util.List;
  */
 public interface PowerUtilizationInterface {
 	public void addUtilizationEntryTermination(double terminatedTime);
+	
 	public List<PowerUtilizationHistoryEntry> getUtilizationHisotry();
+	
 	public double getUtilizationEnergyConsumption();
 }
 

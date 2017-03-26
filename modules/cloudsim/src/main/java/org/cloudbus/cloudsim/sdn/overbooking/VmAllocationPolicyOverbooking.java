@@ -75,13 +75,14 @@ public class VmAllocationPolicyOverbooking extends VmAllocationPolicy implements
 	 */
 	@Override
 	public boolean allocateHostForVm(Vm vm) {
-		if (getVmTable().containsKey(vm.getUid())) { // if this vm was not created
+		if (getVmTable().containsKey(vm.getUid())) { 
+			// If this VM was not created.
 			return false;
 		}
 		
 		int numHosts = getHostList().size();
 
-		// 1. Find/Order the best host for this VM by comparing a metric
+		// Find/Order the best host for this VM by comparing a metric.
 		int requiredPes = vm.getNumberOfPes();
 		double requiredMips = vm.getCurrentRequestedTotalMips();
 		long requiredBw = vm.getCurrentRequestedBw();
@@ -90,25 +91,30 @@ public class VmAllocationPolicyOverbooking extends VmAllocationPolicy implements
 		
 		// freeReousrces : Weighted-calculated free resource percentage in each host 
 		double[] freeResources = new double[numHosts];
-		for (int i = 0; i < numHosts; i++) {
-			double mipsFreePercent = (double)getFreeMips().get(i) / this.hostTotalMips; 
+		
+		for (int i = 0 ; i < numHosts ; i++) {
+			double mipsFreePercent = (double)getFreeMips().get(i) / this.hostTotalMips;
+			
 			double bwFreePercent = (double)getFreeBw().get(i) / this.hostTotalBw;
 			
 			freeResources[i] = this.convertWeightedMetric(mipsFreePercent, bwFreePercent);
 		}
 
 		// Find the most full host, with available resource. 
-		for(int tries = 0; result == false && tries < numHosts; tries++) {// we still trying until we find a host or until we try all of them
+		for(int tries = 0 ; result == false && tries < numHosts ; tries++) {
+			// We still trying until we find a host or until we try all of them.
+			
 			double lessFree = Double.POSITIVE_INFINITY;
 			int idx = -1;
 
-			// Find the most full host
-			for (int i = 0; i < numHosts; i++) {
+			// Find the most full host.
+			for (int i = 0 ; i < numHosts ; i++) {
 				if (freeResources[i] < lessFree) {
 					lessFree = freeResources[i];
 					idx = i;
 				}
 			}
+			
 			freeResources[idx] = Double.POSITIVE_INFINITY;	// Mark visited
 			
 			Host host = getHostList().get(idx);
@@ -120,6 +126,7 @@ public class VmAllocationPolicyOverbooking extends VmAllocationPolicy implements
 						(double)getFreeMips().get(idx)/requiredMips,
 						getFreeBw().get(idx),
 						(double)getFreeBw().get(idx) / requiredBw);
+				
 				continue;
 			}
 			if( getFreeBw().get(idx) < requiredBw) {
@@ -128,13 +135,17 @@ public class VmAllocationPolicyOverbooking extends VmAllocationPolicy implements
 						(double)getFreeMips().get(idx)/requiredMips,
 						getFreeBw().get(idx),
 						(double)getFreeBw().get(idx) / requiredBw);
+				
 				continue;
 			}
 			
 			result = host.vmCreate(vm);
 
-			if (result) { // if vm were succesfully created in the host
+			if (result) { 
+				// If VM were successfully created in the host.
+				
 				getVmTable().put(vm.getUid(), host);
+				
 				getUsedPes().put(vm.getUid(), requiredPes);
 				getFreePes().set(idx, getFreePes().get(idx) - requiredPes);
 				
@@ -151,24 +162,34 @@ public class VmAllocationPolicyOverbooking extends VmAllocationPolicy implements
 		if(!result) {
 			System.err.println("VmAllocationPolicy: WARNING:: Cannot create VM!!!!");
 		}
+		
 		logMaxNumHostsUsed();
+		
 		return result;
 	}
 	
-	protected int maxNumHostsUsed=0;
+	protected int maxNumHostsUsed = 0;
+	
 	public void logMaxNumHostsUsed() {
-		// Get how many are used
-		int numHostsUsed=0;
-		for(int freePes:getFreePes()) {
+		// Get how many are used.
+		int numHostsUsed = 0;
+		
+		for(int freePes : getFreePes()) {
 			if(freePes < hostTotalPes) {
 				numHostsUsed++;
 			}
 		}
-		if(maxNumHostsUsed < numHostsUsed)
+		
+		if(maxNumHostsUsed < numHostsUsed) {
 			maxNumHostsUsed = numHostsUsed;
-		Log.printLine("Number of online hosts:"+numHostsUsed + ", max was ="+maxNumHostsUsed);
+		}
+		
+		Log.printLine("Number of online hosts:" + numHostsUsed + ", max was =" + maxNumHostsUsed);
 	}
-	public int getMaxNumHostsUsed() { return maxNumHostsUsed;}
+	
+	public int getMaxNumHostsUsed() { 
+		return maxNumHostsUsed;
+	}
 
 	/**
 	 * Releases the host used by a VM.
@@ -180,6 +201,7 @@ public class VmAllocationPolicyOverbooking extends VmAllocationPolicy implements
 	@Override
 	public void deallocateHostForVm(Vm vm) {
 		Host host = getVmTable().remove(vm.getUid());
+		
 		if (host != null) {
 			int idx = getHostList().indexOf(host);
 			host.vmDestroy(vm);
@@ -279,18 +301,23 @@ public class VmAllocationPolicyOverbooking extends VmAllocationPolicy implements
 	protected Map<String, Long> getUsedMips() {
 		return usedMips;
 	}
+	
 	protected void setUsedMips(Map<String, Long> usedMips) {
 		this.usedMips = usedMips;
 	}
+	
 	protected Map<String, Long> getUsedBw() {
 		return usedBw;
 	}
+	
 	protected void setUsedBw(Map<String, Long> usedBw) {
 		this.usedBw = usedBw;
 	}
+	
 	protected List<Long> getFreeMips() {
 		return this.freeMips;
 	}
+	
 	protected void setFreeMips(List<Long> freeMips) {
 		this.freeMips = freeMips;
 	}
@@ -298,6 +325,7 @@ public class VmAllocationPolicyOverbooking extends VmAllocationPolicy implements
 	protected List<Long> getFreeBw() {
 		return this.freeBw;
 	}
+	
 	protected void setFreeBw(List<Long> freeBw) {
 		this.freeBw = freeBw;
 	}
@@ -319,21 +347,21 @@ public class VmAllocationPolicyOverbooking extends VmAllocationPolicy implements
 	 */
 	@Override
 	public boolean allocateHostForVm(Vm vm, Host host) {
-		if (host.vmCreate(vm)) { // if vm has been succesfully created in the host
+		if (host.vmCreate(vm)) { 
+			// If VM has been successfully created in the host.
 			getVmTable().put(vm.getUid(), host);
 
 			int requiredPes = vm.getNumberOfPes();
 			int idx = getHostList().indexOf(host);
+			
 			getUsedPes().put(vm.getUid(), requiredPes);
 			getFreePes().set(idx, getFreePes().get(idx) - requiredPes);
 
-			Log.formatLine(
-					"%.2f: VM #" + vm.getId() + " has been allocated to the host #" + host.getId(),
-					CloudSim.clock());
+			Log.formatLine("%.2f: VM #" + vm.getId() + " has been allocated to the host #" + host.getId(), CloudSim.clock());
+			
 			return true;
 		}
 
 		return false;
 	}	
 }
-

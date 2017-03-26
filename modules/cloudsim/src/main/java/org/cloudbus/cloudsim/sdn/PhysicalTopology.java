@@ -8,8 +8,10 @@
 
 package org.cloudbus.cloudsim.sdn;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Hashtable;
+import java.util.List;
 
 import org.cloudbus.cloudsim.network.datacenter.AggregateSwitch;
 
@@ -28,14 +30,14 @@ import com.google.common.collect.Table;
  */
 public class PhysicalTopology {
 	
-	Hashtable<Integer,Node> nodesTable;	// Address -> Node
+	Hashtable<Integer, Node> nodesTable;	// Address -> Node
 	
 	Table<Integer, Integer, Link> links; 	// From : To -> Link
 	
-	Multimap<Node,Link> nodeLinks;	// Node -> all Links
+	Multimap<Node, Link> nodeLinks;	// Node -> all Links
 
 	public PhysicalTopology() {
-		nodesTable = new Hashtable<Integer,Node>();
+		nodesTable = new Hashtable<Integer, Node>();
 		nodeLinks = HashMultimap.create();
 		links = HashBasedTable.create();
 	}
@@ -49,6 +51,7 @@ public class PhysicalTopology {
 	}
 	
 	public Node getNode(int id) {
+		System.out.println(nodesTable.toString());
 		return nodesTable.get(id);
 	}
 	
@@ -62,20 +65,21 @@ public class PhysicalTopology {
 	
 	public void addNode(Node node){
 		nodesTable.put(node.getAddress(), node);
+
 		if (node instanceof CoreSwitch){
-			// coreSwitch is rank 0 (root)
+			// coreSwitch is rank 0 (root).
 			node.setRank(0);
 		} 
 		else if (node instanceof AggregateSwitch){
-			// Hosts are on the bottom of hierarchy (leaf)
+			// Hosts are on the bottom of hierarchy (leaf).
 			node.setRank(1);
 		} 
 		else if (node instanceof EdgeSwitch){
-			// Edge switches are just before hosts in the hierarchy
+			// Edge switches are just before hosts in the hierarchy.
 			node.setRank(2);
 		} 
 		else if (node instanceof SDNHost){
-			//Hosts are on the bottom of hierarchy (leaf)
+			//Hosts are on the bottom of hierarchy (leaf).
 			node.setRank(3);
 		}
 	}
@@ -87,8 +91,9 @@ public class PhysicalTopology {
 		// For Edge: build path to SDN Host.
 		for(Node sdnhost : nodes) {
 			if(sdnhost.getRank() == 3) {
-				// Rank3 = SDN Host
+				// Rank3 = SDN Host.
 				Collection<Link> links = getAdjacentLinks(sdnhost);
+				
 				for(Link l : links) {
 					if(l.getLowOrder().equals(sdnhost)) {
 						sdnhost.addRoute(null, l);
@@ -105,6 +110,7 @@ public class PhysicalTopology {
 			if(lowerNode.getRank() == 2) {	
 				// Rank2 = Edge switch
 				Collection<Link> links = getAdjacentLinks(lowerNode);
+				
 				for(Link l : links) {
 					if(l.getLowOrder().equals(lowerNode)) {
 						// Link is between Edge and Aggregate
@@ -130,6 +136,7 @@ public class PhysicalTopology {
 			if(agg.getRank() == 1) {
 				// Rank1 = Agg switch
 				Collection<Link> links = getAdjacentLinks(agg);
+				
 				for(Link l : links) {
 					if(l.getLowOrder().equals(agg)) {
 						// Link is between Edge and Aggregate.
@@ -211,6 +218,18 @@ public class PhysicalTopology {
 	
 	public Collection<Node> getAllNodes() {
 		return nodesTable.values();
+	}
+	
+	public List<SDNHost> getHostList(){
+		List<SDNHost> hosts = new ArrayList<SDNHost>();
+		
+		for(Node node : nodesTable.values()){
+			if(node.getRank() == 3){
+				hosts.add((SDNHost)node);
+			}
+		}
+		
+		return hosts;
 	}
 	
 	public Collection<Link> getAllLinks() {

@@ -38,12 +38,11 @@ import org.cloudbus.cloudsim.core.SimEvent;
  * @since CloudSimSDN 1.0
  */
 public class SDNHost extends SimEntity implements Node {
-	private static final double PROCESSING_DELAY= 0.1;
+	private static final double PROCESSING_DELAY = 0.1;
 		
 	Host host;
 	
 	EdgeSwitch sw;
-	//Hashtable<Integer,Vm> vms;
 	
 	Hashtable<Integer, Middlebox> middleboxes;
 	
@@ -66,7 +65,6 @@ public class SDNHost extends SimEntity implements Node {
 		this.host = host;
 		this.nos = nos;
 			
-		//this.vms = new Hashtable<Integer,Vm>();
 		this.middleboxes = new Hashtable<Integer, Middlebox>();
 		this.requestsTable = new Hashtable<Cloudlet, Request>();
 		this.forwardingTable = new ForwardingRule();
@@ -81,22 +79,19 @@ public class SDNHost extends SimEntity implements Node {
 	public void setEdgeSwitch(EdgeSwitch sw){
 		this.sw = sw;
 	}
-	
-	/*public void addVm(Vm vm){
-		vms.put(vm.getId(), vm);
-		host.vmCreate(vm);
-	}*/
-	
+		
 	public void addMiddlebox(Middlebox m){
 		middleboxes.put(m.getId(), m);
 		host.vmCreate(m.getVm());
 	}
 
 	@Override
-	public void startEntity(){}
+	public void startEntity() {
+	}
 	
 	@Override
-	public void shutdownEntity(){}
+	public void shutdownEntity() {
+	}
 
 	@Override
 	public void processEvent(SimEvent ev) {
@@ -133,13 +128,13 @@ public class SDNHost extends SimEntity implements Node {
 		if (dstVm != null) {
 			// Try to deliver package to a hosted VM.
 			
-			//Log.printLine(CloudSim.clock() + ": " + getName() + ".processPackage(): Deliver the request to dest VM: "+ dstVm);
 			data.setFinishTime(CloudSim.clock());
 			
 			Request req = data.getPayload();
 			Activity ac = req.removeNextActivity();
 			processActivity(ac, req, vmId);
-		} 
+		}
+		
 		else if (middleboxes.containsKey(vmId)) {
 			// Try to deliver package to a hosted middlebox.
 			Request req = data.getPayload();
@@ -154,8 +149,9 @@ public class SDNHost extends SimEntity implements Node {
 	
 	private void processCloudletReturn(Cloudlet data) {
 		Request req = requestsTable.remove(data);
+		
 		if (req.isFinished()){
-			//return to user
+			// Return to user.
 			send(req.getUserId(), PROCESSING_DELAY, Constants.REQUEST_COMPLETED, req);
 		} 
 		else {
@@ -170,19 +166,21 @@ public class SDNHost extends SimEntity implements Node {
 			Transmission tr = (Transmission)ac;
 
 			Package pkg = tr.getPackage();
-			//send package to router via channel (NOS)
+			// Send package to router via channel (NOS).
 			nos.addPackageToChannel(this, pkg);
 			
 			pkg.setStartTime(CloudSim.clock());
 		}
+		
 		else if(ac instanceof Processing) {
 				Cloudlet cl = ((Processing) ac).getCloudlet();
 				cl.setVmId(vmId);
 				
 				requestsTable.put(cl, req);
-				//sendNow(host.getDatacenter().getId(), CloudSimTags.CLOUDLET_SUBMIT, cl);
+				//sendNow(host.getDatacenter().getId(), CloudSimTags.CLOUDLET_SUBMIT, cl); // Depricated.
 				sendNow(nos.getDatacenterIdFromBrokerId(cl.getUserId()), CloudSimTags.CLOUDLET_SUBMIT, cl);
-		} 
+		}
+		
 		else {
 			Log.printLine(CloudSim.clock() + ": " + getName() + ": Activity is unknown..");
 		}
@@ -336,7 +334,7 @@ public class SDNHost extends SimEntity implements Node {
 	
 	@Override
 	public Node getVMRoute(int src, int dest, int flowId){
-		Node route= this.forwardingTable.getRoute(src, dest, flowId);
+		Node route = this.forwardingTable.getRoute(src, dest, flowId);
 		
 		if(route == null) {
 			this.printVMRoute();

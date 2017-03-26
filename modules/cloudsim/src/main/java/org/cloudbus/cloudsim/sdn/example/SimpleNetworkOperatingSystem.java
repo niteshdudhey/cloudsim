@@ -7,8 +7,11 @@
  */
 package org.cloudbus.cloudsim.sdn.example;
 
+<<<<<<< HEAD
 import java.util.LinkedList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map.Entry;
 
 import org.cloudbus.cloudsim.Log;
 import org.cloudbus.cloudsim.Vm;
@@ -25,6 +28,9 @@ import org.cloudbus.cloudsim.sdn.SDNHost;
 import org.cloudbus.cloudsim.sdn.Switch;
 import org.cloudbus.cloudsim.sdn.TimedVm;
 import org.cloudbus.cloudsim.sdn.VSwitch;
+import org.cloudbus.cloudsim.sdn.VdcEmbedder;
+import org.cloudbus.cloudsim.sdn.VdcEmbedding;
+import org.cloudbus.cloudsim.sdn.VirtualTopology;
 
 /**
  * Simple network operating system class for the example. 
@@ -35,9 +41,9 @@ import org.cloudbus.cloudsim.sdn.VSwitch;
  * @since CloudSimSDN 1.0
  */
 public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
-	
-	public SimpleNetworkOperatingSystem(String fileName) {
-		super(fileName);
+
+	public SimpleNetworkOperatingSystem(String fileName, VdcEmbedder embedder) {
+		super(fileName, embedder);
 	}
 	
 	@Override
@@ -72,6 +78,66 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 			}
 		}
 		return true;
+	}
+	
+	// Depricated.
+	@Override
+	public boolean deployApplication(List<Vm> vms, List<Middlebox> middleboxes, List<Arc> links, VirtualTopology virtualTopology) {
+		return false;
+	}
+	
+	@Override
+	public boolean deployApplication(VirtualTopology virtualTopology) {
+		
+		Log.printLine(CloudSim.clock() + ": " + getName() + ": Starting deploying application..");
+		
+		VdcEmbedding embedding = embedder.embed(topology, virtualTopology);
+		
+		if(!isValidEmbedding(embedding, virtualTopology)){
+			System.out.println("Embedding Failed!!!");
+			return false;
+		}
+		
+		HashMap<Integer, Vm> vms1 = virtualTopology.getVmsTable();
+		
+		for (Entry<Integer, Vm> entry : vms1.entrySet()) {
+			Vm vm = entry.getValue();
+			
+			SDNHost sdnHost = (SDNHost) topology.getNode(embedding.getAllocatedHostForVm(vm.getId()));
+			
+			TimedVm tvm = (TimedVm) vm;
+			
+			tvm.setCandidateHost(sdnHost);
+			
+			SDNDatacenter datacenter = getDatacenterById(tvm.getDatacenterId());
+			
+			Log.printLine(CloudSim.clock() + ": " + getName() + ": Trying to Create VM #" + tvm.getId() 
+					+ " in " + datacenter.getName() + ", (" + tvm.getStartTime() + "~" + tvm.getFinishTime() + ")");
+			
+			send(datacenter.getId(), tvm.getStartTime(), CloudSimTags.VM_CREATE_ACK, tvm);
+			
+			if(tvm.getFinishTime() != Double.POSITIVE_INFINITY) {
+				send(datacenter.getId(), tvm.getFinishTime(), CloudSimTags.VM_DESTROY, tvm);
+				send(this.getId(), tvm.getFinishTime(), CloudSimTags.VM_DESTROY, tvm);
+			}
+		}
+		
+		return true;
+	}
+	
+	/**
+	 * Returns true if each VM is allocated to some host.
+	 * 
+	 * @param embedding
+	 * @param virtualTopology
+	 * @return
+	 */
+	private boolean isValidEmbedding(VdcEmbedding embedding, VirtualTopology virtualTopology){
+		if (embedding.getVmToHostMappings().size() == virtualTopology.getVms().size()) {
+			return true;
+		}
+		
+		return false;
 	}
 	
 	public boolean deployFlow(List<Arc> links) {

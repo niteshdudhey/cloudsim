@@ -15,7 +15,6 @@ import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -37,10 +36,18 @@ import org.cloudbus.cloudsim.provisioners.BwProvisionerSimple;
 import org.cloudbus.cloudsim.provisioners.PeProvisionerSimple;
 import org.cloudbus.cloudsim.provisioners.RamProvisioner;
 import org.cloudbus.cloudsim.provisioners.RamProvisionerSimple;
+import org.cloudbus.cloudsim.sdn.datacenterSpecifications.HostSpec;
+import org.cloudbus.cloudsim.sdn.datacenterSpecifications.LinkSpec;
+import org.cloudbus.cloudsim.sdn.datacenterSpecifications.PdcSpec;
+import org.cloudbus.cloudsim.sdn.datacenterSpecifications.SwitchSpec;
+import org.cloudbus.cloudsim.sdn.datacenterSpecifications.VLinkSpec;
+import org.cloudbus.cloudsim.sdn.datacenterSpecifications.VdcSpec;
+import org.cloudbus.cloudsim.sdn.datacenterSpecifications.VmSpec;
 import org.cloudbus.cloudsim.sdn.example.policies.VmSchedulerTimeSharedEnergy;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.JSONValue;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonIOException;
+import com.google.gson.JsonSyntaxException;
 
 /**
  * NOS calculates and estimates network behaviour. It also mimics SDN Controller functions.  
@@ -54,14 +61,32 @@ import org.json.simple.JSONValue;
 
 /**
  * Modified to handle multiple Datacenters simultaneously.
+ * 
  * @author Nitesh Dudhey
  *
  */
 public abstract class NetworkOperatingSystem extends SimEntity {
 
+	static final int MAX_PORTS = 256;
+	
+	// Used to assign flow Ids to Arcs.
+	// TOCHECK: whether it should necessarily be static.
+	private static int flowNumbers = 0;
+		
 	String physicalTopologyFileName; 
 	
 	protected PhysicalTopology topology;
+	
+	// UserId -> VirtualTopology.
+	protected Map<Integer, VirtualTopology> virtualTopologies;
+	
+	protected VdcEmbedder embedder;
+	
+	// Each broker/user is associated with one Datacenter.
+	protected Map<Integer, Integer> brokerIdToDatacenterIdMap;
+	
+	// Multiple Datacenters on one NOS.
+	protected Map<Integer, SDNDatacenter> datacenterIdToDatacenterMap;
 	
 	Hashtable<Package, Node> pkgTable;
 	
@@ -80,7 +105,12 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	
 	// Multiple Datacenters on one NOS.
 	protected Map<Integer, SDNDatacenter> datacenterIdToDatacenterMap;
+
+	// Some of these members could be redundant due to the introduction of VirtualTopologies.
+	// Could be removed later.
 	
+	int vmId = 0;
+
 	protected LinkedList<Vm> vmList;
 	
 	protected LinkedList<Arc> arcList;
@@ -112,26 +142,16 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	boolean isApplicationDeployed = false;
 	
 	// Resolution of the result.
-	public static double minTimeBetweenEvents = 0.001;	// in sec
+	public static double minTimeBetweenEvents = 0.001;		// in sec
 	public static int resolutionPlaces = 5;
-	public static int timeUnit = 1;	// 1: sec, 1000: msec
+	public static int timeUnit = 1;							// 1: sec, 1000: msec
 	
-	public PhysicalTopology getPhysicalTopology(){
-		return topology;
-	}
-
-	/**
-	 * 1. map VMs and middleboxes to hosts, add the new vm/mb to the vmHostTable, advise host, advise dc
-	 * 2. set channels and bws
-	 * 3. set routing tables to restrict hops to meet latency
-	 */
-	protected abstract boolean deployApplication(List<Vm> vms, List<Middlebox> middleboxes, List<Arc> links, List<VSwitch> vswitchList);
-	protected abstract Middlebox deployMiddlebox(String type, Vm vm);
-
-	public NetworkOperatingSystem(String physicalTopologyFileName) {
+	public NetworkOperatingSystem(String physicalTopologyFileName, VdcEmbedder embedder) {
 		super("NOS");
 		
 		this.physicalTopologyFileName = physicalTopologyFileName;
+		this.embedder = embedder;
+		
 		this.pkgTable = new Hashtable<Package, Node>();
 		this.channelTable = new Hashtable<String, Channel>();
 		
@@ -139,6 +159,8 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		this.datacenterIdToDatacenterMap = new HashMap<Integer, SDNDatacenter>();
 		
 		initPhysicalTopology();
+		
+		virtualTopologies = new HashMap<Integer, VirtualTopology>();
 		
 		vmNameIdTable = new HashMap<String, Integer>();
 		vmList = new LinkedList<Vm>();
@@ -160,6 +182,25 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		EventSummary.setSDNHostList(sdnhosts);
 		EventSummary.setLinks(getPhysicalTopology().getAllLinks());
 		EventSummary.setSwitchList(switches);
+	}
+
+	/**
+	 * 1. map VMs and middleboxes to hosts, add the new vm/mb to the vmHostTable, advise host, advise dc
+	 * 2. set channels and bws
+	 * 3. set routing tables to restrict hops to meet latency
+	 */
+	// TODO: Need to remove the arguments that are redundant.
+	protected abstract boolean deployApplication(VirtualTopology virtualTopology);
+	
+	protected abstract boolean deployApplication(List<Vm> vms, List<Middlebox> middleboxes, List<Arc> links, List<VSwitch> vswitchList);
+	
+	// Depricated.
+	protected abstract boolean deployApplication(List<Vm> vms, List<Middlebox> middleboxes, List<Arc> links, VirtualTopology virtualTopology);
+	
+	protected abstract Middlebox deployMiddlebox(String type, Vm vm);
+
+	public PhysicalTopology getPhysicalTopology(){
+		return topology;
 	}
 
 	public static double getMinTimeBetweenNetworkEvents() {
@@ -192,8 +233,10 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	@Override
 	public void processEvent(SimEvent ev) {
 		int tag = ev.getTag();
+		
 		EventSummary.storePresentState(CloudSim.clock());
 		System.out.println("handling event in NOS. Event Tag " + tag);
+		
 		switch(tag){
 			case Constants.SDN_INTERNAL_PACKAGE_PROCESS: 
 				internalPackageProcess(); 
@@ -203,6 +246,7 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 				break;
 			case CloudSimTags.VM_DESTROY:
 				processVmDestroyAck(ev);
+				embedder.deallocateVm(topology, (TimedVm) ev.getData());
 				break;
 			case CloudSimTags.VSWITCH_CREATE_ACK:
 				processVSwitchCreateAck(ev);
@@ -213,6 +257,7 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 			default: 
 				System.out.println("Unknown event received by " + super.getName() + ". Tag:" + ev.getTag());
 		}
+		
 		EventSummary.storePresentState(CloudSim.clock());
 	}
 
@@ -444,28 +489,34 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	private void adjustAllChannels() {
 		for(Channel ch : this.channelTable.values()) {
 			double oldTransmissionBandwidth = ch.getAllocatedBandwidthPerTransmission();
+			
 			if(ch.adjustDedicatedBandwidthAlongLink()) {
 				// Channel BW is changed. send event.
 				double newTransmissionBandwidth = ch.getAllocatedBandwidthPerTransmission();
 				double diff = newTransmissionBandwidth - oldTransmissionBandwidth;
+				
 				for(Transmission transmission : ch.getActiveTransmissions()){
 					TimedVm upvm = (TimedVm) findVm(transmission.getPackage().getOrigin());
 					TimedVm downvm = (TimedVm) findVm(transmission.getPackage().getDestination());
+					
 					upvm.incrementCurrentUpBW(diff);
 					downvm.incrementCurrentDownBW(diff);
 				}
 			}
 		}
 		
-		for(Channel ch:this.channelTable.values()) {
+		for(Channel ch : this.channelTable.values()) {
 			double oldTransmissionBandwidth = ch.getAllocatedBandwidthPerTransmission();
+			
 			if(ch.adjustSharedBandwidthAlongLink()) {
 				// Channel BW is changed. send event.
 				double newTransmissionBandwidth = ch.getAllocatedBandwidthPerTransmission();
 				double diff = newTransmissionBandwidth - oldTransmissionBandwidth;
+				
 				for(Transmission transmission : ch.getActiveTransmissions()){
 					TimedVm upvm = (TimedVm) findVm(transmission.getPackage().getOrigin());
 					TimedVm downvm = (TimedVm) findVm(transmission.getPackage().getDestination());
+					
 					upvm.incrementCurrentUpBW(diff);
 					downvm.incrementCurrentDownBW(diff);
 				}
@@ -666,6 +717,32 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		return sdnhost.getAddress();
 	}
 	
+	/**
+	 * Creates a host by reading host specifications.
+	 * 
+	 * @param hostId
+	 * @param hostSpec
+	 * @return
+	 */
+	protected Host createHost(int hostId, HostSpec hostSpec) {
+		LinkedList<Pe> peList = new LinkedList<Pe>();
+		int peId = 0;
+		
+		for(int i = 0 ; i < hostSpec.getPes() ; i++) {
+			peList.add(new Pe(peId++, new PeProvisionerSimple(hostSpec.getMips())));
+		}
+		
+		RamProvisioner ramPro = new RamProvisionerSimple(hostSpec.getRam());
+		BwProvisioner bwPro = new BwProvisionerSimple(hostSpec.getBw());
+		VmScheduler vmScheduler = new VmSchedulerTimeSharedEnergy(peList);		
+		
+		Host newHost = new Host(hostId, ramPro, bwPro, hostSpec.getStorage(), peList, vmScheduler);
+		
+		return newHost;		
+	}
+	
+	// Depricated.
+	// Not removed because it is overloaded in OverbookingNetworkOperating System.
 	protected Host createHost(int hostId, int ram, long bw, long storage, long pes, double mips) {
 		LinkedList<Pe> peList = new LinkedList<Pe>();
 		int peId = 0;
@@ -683,342 +760,289 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		return newHost;		
 	}
 	
+	/**
+	 * Creates a switch by reading switch specifications.
+	 * 
+	 * @param switchSpec
+	 * @return
+	 */
+	protected Switch createSwitch(SwitchSpec switchSpec){
+		Switch sw = null;
+		
+		switch(switchSpec.getType()){
+		case "core":
+			sw = new CoreSwitch(switchSpec.getName(), switchSpec.getBw(), switchSpec.getIops(), switchSpec.getUpports(), switchSpec.getDownports(), this);
+			break;
+		case "aggregate":
+			sw = new AggregationSwitch(switchSpec.getName(), switchSpec.getBw(), switchSpec.getIops(), switchSpec.getUpports(), switchSpec.getDownports(), this);
+			break;
+		case "edge":
+			sw = new EdgeSwitch(switchSpec.getName(), switchSpec.getBw(), switchSpec.getIops(), switchSpec.getUpports(), switchSpec.getDownports(), this);
+			break;
+		default:
+			System.err.println("No switch found!");
+			//throw new IllegalArgumentException("No switch found!");
+		}
+		
+		return sw;
+	}
+	
+	/**
+	 * Initializes the physical topology by reading the physical topology file.
+	 * 
+	 */
 	protected void initPhysicalTopology() {
 		this.topology = new PhysicalTopology();
 		this.hosts = new ArrayList<Host>();
 		this.sdnhosts = new ArrayList<SDNHost>();
 		
-		hostNameIdTable = new Hashtable<String, Integer>();
-
 		int hostId = 0;
 		Hashtable<String, Integer> nameIdTable = new Hashtable<String, Integer>();
 		
+		Gson gson = new Gson();
+		PdcSpec pdc = null;
+		
 		try {
-    		JSONObject doc = (JSONObject) JSONValue.parse(new FileReader(this.physicalTopologyFileName));
-    		
-    		JSONArray nodes = (JSONArray) doc.get("nodes");
-    		@SuppressWarnings("unchecked")
-			Iterator<JSONObject> iter =nodes.iterator(); 
-			
-    		while(iter.hasNext()){
-				JSONObject node = iter.next();
-				String nodeType = (String) node.get("type");
-				String nodeName = (String) node.get("name");
-				
-				if(nodeType.equalsIgnoreCase("host")){
-					// Host.
-					long pes = (Long) node.get("pes");
-					long mips = (Long) node.get("mips");
-					int ram = new BigDecimal((Long)node.get("ram")).intValueExact();
-					long storage = (Long) node.get("storage");
-					long bw = new BigDecimal((Long)node.get("bw")).intValueExact();
-					
-					int num = 1;
-					if (node.get("nums")!= null) {
-						num = new BigDecimal((Long)node.get("nums")).intValueExact();
-					}
-					
-					// Number of hosts with same specification.
-					// Name of hosts will be <original name><number(0..n-1)>
-					for(int n = 0 ; n < num ; n++) {
-						String nodeName2 = nodeName;
-						if(num > 1) {
-							// TODO: could be changed to nodeName_n for better understanding.
-							nodeName2 = nodeName + n;
-						}
-						
-						Host host = createHost(hostId, ram, bw, storage, pes, mips);
-						
-						SDNHost sdnHost = new SDNHost(nodeName2, host, this);
-						hostNameIdTable.put(nodeName2, hostId);
-						nameIdTable.put(nodeName2, sdnHost.getAddress());
-						
-						hostId++;
-						
-						topology.addNode(sdnHost);
-						this.hosts.add(host);
-						this.sdnhosts.add(sdnHost);
-					}
-					
-				} 
-				else {
-					// Switch.
-					
-					int MAX_PORTS = 256;
-							
-					int bw = new BigDecimal((Long)node.get("bw")).intValueExact();
-					long iops = (Long) node.get("iops");
-					
-					int upports = MAX_PORTS;
-					if (node.get("upports") != null) {
-						upports = new BigDecimal((Long)node.get("upports")).intValueExact();
-					}
-					
-					int downports = MAX_PORTS;
-					if (node.get("downports")!= null) {
-						downports = new BigDecimal((Long)node.get("downports")).intValueExact();
-					}
-					
-					Switch sw = null;
-					
-					if(nodeType.equalsIgnoreCase("core")) {
-						sw = new CoreSwitch(nodeName, bw, iops, upports, downports, this);
-					} 
-					else if (nodeType.equalsIgnoreCase("aggregate")) {
-						sw = new AggregationSwitch(nodeName, bw, iops, upports, downports, this);
-					} 
-					else if (nodeType.equalsIgnoreCase("edge")) {
-						sw = new EdgeSwitch(nodeName, bw, iops, upports, downports, this);
-					} 
-					else {
-						throw new IllegalArgumentException("No switch found!");
-					}
-					
-					if(sw != null) {
-						nameIdTable.put(nodeName, sw.getAddress());
-						topology.addNode(sw);
-						this.switches.add(sw);
-					}
-				}
-			}
-				
-			JSONArray links = (JSONArray) doc.get("links");
-			@SuppressWarnings("unchecked")
-			Iterator<JSONObject> linksIter = links.iterator(); 
-			
-			while(linksIter.hasNext()){
-				JSONObject link = linksIter.next();
-				String src = (String) link.get("source");  
-				String dst = (String) link.get("destination");
-				double lat = (Double) link.get("latency");
-				
-				int srcAddress = nameIdTable.get(src);
-				int dstAddress = nameIdTable.get(dst);
-				topology.addLink(srcAddress, dstAddress, lat);
-			}
-    		
+			pdc = gson.fromJson(new FileReader(this.physicalTopologyFileName), PdcSpec.class);
 		} 
-		catch (FileNotFoundException e) {
-			e.printStackTrace();
+		catch (JsonSyntaxException e1) {
+			e1.printStackTrace();
+		} 
+		catch (JsonIOException e1) {
+			e1.printStackTrace();
+		} 
+		catch (FileNotFoundException e1) {
+			e1.printStackTrace();
 		}
 		
+		for(HostSpec hostSpec : pdc.getHosts()) {
+			
+			if(hostSpec.getNums() == 0) {
+				// nums not specified => one host.
+				
+				Host host = createHost(hostId, hostSpec);
+				
+				String nodeName2 = hostSpec.getName();
+				
+				SDNHost sdnHost = new SDNHost(nodeName2, host, this);
+				nameIdTable.put(nodeName2, sdnHost.getAddress());
+				
+				hostId++;
+				
+				topology.addNode(sdnHost);
+				this.hosts.add(host);
+				this.sdnhosts.add(sdnHost);
+				
+			}
+			else{
+				String nodeName = hostSpec.getName();
+				String nodeName2 = nodeName;
+				
+				for(int n = 0 ; n < hostSpec.getNums() ; n++) {
+					nodeName2 = nodeName + n;
+					
+					Host host = createHost(hostId, hostSpec);					
+					
+					SDNHost sdnHost = new SDNHost(nodeName2, host, this);
+					nameIdTable.put(nodeName2, sdnHost.getAddress());
+					
+					hostId++;
+					
+					topology.addNode(sdnHost);
+					this.hosts.add(host);
+					this.sdnhosts.add(sdnHost);
+					
+				}
+			}
+		}
+		
+		for(SwitchSpec switchSpec : pdc.getSwitches()) {
+			if(switchSpec.getUpports() == 0) {
+				switchSpec.setUpports(MAX_PORTS);
+			}
+			
+			if(switchSpec.getDownports() == 0) {
+				switchSpec.setDownports(MAX_PORTS);
+			}
+			
+			Switch sw = createSwitch(switchSpec);
+			
+			if(sw != null) {
+				nameIdTable.put(switchSpec.getName(), sw.getAddress());
+				topology.addNode(sw);
+				this.switches.add(sw);
+			}
+		}	
+			
+		for(LinkSpec linkSpec : pdc.getLinks()) {
+			
+			int srcAddress = nameIdTable.get(linkSpec.getSource());
+			int dstAddress = nameIdTable.get(linkSpec.getDestination());
+			
+			topology.addLink(srcAddress, dstAddress, linkSpec.getLatency());
+		}
+				
 		topology.buildDefaultRouting();
+		
+		// Initialize the Embedder to get ready to serve VDC requests.
+		embedder.init(topology);
 	}
 	
-	// Used to assign flow Ids to Arcs.
-	// TOCHECK: whether it should necessarily be static.
-	protected static int flowNumbers = 0;
-	
-	
-	public boolean deployApplication(int userId, String vmsFileName){
+	/**
+	 * Reads the virtual network from the file and stores in the required data in their respective memebers.
+	 *  
+	 * @param userId
+	 * @param vmsFileName
+	 */
+	public void readVirtualNetwork(int userId, String vmsFileName) {
 
-		LinkedList<Middlebox> mbList = new LinkedList<Middlebox>();
-		
-		int datacenterId = brokerIdToDatacenterIdMap.get(userId);
-		
-		vmIdRequestedHostTable = new HashMap<Integer, String>();
+		Gson gson = new Gson();
+		VdcSpec vdc = null;
 		
 		try {
-    		JSONObject doc = (JSONObject) JSONValue.parse(new FileReader(vmsFileName));
-    		
-    		JSONArray nodes = (JSONArray) doc.get("nodes");
-    		
-    		@SuppressWarnings("unchecked")
-			Iterator<JSONObject> iter = nodes.iterator(); 
-			while(iter.hasNext()){
-				JSONObject node = iter.next();
-				String nodeType = (String) node.get("type");
-				String nodeName = (String) node.get("name");
-				if (nodeType.equalsIgnoreCase("vm") || nodeType.equalsIgnoreCase("middlebox")) {
-					int pes = new BigDecimal((Long) node.get("pes")).intValueExact();
-					long mips = (Long) node.get("mips");
-					int ram = new BigDecimal((Long) node.get("ram")).intValueExact();
-					long size = (Long) node.get("size");
-					
-					long bw = 1000;
-					String hostName = "";
-					
-					if(node.get("bw") != null) {
-						bw = (Long) node.get("bw");
-					}
-					if(node.get("host") != null) {
-						hostName = (String) node.get("host");
-					}
-					
-					double starttime = 0;
-					if(node.get("starttime") != null) {
-						starttime = (Double) node.get("starttime");
-					}
-					
-					double endtime = Double.POSITIVE_INFINITY;
-					if(node.get("endtime") != null){
-						endtime = (Double) node.get("endtime");
-					}
+			vdc = gson.fromJson(new FileReader(vmsFileName), VdcSpec.class);
+		} 
+		catch (JsonSyntaxException e1) {
+			e1.printStackTrace();
+		} 
+		catch (JsonIOException e1) {
+			e1.printStackTrace();
+		} 
+		catch (FileNotFoundException e1) {
+			e1.printStackTrace();
+		}
 
-					// Number of nodes with same specification.
-					// Name of nodes will be <original name><number(0..n-1)>
-					long nums = 1;
-					if(node.get("nums") != null){
-						nums = (Long) node.get("nums");
-					}
-					
-					for(int n = 0 ; n < nums ; n++) {
-						String nodeName2 = nodeName;
-						if(nums > 1) {
-							// Nodename should be numbered.
-							// TODO: could be changed to nodeName_n for better understanding.
-							nodeName2 = nodeName + n;
-						}
-						
-						if(nodeType.equalsIgnoreCase("vm")){
-							// VM
-							Vm vm = new TimedVm(nodeName2, virtualNodeId, userId, datacenterId, mips, pes, ram, bw, size, "VMM", new CloudletSchedulerTimeShared(), starttime, endtime);
-							vmNameIdTable.put(nodeName2, virtualNodeId);
-							NetworkOperatingSystem.debugVmIdName.put(virtualNodeId, nodeName2);
-							
-							vmList.add(vm);
-							vmIdRequestedHostTable.put(virtualNodeId, hostName);
-							virtualNodeId++;
-						}
-						else{
-							// Middle box
-							Vm vm = new Vm(virtualNodeId, userId, mips, pes, ram, bw, size, "VMM", new CloudletSchedulerTimeShared());
-							Middlebox m = deployMiddlebox(nodeType, vm);
-							vmNameIdTable.put(nodeName2, virtualNodeId);
-							mbList.add(m);
-							virtualNodeId++;
-						}
-					}
-				} else if (nodeType.equalsIgnoreCase("vswitch")) {
-					// VSwitch 
-					
-					int MAX_PORTS = 256;
-					
-					double startTime = 0.0;
-					if (node.get("starttime") != null) {
-						startTime = (Double) node.get("starttime");
-					}
-					
-					double finishTime = Double.POSITIVE_INFINITY;
-					if (node.get("endtime") != null) {
-						finishTime = (Double) node.get("endtime");
-					}
-					
-					int bw = new BigDecimal((Long)node.get("bw")).intValueExact();
-					long iops = (Long) node.get("iops");
-					
-					int upports = MAX_PORTS;
-					if (node.get("upports") != null) {
-						upports = new BigDecimal((Long)node.get("upports")).intValueExact();
-					}
-					
-					int downports = MAX_PORTS;
-					if (node.get("downports") != null) {
-						downports = new BigDecimal((Long)node.get("downports")).intValueExact();
-					}
-					
-					long nums = 1;
-					if(node.get("nums") != null){
-						nums = (Long) node.get("nums");
-					}
-					
-					/*
-					 *  TODO: For now, the embedding of virtual switches onto 
-					 *  physical switches is user-defined.
-					 */ 
-					
-					String pswitchName = null;
-					if (node.get("pswitch") != null) {
-						pswitchName = (String) node.get("pswitch");
-					}
-					
-					for(int n = 0 ; n < nums ; n++) {
-						String nodeName2 = nodeName;
-						if(nums > 1) {
-							nodeName2 = nodeName + "_" + n;
-						}
-						
-						Switch pswitch = getSwitchByName(pswitchName);
-						
-						VSwitch vswitch = new VSwitch(nodeName, bw, iops, upports, downports, 
-								startTime, finishTime, datacenterId, pswitch);
-						vswitchList.add(vswitch);
-						// We use virtualNodeId to represent a virtual node Id. Since Arcs can 
-						// contain both VMs and VSwitches, we need to use distinct Ids for 
-						// VMs and VSwitches.
-						vswitchIdNameTable.put(virtualNodeId, nodeName2);
-						vswitchNameIdTable.put(nodeName2, virtualNodeId);
-						NetworkOperatingSystem.debugVmIdName.put(virtualNodeId, nodeName2);
-						++virtualNodeId;
-					}	
-				}				
+		int datacenterId = brokerIdToDatacenterIdMap.get(userId);
+		String datacenterName = datacenterIdToDatacenterMap.get(datacenterId).getName();
+		
+		VirtualTopology virtualTopology = new VirtualTopology(datacenterId, datacenterName);
+		
+		datacenterIdToDatacenterMap.get(datacenterId).setStartTime(vdc.getStarttime());
+		datacenterIdToDatacenterMap.get(datacenterId).setEndTime(vdc.getEndtime());
+		
+		for(VmSpec vmSpec : vdc.getVms()) {
+			
+			if(vmSpec.getBw() == 0) {
+				vmSpec.setBw(1000);
 			}
 			
-			// Adding Arcs.
-			JSONArray links = (JSONArray) doc.get("links");
-			
-			@SuppressWarnings("unchecked")
-			Iterator<JSONObject> linksIter = links.iterator();
-			
-			while(linksIter.hasNext()){
-				JSONObject link = linksIter.next();
-				
-				String name = (String) link.get("name");
-				String src = (String) link.get("source");
-				String dst = (String) link.get("destination");
-				Object reqLat = link.get("latency");
-				Object reqBw = link.get("bandwidth");
-				
-				double lat = 0.0;
-				if(reqLat != null){
-					lat = (Double) reqLat;
-				}
-				
-				long bw = 0;
-				if(reqBw != null){
-					bw = (Long) reqBw;
-				}
-				
-				Integer srcId = vmNameIdTable.get(src);
-				Integer dstId = vmNameIdTable.get(dst);
-				
-				if (srcId == null) {
-					srcId = vswitchNameIdTable.get(src);
-				}
-				if (dstId == null) {
-					dstId = vswitchNameIdTable.get(dst);
-				}
-				
-				int flowId = -1;
-				
-				if(name == null || "default".equalsIgnoreCase(name)) {
-					// Default flow.
-					flowId = -1;
-				}
-				else {
-					flowId = flowNumbers++;
-					flowNameIdTable.put(name, flowId);
-				}
-				
-				Arc arc = new Arc(name, srcId, dstId, flowId, bw, lat);
-				arcList.add(arc);
-				
-				if(flowId != -1) {
-					flowIdArcTable.put(flowId, arc);
-				}
+			if(vmSpec.getEndtime() == 0) {
+				vmSpec.setEndtime(Double.POSITIVE_INFINITY);
 			}
 			
-			EventSummary.setVmList(vmList);
-			EventSummary.setVSwitchList(vswitchList);
-    	
-			boolean result = deployApplication(vmList, mbList, arcList, vswitchList);
-			if (result){
-				isApplicationDeployed = true;
-				return true;
+			if(vmSpec.getNums() == 0){
+				// nums not specified => one VM.
+				Vm vm = new TimedVm(vmId, vmSpec, userId, datacenterId, "VMM", new CloudletSchedulerTimeShared());
+				
+				String nodeName2 = vmSpec.getName();
+				
+				vmNameIdTable.put(nodeName2, vmId);
+				NetworkOperatingSystem.debugVmIdName.put(vmId, nodeName2);
+				vmList.add(vm);
+				virtualTopology.addVm(vm);
+				vmId++;
+			}
+			else{
+				String nodeName = vmSpec.getName();
+				String nodeName2 = nodeName;
+				
+				for(int n = 0 ; n < vmSpec.getNums() ; n++){
+					nodeName2 = nodeName + n;
+					
+					Vm vm = new TimedVm(vmId, nodeName2, vmSpec, userId, datacenterId, "VMM", new CloudletSchedulerTimeShared());
+					
+					vmNameIdTable.put(nodeName2, vmId);
+					NetworkOperatingSystem.debugVmIdName.put(vmId, nodeName2);
+					vmList.add(vm);
+					virtualTopology.addVm(vm);
+					vmId++;
+				}
+			}
+		}		
+		
+		for(VSwitchSpec vSwitchSpec : vdc.getVSwitches()) {
+			
+			if(vSwitchSpec.getBw() == 0) {
+				vSwitchSpec.setBw(1000);
+			}
+			
+			if(vSwitchSpec.getEndtime() == 0) {
+				vmSpec.setEndtime(Double.POSITIVE_INFINITY);
+			}
+			
+			if(vSwitchSpec.getNums() == 0){
+				// nums not specified => one VSwitch.
+				Switch pswitch = getSwitchByName(vSwitchSpec.getPSwitch);
+				
+				VSwitch vswitch = new VSwitch(vSwitchSpec, datacenterId, pSwitch);
+				
+				String nodeName2 = vSwitchSpec.getName();
+				
+				vswitchList.add(vswitch);
+				// We use virtualNodeId to represent a virtual node Id. Since Arcs can 
+				// contain both VMs and VSwitches, we need to use distinct Ids for 
+				// VMs and VSwitches.
+				vswitchIdNameTable.put(virtualNodeId, nodeName2);
+				vswitchNameIdTable.put(nodeName2, virtualNodeId);
+				NetworkOperatingSystem.debugVmIdName.put(virtualNodeId, nodeName2);
+				++virtualNodeId;
+			}
+			else{
+				// TODO: Need to update this part according to the previous if.
+				String nodeName = vmSpec.getName();
+				String nodeName2 = nodeName;
+				
+				for(int n = 0 ; n < vmSpec.getNums() ; n++){
+					nodeName2 = nodeName + n;
+					
+					Vm vm = new TimedVm(vmId, nodeName2, vmSpec, userId, datacenterId, "VMM", new CloudletSchedulerTimeShared());
+					
+					vmNameIdTable.put(nodeName2, vmId);
+					NetworkOperatingSystem.debugVmIdName.put(vmId, nodeName2);
+					vmList.add(vm);
+					virtualTopology.addVm(vm);
+					vmId++;
+				}
 			}
 		}
-		catch (FileNotFoundException e) {
-			e.printStackTrace();
+		
+		for(VLinkSpec vLinkSpec : vdc.getLinks()){
+			
+			int srcId = vmNameIdTable.get(vLinkSpec.getSource());
+			int dstId = vmNameIdTable.get(vLinkSpec.getDestination());
+			
+			// Default flow.
+			int flowId = -1;
+			
+			if(vLinkSpec.getName() != null && !"default".equalsIgnoreCase(vLinkSpec.getName())) {
+				flowId = flowNumbers++;
+				flowNameIdTable.put(vLinkSpec.getName(), flowId);
+			}
+			
+			Arc arc = new Arc(vLinkSpec, srcId, dstId, flowId);
+			arcList.add(arc);
+			
+			if(flowId != -1) {
+				flowIdArcTable.put(flowId, arc);
+			}
+		}
+		
+		virtualTopologies.put(userId,  virtualTopology);
+	}
+
+	
+	/**
+	 * Deploys the VDC (if possible according to the Embedding Policy).
+	 * 
+	 * @param userId
+	 * @return
+	 */
+	public boolean deployApplication(int userId) {
+		boolean result = deployApplication(virtualTopologies.get(userId));
+		
+		if (result) {
+			isApplicationDeployed = true;
+			return true;
 		}
 		
 		return false;

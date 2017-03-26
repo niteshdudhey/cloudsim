@@ -74,12 +74,12 @@ public class WorkloadParser {
 	}
 	
 	public List<Cloudlet> getLastCloudlets() {
-		// Returns cloudlets that is done at last for each workload
+		// Returns cloudlets that is done at last for each workload.
 		return this.lastCloudlets;
 	}
 	
 	public List<Cloudlet> getAllCloudlets() {
-		// Returns cloudlets that is done at last for each workload
+		// Returns cloudlets that is done at last for each workload.
 		return this.allCloudlets;
 	}
 	
@@ -96,7 +96,7 @@ public class WorkloadParser {
 	}
 
 	private Cloudlet generateCloudlet(int vmId, int length) {
-		int peNum=1;
+		int peNum = 1;
 		long fileSize = 300;
 		long outputSize = 300;
 		

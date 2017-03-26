@@ -33,12 +33,17 @@ import org.cloudbus.cloudsim.core.SimEvent;
  */
 
 /**
+ * Modified to add the support of start time.
  * 
  * @author Nitesh Dudhey
  *
  */
 public class SDNDatacenter extends Datacenter {
 
+	double startTime;
+	
+	double endTime;
+	
 	NetworkOperatingSystem nos;
 	
 	List<VSwitch> vswitchList;
@@ -51,6 +56,26 @@ public class SDNDatacenter extends Datacenter {
 		this.vswitchList = new LinkedList<VSwitch>();
 	}
 	
+	public double getStartTime() {
+		return startTime;
+	}
+
+
+	public void setStartTime(double startTime) {
+		this.startTime = startTime;
+	}
+
+
+	public double getEndTime() {
+		return endTime;
+	}
+
+
+	public void setEndTime(double endTime) {
+		this.endTime = endTime;
+	}
+
+
 	/**
 	 * Adds a VM to the datacenter.
 	 * @param vm
@@ -67,6 +92,7 @@ public class SDNDatacenter extends Datacenter {
 		
 	@Override
 	protected void processVmCreate(SimEvent ev, boolean ack) {
+<<<<<<< HEAD
 		Vm vm = (Vm) ev.getData();
 		
 		boolean result = false;
@@ -105,6 +131,41 @@ public class SDNDatacenter extends Datacenter {
 
 			vm.updateVmProcessing(CloudSim.clock(), getVmAllocationPolicy().getHost(vm).getVmScheduler()
 					.getAllocatedMipsForVm(vm));
+=======
+		
+		Vm vm = (Vm) ev.getData();
+		
+		TimedVm tvm = (TimedVm) vm;
+		
+		// Used only to check the creation time.
+		System.out.println(CloudSim.clock() + " Creating VM " + vm.getUid() + " , Id " + vm.getId());
+		
+		boolean result = getVmAllocationPolicy().allocateHostForVm(vm, tvm.getCandidateHost().getHost());
+
+		if (ack) {
+			int[] data = new int[3];
+			data[0] = getId();
+			data[1] = vm.getId();
+
+			if (result) {
+				data[2] = CloudSimTags.TRUE;
+			}
+			else {
+				data[2] = CloudSimTags.FALSE;
+			}
+			
+			send(vm.getUserId(), CloudSim.getMinTimeBetweenEvents(), CloudSimTags.VM_CREATE_ACK, data);
+		}
+
+		if (result) {
+			getVmList().add(vm);
+
+			if (vm.isBeingInstantiated()) {
+				vm.setBeingInstantiated(false);
+			}
+
+			vm.updateVmProcessing(CloudSim.clock(), getVmAllocationPolicy().getHost(vm).getVmScheduler().getAllocatedMipsForVm(vm));
+>>>>>>> refs/remotes/origin/VDCEmbeddingPolicy
 		}
 		
 		if(ack) {
@@ -115,6 +176,7 @@ public class SDNDatacenter extends Datacenter {
 	
 	@Override
 	public void processOtherEvent(SimEvent ev){
+		
 		switch(ev.getTag()){
 			case Constants.REQUEST_SUBMIT:
 				processRequest((Request) ev.getData());
@@ -122,12 +184,18 @@ public class SDNDatacenter extends Datacenter {
 			case Constants.APPLICATION_SUBMIT:
 				processApplication(ev.getSource(), (String) ev.getData());
 				break;
+<<<<<<< HEAD
 			case CloudSimTags.VSWITCH_CREATE_ACK:
 				processVSwitchCreate(ev, true);
 				break;
 			case CloudSimTags.VSWITCH_DESTROY:
 				processVSwitchDestroy(ev, false);
 				break;
+=======
+			case Constants.DEPLOY_APPLICATION:
+				String []data = (String [])ev.getData();
+				deployApplication(Integer.parseInt(data[0]), data[1]);
+>>>>>>> refs/remotes/origin/VDCEmbeddingPolicy
 			default: 
 				System.out.println("Unknown event received by SdnDatacenter. Tag:" + ev.getTag());
 		}
@@ -157,7 +225,7 @@ public class SDNDatacenter extends Datacenter {
 			}
 		}
 	}
-	
+		
 	private void processRequest(Request req) {
 		// Request received from user. Send to SdnHost.
 		Activity ac = req.getNextActivity();
@@ -175,9 +243,36 @@ public class SDNDatacenter extends Datacenter {
 		}
 	}
 	
+	/**
+	 * Processes application request and schedules the deployment at the start time of the datacenter.
+	 * @param userId
+	 * @param filename
+	 */
 	private void processApplication(int userId, String filename) {
-		nos.deployApplication(userId, filename);
-		send(userId, CloudSim.getMinTimeBetweenEvents(), Constants.APPLICATION_SUBMIT_ACK, filename);
+		
+		nos.readVirtualNetwork(userId, filename);
+		
+		String []sendData = {Integer.toString(userId), filename};
+		
+		send(this.getId(), this.getStartTime() + CloudSim.getMinTimeBetweenEvents(), 
+				Constants.DEPLOY_APPLICATION, sendData);
+	}
+	
+	/**
+	 * Deploys the virtual datacenter and its workload if it succeeds.
+	 * @param userId
+	 * @param filename
+	 */
+	private void deployApplication(int userId, String filename){
+		boolean result = nos.deployApplication(userId);
+		
+		if (result) {
+			// Deploying workload.
+			send(userId, CloudSim.getMinTimeBetweenEvents(), Constants.APPLICATION_SUBMIT_ACK, filename);
+		}
+		else {
+			System.out.println("Could not deploy Virtual Datacenter");
+		}
 	}
 	
 	public Map<String, Integer> getVmNameIdTable() {

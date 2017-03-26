@@ -25,8 +25,8 @@ public class Package {
 	int flowId;
 	Request payload;
 
-	private double startTime=-1;
-	private double finishTime=-1;
+	private double startTime = -1;
+	private double finishTime = -1;
 	
 	public Package(int origin, int destination, long size, int flowId, Request payload) {
 		this.origin = origin;
@@ -62,18 +62,31 @@ public class Package {
 	}
 	
 	public String toString() {
-		return "PKG:"+origin + "->" + destination + " - " + payload.toString();
+		StringBuilder ret = new StringBuilder();
+		
+		ret.append("PKG:");
+		ret.append(origin);
+		ret.append("->");
+		ret.append(destination);
+		
+		ret.append(" - ");
+		ret.append(payload.toString());
+		
+		return ret.toString();
 	}
 
 	public void setStartTime(double time) {
 		this.startTime = time;
 	}
+	
 	public void setFinishTime(double time) {
 		this.finishTime = time;
 	}
+	
 	public double getStartTime() {
 		return this.startTime;
 	}
+	
 	public double getFinishTime() {
 		return this.finishTime;
 	}

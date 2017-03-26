@@ -67,7 +67,8 @@ public class PeProvisionerOverbooking extends PeProvisioner {
 
 		if (getPeTable().containsKey(vmUid)) {
 			allocatedMips = getPeTable().get(vmUid);
-		} else {
+		} 
+		else {
 			allocatedMips = new ArrayList<Double>();
 		}
 
@@ -87,11 +88,12 @@ public class PeProvisionerOverbooking extends PeProvisioner {
 	@Override
 	public boolean allocateMipsForVm(Vm vm, List<Double> mips) {
 		int totalMipsToAllocate = 0;
+		
 		for (double _mips : mips) {
 			totalMipsToAllocate += _mips;
 		}
 
-		if (getAvailableMips() + getTotalAllocatedMipsForVm(vm) < totalMipsToAllocate) {
+		if ((getAvailableMips() + getTotalAllocatedMipsForVm(vm)) < totalMipsToAllocate) {
 			return false;
 		}
 
@@ -110,7 +112,7 @@ public class PeProvisionerOverbooking extends PeProvisioner {
 	public void deallocateMipsForAllVms() {
 		super.deallocateMipsForAllVms();
 		
-		setAvailableMips(PeProvisionerOverbooking.getOverbookedMips(getMips()));	//Overbooking
+		setAvailableMips(PeProvisionerOverbooking.getOverbookedMips(getMips()));	// Overbooking
 
 		getPeTable().clear();
 	}
@@ -126,9 +128,11 @@ public class PeProvisionerOverbooking extends PeProvisioner {
 		if (getPeTable().containsKey(vm.getUid())) {
 			try {
 				return getPeTable().get(vm.getUid()).get(peId);
-			} catch (Exception e) {
+			} 
+			catch (Exception e) {
 			}
 		}
+		
 		return 0;
 	}
 
@@ -141,6 +145,7 @@ public class PeProvisionerOverbooking extends PeProvisioner {
 		if (getPeTable().containsKey(vm.getUid())) {
 			return getPeTable().get(vm.getUid());
 		}
+		
 		return null;
 	}
 
@@ -152,11 +157,14 @@ public class PeProvisionerOverbooking extends PeProvisioner {
 	public double getTotalAllocatedMipsForVm(Vm vm) {
 		if (getPeTable().containsKey(vm.getUid())) {
 			double totalAllocatedMips = 0.0;
+			
 			for (double mips : getPeTable().get(vm.getUid())) {
 				totalAllocatedMips += mips;
 			}
+			
 			return totalAllocatedMips;
 		}
+		
 		return 0;
 	}
 
@@ -167,9 +175,11 @@ public class PeProvisionerOverbooking extends PeProvisioner {
 	@Override
 	public void deallocateMipsForVm(Vm vm) {
 		if (getPeTable().containsKey(vm.getUid())) {
+			
 			for (double mips : getPeTable().get(vm.getUid())) {
 				setAvailableMips(getAvailableMips() + mips);
 			}
+			
 			getPeTable().remove(vm.getUid());
 		}
 	}

@@ -23,7 +23,9 @@ import org.cloudbus.cloudsim.VmAllocationPolicy;
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.sdn.NetworkOperatingSystem;
 import org.cloudbus.cloudsim.sdn.SDNDatacenter;
+import org.cloudbus.cloudsim.sdn.VdcEmbedderSimple;
 import org.cloudbus.cloudsim.sdn.Switch;
+import org.cloudbus.cloudsim.sdn.VdcEmbedder;
 import org.cloudbus.cloudsim.sdn.example.policies.VmAllocationPolicyCombinedLeastFullFirst;
 import org.cloudbus.cloudsim.sdn.example.policies.VmAllocationPolicyCombinedMostFullFirst;
 import org.cloudbus.cloudsim.sdn.example.policies.VmAllocationPolicyMipsLeastFullFirst;
@@ -104,38 +106,41 @@ public class SDNExample {
 			
 			VmAllocationPolicyFactory vmAllocationFac = null;
 			NetworkOperatingSystem snos = null;
+			
+			VdcEmbedder embedder = new VdcEmbedderSimple();
+			
 			switch(vmAllocPolicy) {
 			case CombMFF:
 			case MFF:
 				vmAllocationFac = new VmAllocationPolicyFactory() {
 					public VmAllocationPolicy create(List<? extends Host> hostList) { return new VmAllocationPolicyCombinedMostFullFirst(hostList); }
 				};
-				snos = new SimpleNetworkOperatingSystem(physicalTopologyFile);
+				snos = new SimpleNetworkOperatingSystem(physicalTopologyFile, embedder);
 				break;
 			case CombLFF:
 			case LFF:
 				vmAllocationFac = new VmAllocationPolicyFactory() {
 					public VmAllocationPolicy create(List<? extends Host> hostList) { return new VmAllocationPolicyCombinedLeastFullFirst(hostList); }
 				};
-				snos = new SimpleNetworkOperatingSystem(physicalTopologyFile);
+				snos = new SimpleNetworkOperatingSystem(physicalTopologyFile, embedder);
 				break;
 			case MipMFF:
 				vmAllocationFac = new VmAllocationPolicyFactory() {
 					public VmAllocationPolicy create(List<? extends Host> hostList) { return new VmAllocationPolicyMipsMostFullFirst(hostList); }
 				};
-				snos = new SimpleNetworkOperatingSystem(physicalTopologyFile);
+				snos = new SimpleNetworkOperatingSystem(physicalTopologyFile, embedder);
 				break;
 			case MipLFF:
 				vmAllocationFac = new VmAllocationPolicyFactory() {
 					public VmAllocationPolicy create(List<? extends Host> hostList) { return new VmAllocationPolicyMipsLeastFullFirst(hostList); }
 				};
-				snos = new SimpleNetworkOperatingSystem(physicalTopologyFile);
+				snos = new SimpleNetworkOperatingSystem(physicalTopologyFile, embedder);
 				break;
 			case Overbooking:
 				vmAllocationFac = new VmAllocationPolicyFactory() {
 					public VmAllocationPolicy create(List<? extends Host> hostList) { return new VmAllocationPolicyOverbooking(hostList); }
 				};
-				snos = new OverbookingNetworkOperatingSystem(physicalTopologyFile);
+				snos = new OverbookingNetworkOperatingSystem(physicalTopologyFile, embedder);
 				break;
 			default:
 				System.err.println("Choose proper VM placement polilcy!");
