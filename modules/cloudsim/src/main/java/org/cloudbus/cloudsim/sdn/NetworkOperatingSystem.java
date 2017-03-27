@@ -41,6 +41,7 @@ import org.cloudbus.cloudsim.sdn.datacenterSpecifications.LinkSpec;
 import org.cloudbus.cloudsim.sdn.datacenterSpecifications.PdcSpec;
 import org.cloudbus.cloudsim.sdn.datacenterSpecifications.SwitchSpec;
 import org.cloudbus.cloudsim.sdn.datacenterSpecifications.VLinkSpec;
+import org.cloudbus.cloudsim.sdn.datacenterSpecifications.VSwitchSpec;
 import org.cloudbus.cloudsim.sdn.datacenterSpecifications.VdcSpec;
 import org.cloudbus.cloudsim.sdn.datacenterSpecifications.VmSpec;
 import org.cloudbus.cloudsim.sdn.example.policies.VmSchedulerTimeSharedEnergy;
@@ -71,7 +72,7 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	
 	// Used to assign flow Ids to Arcs.
 	// TOCHECK: whether it should necessarily be static.
-	private static int flowNumbers = 0;
+	protected static int flowNumbers = 0;
 		
 	String physicalTopologyFileName; 
 	
@@ -99,12 +100,6 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	protected List<Switch> switches = new ArrayList<Switch>();
 	
 	int virtualNodeId = 0;
-		
-	// Each broker/user is associated with one Datacenter.
-	protected Map<Integer, Integer> brokerIdToDatacenterIdMap;
-	
-	// Multiple Datacenters on one NOS.
-	protected Map<Integer, SDNDatacenter> datacenterIdToDatacenterMap;
 
 	// Some of these members could be redundant due to the introduction of VirtualTopologies.
 	// Could be removed later.
@@ -889,18 +884,18 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	}
 	
 	/**
-	 * Reads the virtual network from the file and stores in the required data in their respective memebers.
+	 * Reads the virtual network from the file and stores in the required data in their respective members.
 	 *  
 	 * @param userId
-	 * @param vmsFileName
+	 * @param virtualTopologyFileName
 	 */
-	public void readVirtualNetwork(int userId, String vmsFileName) {
+	public void readVirtualNetwork(int userId, String virtualTopologyFileName) {
 
 		Gson gson = new Gson();
 		VdcSpec vdc = null;
 		
 		try {
-			vdc = gson.fromJson(new FileReader(vmsFileName), VdcSpec.class);
+			vdc = gson.fromJson(new FileReader(virtualTopologyFileName), VdcSpec.class);
 		} 
 		catch (JsonSyntaxException e1) {
 			e1.printStackTrace();
@@ -931,32 +926,23 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 			}
 			
 			if(vmSpec.getNums() == 0){
-				// nums not specified => one VM.
-				Vm vm = new TimedVm(vmId, vmSpec, userId, datacenterId, "VMM", new CloudletSchedulerTimeShared());
+				vmSpec.setNums(1);
+			}
+			
+			String nodeName = vmSpec.getName();
+			String nodeName2 = nodeName;
+			int nums = vmSpec.getNums();
+			
+			for(int n = 0 ; n < nums ; n++){
+				nodeName2 = nodeName + n;
 				
-				String nodeName2 = vmSpec.getName();
+				Vm vm = new TimedVm(virtualNodeId, nodeName2, vmSpec, userId, datacenterId, "VMM", new CloudletSchedulerTimeShared());
 				
-				vmNameIdTable.put(nodeName2, vmId);
-				NetworkOperatingSystem.debugVmIdName.put(vmId, nodeName2);
+				vmNameIdTable.put(nodeName2, virtualNodeId);
+				NetworkOperatingSystem.debugVmIdName.put(virtualNodeId, nodeName2);
 				vmList.add(vm);
 				virtualTopology.addVm(vm);
-				vmId++;
-			}
-			else{
-				String nodeName = vmSpec.getName();
-				String nodeName2 = nodeName;
-				
-				for(int n = 0 ; n < vmSpec.getNums() ; n++){
-					nodeName2 = nodeName + n;
-					
-					Vm vm = new TimedVm(vmId, nodeName2, vmSpec, userId, datacenterId, "VMM", new CloudletSchedulerTimeShared());
-					
-					vmNameIdTable.put(nodeName2, vmId);
-					NetworkOperatingSystem.debugVmIdName.put(vmId, nodeName2);
-					vmList.add(vm);
-					virtualTopology.addVm(vm);
-					vmId++;
-				}
+				virtualNodeId++;
 			}
 		}		
 		
@@ -967,17 +953,23 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 			}
 			
 			if(vSwitchSpec.getEndtime() == 0) {
-				vmSpec.setEndtime(Double.POSITIVE_INFINITY);
+				vSwitchSpec.setEndtime(Double.POSITIVE_INFINITY);
 			}
+						
+			if(vSwitchSpec.getNums() == 0) {
+				vSwitchSpec.setNums(1);
+			}
+				
+			String nodeName = vSwitchSpec.getName();
+			String nodeName2 = nodeName;
 			
-			if(vSwitchSpec.getNums() == 0){
-				// nums not specified => one VSwitch.
-				Switch pswitch = getSwitchByName(vSwitchSpec.getPSwitch);
+			for(int n = 0 ; n < vSwitchSpec.getNums() ; n++){
+				nodeName2 = nodeName + n;
 				
-				VSwitch vswitch = new VSwitch(vSwitchSpec, datacenterId, pSwitch);
+				Switch pswitch = getSwitchByName(vSwitchSpec.getPSwitchName());
 				
-				String nodeName2 = vSwitchSpec.getName();
-				
+				VSwitch vswitch = new VSwitch(virtualNodeId, vSwitchSpec, datacenterId, pswitch);
+						
 				vswitchList.add(vswitch);
 				// We use virtualNodeId to represent a virtual node Id. Since Arcs can 
 				// contain both VMs and VSwitches, we need to use distinct Ids for 
@@ -986,23 +978,6 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 				vswitchNameIdTable.put(nodeName2, virtualNodeId);
 				NetworkOperatingSystem.debugVmIdName.put(virtualNodeId, nodeName2);
 				++virtualNodeId;
-			}
-			else{
-				// TODO: Need to update this part according to the previous if.
-				String nodeName = vmSpec.getName();
-				String nodeName2 = nodeName;
-				
-				for(int n = 0 ; n < vmSpec.getNums() ; n++){
-					nodeName2 = nodeName + n;
-					
-					Vm vm = new TimedVm(vmId, nodeName2, vmSpec, userId, datacenterId, "VMM", new CloudletSchedulerTimeShared());
-					
-					vmNameIdTable.put(nodeName2, vmId);
-					NetworkOperatingSystem.debugVmIdName.put(vmId, nodeName2);
-					vmList.add(vm);
-					virtualTopology.addVm(vm);
-					vmId++;
-				}
 			}
 		}
 		

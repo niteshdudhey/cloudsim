@@ -8,11 +8,7 @@
 package org.cloudbus.cloudsim.sdn;
 
 import org.cloudbus.cloudsim.CloudletScheduler;
-<<<<<<< HEAD
 import org.cloudbus.cloudsim.FullVmStateHistoryEntry;
-=======
-import org.cloudbus.cloudsim.Host;
->>>>>>> refs/remotes/origin/VDCEmbeddingPolicy
 import org.cloudbus.cloudsim.Vm;
 import org.cloudbus.cloudsim.sdn.datacenterSpecifications.VmSpec;
 

@@ -23,12 +23,9 @@ import org.cloudbus.cloudsim.sdn.Node;
 import org.cloudbus.cloudsim.sdn.SDNDatacenter;
 import org.cloudbus.cloudsim.sdn.SDNHost;
 import org.cloudbus.cloudsim.sdn.TimedVm;
-<<<<<<< HEAD
 import org.cloudbus.cloudsim.sdn.VSwitch;
-=======
 import org.cloudbus.cloudsim.sdn.VdcEmbedder;
 import org.cloudbus.cloudsim.sdn.VirtualTopology;
->>>>>>> refs/remotes/origin/VDCEmbeddingPolicy
 
 public class OverbookingNetworkOperatingSystem extends NetworkOperatingSystem {
 

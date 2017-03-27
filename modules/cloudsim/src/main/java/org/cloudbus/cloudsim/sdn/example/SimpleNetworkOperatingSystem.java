@@ -7,10 +7,10 @@
  */
 package org.cloudbus.cloudsim.sdn.example;
 
-<<<<<<< HEAD
 import java.util.LinkedList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import org.cloudbus.cloudsim.Log;
@@ -98,12 +98,12 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 			return false;
 		}
 		
-		HashMap<Integer, Vm> vms1 = virtualTopology.getVmsTable();
+		Map<Integer, Vm> vms1 = virtualTopology.getVmsTable();
 		
 		for (Entry<Integer, Vm> entry : vms1.entrySet()) {
 			Vm vm = entry.getValue();
 			
-			SDNHost sdnHost = (SDNHost) topology.getNode(embedding.getAllocatedHostForVm(vm.getId()));
+			SDNHost sdnHost = embedding.getAllocatedHostForVm(vm);
 			
 			TimedVm tvm = (TimedVm) vm;
 			
@@ -119,6 +119,29 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 			if(tvm.getFinishTime() != Double.POSITIVE_INFINITY) {
 				send(datacenter.getId(), tvm.getFinishTime(), CloudSimTags.VM_DESTROY, tvm);
 				send(this.getId(), tvm.getFinishTime(), CloudSimTags.VM_DESTROY, tvm);
+			}
+		}
+		
+		Map<Integer, VSwitch> vswitches = virtualTopology.getVSwitchesTable();
+		
+		for (Entry<Integer, VSwitch> entry : vswitches.entrySet()) {
+			VSwitch vswitch = entry.getValue();
+			
+			Switch pswitch = embedding.getAllocatedSwitchForVSwitch(vswitch);
+					
+			//TODO
+			vswitch.setCandidateSwitch(pswitch);
+			
+			SDNDatacenter datacenter = getDatacenterById(vswitch.getDatacenterId());
+			
+			Log.printLine(CloudSim.clock() + ": " + getName() + ": Trying to Create VM #" + vswitch.getId() 
+					+ " in " + datacenter.getName() + ", (" + vswitch.getStartTime() + "~" + vswitch.getFinishTime() + ")");
+			
+			send(datacenter.getId(), vswitch.getStartTime(), CloudSimTags.VSWITCH_CREATE_ACK, vswitch);
+			
+			if(vswitch.getFinishTime() != Double.POSITIVE_INFINITY) {
+				send(datacenter.getId(), vswitch.getFinishTime(), CloudSimTags.VSWITCH_DESTROY, vswitch);
+				send(this.getId(), vswitch.getFinishTime(), CloudSimTags.VSWITCH_DESTROY, vswitch);
 			}
 		}
 		

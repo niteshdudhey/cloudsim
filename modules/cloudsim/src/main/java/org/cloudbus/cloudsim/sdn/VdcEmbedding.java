@@ -4,6 +4,10 @@
 package org.cloudbus.cloudsim.sdn;
 
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.cloudbus.cloudsim.Vm;
 
 /**
  * The class to represent a VDC embedding on a Physical Datacenter.
@@ -14,29 +18,90 @@ import java.util.HashMap;
  */
 public class VdcEmbedding {
 	// Maps VM id to SDNHost id on which it is assigned.
-	HashMap<Integer, Integer> vmToHostMappings;
+//	HashMap<Integer, Integer> vmToHostMappings;
+	
+	// Prefer to have an explicit Vm to Host mapping rather than just id - id mapping
+	Map<Vm, SDNHost> vmMap;
+	
+	// VSwitch to Switch mapping
+	Map<VSwitch, Switch> vswitchMap;
+	
+	// Arc (VLink) to Link mapping
+	Map<Arc, List<Link>> vlinkMap;
 	
 	public VdcEmbedding() {
-		vmToHostMappings = new HashMap<Integer, Integer>();
+//		vmToHostMappings = new HashMap<Integer, Integer>();
+		vmMap = new HashMap<Vm, SDNHost>();
+		vswitchMap = new HashMap<VSwitch, Switch>();
+		vlinkMap = new HashMap<Arc, List<Link>>();
 	}
 	
-	public HashMap<Integer, Integer> getVmToHostMappings() {
-		return vmToHostMappings;
-	}
-
-	public int getAllocatedHostForVm(int id){
-		return vmToHostMappings.get(id);
+//	public HashMap<Integer, Integer> getVmToHostMappings() {
+//		return vmToHostMappings;
+//	}
+	
+	public Map<Vm, SDNHost> getVmMap() {
+		return vmMap;
 	}
 	
-	public void allocateVmToHost(int vmId, int hostId){
-		vmToHostMappings.put(vmId, hostId);
+	public void setVmMap(Map<Vm, SDNHost> vmMap) {
+		this.vmMap = vmMap;
+	}
+	
+	public Map<VSwitch, Switch> getVSwitchMap() {
+		return vswitchMap;
+	}
+	
+	public void setVSwitchMap(Map<VSwitch, Switch> vswitchMap) {
+		this.vswitchMap = vswitchMap;
+	}
+	
+	public Map<Arc, List<Link>> getVLinkMap() {
+		return vlinkMap;
+	}
+	
+	public void setVLinkMap(Map<Arc, List<Link>> vlinkMap) {
+		this.vlinkMap = vlinkMap;
+	}
+	
+	public SDNHost getAllocatedHostForVm(Vm vm){
+		return vmMap.get(vm);
+	}
+	
+	public void allocateVmToHost(Vm vm, SDNHost host){
+		vmMap.put(vm, host);
+	}
+	
+	public Switch getAllocatedSwitchForVSwitch(VSwitch vswitch) {
+		return vswitchMap.get(vswitch);
+	}
+	
+	public void allocateVSwitchToSwitch(VSwitch vswitch, Switch pswitch){
+		vswitchMap.put(vswitch, pswitch);
+	}
+	
+	public List<Link> getAllocatedLinksForVLink(Arc arc){
+		return vlinkMap.get(arc);
+	}
+	
+	public void allocateVLinkToLinks(Arc arc, List<Link> links){
+		vlinkMap.put(arc, links);
 	}
 	
 	public String toString(){
 		StringBuilder ret = new StringBuilder();
 		
-		ret.append("VmToHostMappings\n");
-		ret.append(vmToHostMappings.toString());
+//		ret.append("VmToHostMappings\n");
+//		ret.append(vmToHostMappings.toString());
+		
+		ret.append("\nVm to Host Mapping\n");
+		ret.append(vmMap.toString());
+		
+		ret.append("\nVSwitch to Switch Mapping\n");
+		ret.append(vswitchMap.toString());
+		
+		ret.append("\nVLink to Links Mapping\n");
+		ret.append(vlinkMap.toString());
 		
 		return ret.toString();
 	}

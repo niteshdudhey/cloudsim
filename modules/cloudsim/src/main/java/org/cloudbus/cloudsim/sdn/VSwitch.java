@@ -4,8 +4,11 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.cloudbus.cloudsim.FullVmStateHistoryEntry;
+import org.cloudbus.cloudsim.sdn.datacenterSpecifications.VSwitchSpec;
 
 public class VSwitch {
+	
+	private int id;
 	
 	private String name;
 	
@@ -29,8 +32,9 @@ public class VSwitch {
 	
 	private List<VSwitchStateHistoryEntry> stateHistory;
 	
-	public VSwitch(String name, int bw, long iops, int upports, int downports, 
+	public VSwitch(int id, String name, int bw, long iops, int upports, int downports, 
 					double startTime, double finishTime, int datacenterId, Switch pswitch) {
+		this.id = id;
 		this.name = name;
 		this.bw = bw;
 		this.iops = iops;
@@ -42,6 +46,25 @@ public class VSwitch {
 		this.pswitch = pswitch;
 		this.numPackets = 0;
 		this.stateHistory = new LinkedList<VSwitchStateHistoryEntry>();
+	}
+	
+	public VSwitch(int id, VSwitchSpec vSpec, int datacenterId, Switch pswitch) {
+		this.id = id;
+		this.name = vSpec.getName();
+		this.bw = vSpec.getBw();
+		this.iops = vSpec.getIops();
+		this.upports = vSpec.getUpports();
+		this.downports = vSpec.getDownports();
+		this.startTime = vSpec.getStarttime();
+		this.finishTime = vSpec.getEndtime();
+		this.datacenterId = datacenterId;
+		this.pswitch = pswitch;
+		this.numPackets = 0;
+		this.stateHistory = new LinkedList<VSwitchStateHistoryEntry>();
+	}
+	
+	public int getId() {
+		return id;
 	}
 	
 	public String getName() {

@@ -16,7 +16,7 @@ public class VdcSpec {
 	
 	List<VSwitchSpec> vSwitches;
 	
-	public VdcSpec(List<VmSpec> vms, List<VLinkSpec> links, double starttime, double endtime){
+	public VdcSpec(List<VmSpec> vms, List<VLinkSpec> links, double starttime, double endtime) {
 		this.vms = vms;
 		this.links = links;
 		this.starttime = starttime;
@@ -44,7 +44,7 @@ public class VdcSpec {
 		return gson.toJson(this);
 	}
 	
-	public List<VSwitch> getVSwitches(){
+	public List<VSwitchSpec> getVSwitches() {
 		return vSwitches;
 	}
 }

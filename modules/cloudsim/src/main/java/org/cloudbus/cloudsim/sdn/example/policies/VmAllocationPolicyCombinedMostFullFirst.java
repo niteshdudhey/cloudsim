@@ -379,40 +379,6 @@ public class VmAllocationPolicyCombinedMostFullFirst extends VmAllocationPolicy 
 		// TODO Auto-generated method stub
 		return null;
 	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.cloudbus.cloudsim.VmAllocationPolicy#allocateHostForVm(org.cloudbus.cloudsim.Vm,
-	 * org.cloudbus.cloudsim.Host)
-	 */
-	@Override
-	public boolean allocateHostForVm(Vm vm, Host host) {
-		if (host.vmCreate(vm)) { // if vm has been succesfully created in the host
-			
-			
-			getVmTable().put(vm.getUid(), host);
-
-			int requiredPes = vm.getNumberOfPes();
-			double requiredMips = vm.getCurrentRequestedTotalMips();
-			long requiredBw = vm.getCurrentRequestedBw();
-			
-			int idx = getHostList().indexOf(host);
-			getUsedPes().put(vm.getUid(), requiredPes);
-			getFreePes().set(idx, getFreePes().get(idx) - requiredPes);
-			
-			getUsedMips().put(vm.getUid(), (long) requiredMips);
-			getFreeMips().set(idx,  (long) (getFreeMips().get(idx) - requiredMips));
-
-			getUsedBw().put(vm.getUid(), (long) requiredBw);
-			getFreeBw().set(idx,  (long) (getFreeBw().get(idx) - requiredBw));
-
-			Log.formatLine(
-					"%.2f: VM #" + vm.getId() + " has been allocated to the host #" + host.getId(),
-					CloudSim.clock());
-			return true;
-		}
-
-		return false;
-	}	
+	
 }
 
