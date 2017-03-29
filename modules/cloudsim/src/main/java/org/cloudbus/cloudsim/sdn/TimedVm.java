@@ -7,6 +7,7 @@
  */
 package org.cloudbus.cloudsim.sdn;
 
+import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.CloudletScheduler;
 import org.cloudbus.cloudsim.FullVmStateHistoryEntry;
 import org.cloudbus.cloudsim.Vm;
@@ -29,7 +30,7 @@ import org.cloudbus.cloudsim.sdn.datacenterSpecifications.VmSpec;
  * @author Nitesh Dudhey
  *
  */
-public class TimedVm extends Vm {
+public class TimedVm extends Vm implements VNode {
 
 	private double startTime;
 	
@@ -50,6 +51,8 @@ public class TimedVm extends Vm {
 	
 	private double currentDownBW;
 	
+	private boolean active;
+	
 	public TimedVm(String name, int id, int userId, int datacenterId, double mips, int numberOfPes, int ram,
 			long bw, long size, String vmm, CloudletScheduler cloudletScheduler) {
 		
@@ -58,6 +61,7 @@ public class TimedVm extends Vm {
 		this.datacenterId = datacenterId;
 		currentUpBW = 0;
 		currentDownBW = 0;
+		this.active = false;		
 	}
 	
 	public TimedVm(String name, int id, int userId, int datacenterId, double mips, int numberOfPes, int ram,
@@ -72,6 +76,7 @@ public class TimedVm extends Vm {
 		this.finishTime = finishTime;
 		currentUpBW = 0;
 		currentDownBW = 0;
+		this.active = false;
 	}
 	
 	public TimedVm(int id, VmSpec vmSpec, int userId, int datacenterId, String vmm, CloudletScheduler cloudletScheduler) {
@@ -82,6 +87,7 @@ public class TimedVm extends Vm {
 		this.datacenterId = datacenterId;
 		this.startTime = vmSpec.getStarttime();
 		this.finishTime = vmSpec.getEndtime();
+		this.active = false;
 	}
 	
 	public TimedVm(int id, String name, VmSpec vmSpec, int userId, int datacenterId, String vmm, CloudletScheduler cloudletScheduler) {
@@ -92,6 +98,7 @@ public class TimedVm extends Vm {
 		this.datacenterId = datacenterId;
 		this.startTime = vmSpec.getStarttime();
 		this.finishTime = vmSpec.getEndtime();
+		this.active = false;
 	}
 	
 	public String getName() {
@@ -205,4 +212,13 @@ public class TimedVm extends Vm {
 	public void setCandidateHost(SDNHost candidateHost) {
 		this.candidateHost = candidateHost;
 	}
+	
+	public void setActive(boolean active) {
+		this.active = active;
+	}
+	
+	public boolean isActive() {
+		return active;
+	}
+	
 }

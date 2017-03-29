@@ -83,6 +83,8 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	
 	protected VdcEmbedder embedder;
 	
+	protected Map<VirtualTopology, VdcEmbedding> vdcEmbeddingMap;
+	
 	// Each broker/user is associated with one Datacenter.
 	protected Map<Integer, Integer> brokerIdToDatacenterIdMap;
 	
@@ -173,6 +175,8 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		flowNameIdTable.put("default", -1);
 		
 		flowIdVSwitchListTable = new HashMap<Integer, List<VSwitch> >();
+		
+		vdcEmbeddingMap = new HashMap<VirtualTopology, VdcEmbedding>();
 		
 		EventSummary.setSDNHostList(sdnhosts);
 		EventSummary.setLinks(getPhysicalTopology().getAllLinks());
@@ -983,8 +987,22 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		
 		for(VLinkSpec vLinkSpec : vdc.getLinks()){
 			
-			int srcId = vmNameIdTable.get(vLinkSpec.getSource());
-			int dstId = vmNameIdTable.get(vLinkSpec.getDestination());
+			String src = vLinkSpec.getSource();
+			String dst = vLinkSpec.getDestination();
+			
+			// Next few lines assume that a VM and VSwitch cannot have the same name.
+			// It is a reasonable assumption, but must be kept in mind while creating
+			// VDCs.
+			
+			Integer srcId = vmNameIdTable.get(src);
+			Integer dstId = vmNameIdTable.get(dst);
+			
+			if (srcId == null) {
+				srcId = vswitchNameIdTable.get(src);
+			}
+			if (dstId == null) {
+				dstId = vswitchNameIdTable.get(dst);
+			}
 			
 			// Default flow.
 			int flowId = -1;
@@ -994,6 +1012,9 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 				flowNameIdTable.put(vLinkSpec.getName(), flowId);
 			}
 			
+			// For now we are assuming that Arc are uni-directional, hence the user
+			// must give 2 arcs to represent a bi-directional VLink.
+			
 			Arc arc = new Arc(vLinkSpec, srcId, dstId, flowId);
 			arcList.add(arc);
 			
@@ -1001,6 +1022,9 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 				flowIdArcTable.put(flowId, arc);
 			}
 		}
+		
+		EventSummary.setVmList(vmList);
+		EventSummary.setVSwitchList(vswitchList);
 		
 		virtualTopologies.put(userId,  virtualTopology);
 	}

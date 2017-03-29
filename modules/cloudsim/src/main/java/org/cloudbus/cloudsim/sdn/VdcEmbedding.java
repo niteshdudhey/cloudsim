@@ -17,8 +17,6 @@ import org.cloudbus.cloudsim.Vm;
  *
  */
 public class VdcEmbedding {
-	// Maps VM id to SDNHost id on which it is assigned.
-//	HashMap<Integer, Integer> vmToHostMappings;
 	
 	// Prefer to have an explicit Vm to Host mapping rather than just id - id mapping
 	Map<Vm, SDNHost> vmMap;
@@ -30,15 +28,10 @@ public class VdcEmbedding {
 	Map<Arc, List<Link>> vlinkMap;
 	
 	public VdcEmbedding() {
-//		vmToHostMappings = new HashMap<Integer, Integer>();
 		vmMap = new HashMap<Vm, SDNHost>();
 		vswitchMap = new HashMap<VSwitch, Switch>();
 		vlinkMap = new HashMap<Arc, List<Link>>();
 	}
-	
-//	public HashMap<Integer, Integer> getVmToHostMappings() {
-//		return vmToHostMappings;
-//	}
 	
 	public Map<Vm, SDNHost> getVmMap() {
 		return vmMap;
@@ -90,9 +83,6 @@ public class VdcEmbedding {
 	
 	public String toString(){
 		StringBuilder ret = new StringBuilder();
-		
-//		ret.append("VmToHostMappings\n");
-//		ret.append(vmToHostMappings.toString());
 		
 		ret.append("\nVm to Host Mapping\n");
 		ret.append(vmMap.toString());

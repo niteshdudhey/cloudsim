@@ -118,6 +118,7 @@ public class SDNDatacenter extends Datacenter {
 
 		if (result) {
 			getVmList().add(vm);
+			tvm.setActive(true);
 
 			if (vm.isBeingInstantiated()) {
 				vm.setBeingInstantiated(false);
@@ -130,6 +131,31 @@ public class SDNDatacenter extends Datacenter {
 			send(nos.getId(), CloudSim.getMinTimeBetweenEvents(), CloudSimTags.VM_CREATE_ACK, ev.getData());
 		}
 			
+	}
+	
+	@Override
+	protected void processVmDestroy(SimEvent ev, boolean ack) {
+		Vm vm = (Vm) ev.getData();
+		
+		TimedVm tvm = (TimedVm) vm;
+		
+		// Used only to check the destruction time.
+		System.out.println(CloudSim.clock() + " Destroying VM " + vm.getUid() + " , Id " + vm.getId());
+		
+		getVmAllocationPolicy().deallocateHostForVm(vm);
+
+		if (ack) {
+			int[] data = new int[3];
+			data[0] = getId();
+			data[1] = vm.getId();
+			data[2] = CloudSimTags.TRUE;
+
+			sendNow(vm.getUserId(), CloudSimTags.VM_DESTROY_ACK, data);
+		}
+
+		getVmList().remove(vm);
+		
+		tvm.setActive(false);
 	}
 	
 	@Override
@@ -247,6 +273,7 @@ public class SDNDatacenter extends Datacenter {
 		Switch pswitch = vswitch.getSwitch();
 		if (pswitch.vswitchCreate(vswitch)) {
 			getVSwitchList().add(vswitch);
+			vswitch.setActive(true);
 		}
 		if (ack) {
 			send(nos.getId(), CloudSim.getMinTimeBetweenEvents(), CloudSimTags.VSWITCH_CREATE_ACK, ev.getData());
@@ -259,6 +286,7 @@ public class SDNDatacenter extends Datacenter {
 		
 		if (pswitch.vswitchDestroy(vswitch)) {
 			getVSwitchList().remove(vswitch);
+			vswitch.setActive(false);
 		}
 		
 		if (ack) {

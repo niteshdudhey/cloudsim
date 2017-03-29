@@ -93,6 +93,8 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 		
 		VdcEmbedding embedding = embedder.embed(topology, virtualTopology);
 		
+		vdcEmbeddingMap.put(virtualTopology, embedding);
+		
 		if(!isValidEmbedding(embedding, virtualTopology)){
 			System.out.println("Embedding Failed!!!");
 			return false;
@@ -129,8 +131,7 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 			
 			Switch pswitch = embedding.getAllocatedSwitchForVSwitch(vswitch);
 					
-			//TODO
-			vswitch.setCandidateSwitch(pswitch);
+			vswitch.setSwitch(pswitch);
 			
 			SDNDatacenter datacenter = getDatacenterById(vswitch.getDatacenterId());
 			
@@ -156,10 +157,9 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 	 * @return
 	 */
 	private boolean isValidEmbedding(VdcEmbedding embedding, VirtualTopology virtualTopology){
-		if (embedding.getVmToHostMappings().size() == virtualTopology.getVms().size()) {
+		if (embedding.getVmMap().size() == virtualTopology.getVms().size()) {
 			return true;
 		}
-		
 		return false;
 	}
 	
@@ -478,8 +478,12 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 		Log.printLine(CloudSim.clock() + ": " + getName() 
 				+ ": VM Created: " +  vm.getId() + " in " + host);
 		
-		deployFlowVms(this.arcList);
-		createNewFlows();
+//		deployFlowVms(this.arcList);
+//		createNewFlows();
+		
+		// Can optimize by calling createFlowsForVm(vm, ..).
+		createFlowsBetweenVms();
+		
 	}
 	
 	@Override
@@ -490,7 +494,56 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 		Log.printLine(CloudSim.clock() + ": " + getName() 
 				+ ": VSwitch Created: " +  vswitch.getName() + " in " + pswitch.getName());
 
-		createNewFlows();
-	}
+//		createNewFlows();
 		
+		createFlowsBetweenVms();
+		
+	}
+	
+	private void createFlowsBetweenVms() {
+		for (Vm vm: vmList) {
+			createFlowsForVm(vm, vm.getUserId());
+		}
+	}
+	
+	private void createFlowsForVm(Vm vm, int userId) {
+		VirtualTopology virtualTopology = virtualTopologies.get(userId);
+		List<List<Arc>> links = virtualTopology.getPathsFromVm(vm.getId());
+		VdcEmbedding embedding = vdcEmbeddingMap.get(virtualTopology);
+		Map<Arc, List<Link>> vlinkMap = embedding.getVLinkMap();
+		int flowId;
+		if (links == null) {
+			return;
+		}
+		for (List<Arc> vlinksForOnePairOfVms: links) {
+			Arc lastVLink = vlinksForOnePairOfVms.get(vlinksForOnePairOfVms.size()-1);
+			int srcVmId = vm.getId();
+			int destVmId = lastVLink.getDstId();
+			Node srcNode = findSDNHost(vm.getId()), nextHop;
+			if (checkFlowExists(srcVmId, destVmId)) {
+				continue;
+			}
+			SDNHost srcHost = findSDNHost(srcVmId);
+			SDNHost dstHost = findSDNHost(destVmId);
+			if (srcHost == null || dstHost == null) {
+				continue;
+			}
+			flowNumbers++;
+			flowId = flowNumbers;
+			for (Arc vlink: vlinksForOnePairOfVms) {
+				List<Link> plinks = vlinkMap.get(vlink);
+				for (Link link: plinks) { 
+					nextHop = link.getOtherNode(srcNode);
+					srcNode.addVMRoute(srcVmId, destVmId, flowId, nextHop);
+					srcNode = nextHop;
+				}
+			}
+			System.out.println("New flow with FlowId = " + flowId + " between " + srcVmId + " " + destVmId + " created");
+			updateVSwitchesInFlow((SDNHost)srcNode, srcVmId, destVmId, flowId);
+			Arc arc = new Arc(Integer.toString(flowId), srcVmId, destVmId, flowId, 0, 0);
+			newFlows.add(arc);
+			this.flowIdArcTable.put(flowId, arc);
+		}
+	}
+	
 }
