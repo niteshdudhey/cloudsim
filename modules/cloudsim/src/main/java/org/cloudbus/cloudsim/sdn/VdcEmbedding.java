@@ -33,6 +33,12 @@ public class VdcEmbedding {
 		vlinkMap = new HashMap<Arc, List<Link>>();
 	}
 	
+	public VdcEmbedding(Map<Vm, SDNHost> vmMap, Map<VSwitch, Switch> vswitchMap, Map<Arc, List<Link>> vlinkMap) {
+		this.vmMap = vmMap;
+		this.vswitchMap = vswitchMap;
+		this.vlinkMap = vlinkMap;
+	}
+	
 	public Map<Vm, SDNHost> getVmMap() {
 		return vmMap;
 	}

@@ -232,6 +232,42 @@ public class PhysicalTopology {
 		return hosts;
 	}
 	
+	public List<EdgeSwitch> getEdgeSwitchList(){
+		List<EdgeSwitch> switches = new ArrayList<EdgeSwitch>();
+		
+		for(Node node : nodesTable.values()){
+			if(node.getRank() == 2){
+				switches.add((EdgeSwitch)node);
+			}
+		}
+		
+		return switches;
+	}
+	
+	public List<AggregationSwitch> getAggregationSwitchList(){
+		List<AggregationSwitch> switches = new ArrayList<AggregationSwitch>();
+		
+		for(Node node : nodesTable.values()){
+			if(node.getRank() == 1){
+				switches.add((AggregationSwitch)node);
+			}
+		}
+		
+		return switches;
+	}
+	
+	public List<CoreSwitch> getCoreSwitchList(){
+		List<CoreSwitch> switches = new ArrayList<CoreSwitch>();
+		
+		for(Node node : nodesTable.values()){
+			if(node.getRank() == 0){
+				switches.add((CoreSwitch)node);
+			}
+		}
+		
+		return switches;
+	}
+	
 	public Collection<Link> getAllLinks() {
 		return nodeLinks.values();
 	}
