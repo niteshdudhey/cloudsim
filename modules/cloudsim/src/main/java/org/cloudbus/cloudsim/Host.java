@@ -554,7 +554,7 @@ public class Host {
 	 * 
 	 * @param storage the new storage
 	 */
-	protected void setStorage(long storage) {
+	public void setStorage(long storage) {
 		this.storage = storage;
 	}
 

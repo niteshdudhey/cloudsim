@@ -1,12 +1,18 @@
 package org.cloudbus.cloudsim.sdn;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.cloudbus.cloudsim.Host;
 import org.cloudbus.cloudsim.Vm;
+import org.cloudbus.cloudsim.VmScheduler;
 import org.cloudbus.cloudsim.network.datacenter.AggregateSwitch;
+import org.cloudbus.cloudsim.provisioners.BwProvisioner;
+import org.cloudbus.cloudsim.provisioners.RamProvisioner;
 
 public class VdcEmbedderSwitchLFF implements VdcEmbedder {
 
@@ -43,69 +49,78 @@ public class VdcEmbedderSwitchLFF implements VdcEmbedder {
 		
 		//embed edgeswitches
 		
+		Set<VSwitch> upperVSwitches = new HashSet<VSwitch>();
+		
+		List<SwitchResources> edgeSwitchResources = new ArrayList<SwitchResources>();
+		for (Switch pswitch : edgeSwitches) {
+			edgeSwitchResources.add(new SwitchResources(pswitch));
+		}
+		
 		for (VSwitch edgeVSwitch : edgeVSwitches) {
 			Boolean embedded = false;
-			for (EdgeSwitch edgeSwitch : edgeSwitches) {
-				if (embedEdge(edgeVSwitch, edgeSwitch)) {
+			upperVSwitches.addAll(edgeVSwitch.getUpperVSwitches());
+			for (SwitchResources switchResources : edgeSwitchResources) {
+				if (embedEdge(edgeVSwitch, switchResources)) {
 					embedded = true;
-					vswitchMap.put(edgeVSwitch, edgeSwitch);
+					vswitchMap.put(edgeVSwitch, switchResources.getSwitch());
+					break;
 				}
 			}
 			if (embedded == false) {
 				success = false;
+				break;
 			}
 		}
 		
-		if (success) {
-			// embed aggregationswitches
-			for (VSwitch aggregationVSwitch : aggregationVSwitches) {
+		Set<SwitchResources> upperSwitchResources = new HashSet<SwitchResources>();
+		for (SwitchResources switchResources : edgeSwitchResources) {
+			upperSwitchResources.addAll(getResources(switchResources.getSwitch().getUpperSwicthes()));
+		}
+		
+		while(success && !upperVSwitches.isEmpty()) {
+			// embed other switches
+			Set<VSwitch> newUpperVSwitches = new HashSet<VSwitch>();
+			Set<SwitchResources> newUpperSwitchResources = new HashSet<SwitchResources>();
+			
+			for (VSwitch internalVSwitch : upperVSwitches) {
+				newUpperVSwitches.addAll(internalVSwitch.getUpperVSwitches());
 				Boolean embedded = false;
-				for (AggregationSwitch aggregationSwitch : aggregationSwitches) {
-					if (embedAggregation(aggregationVSwitch, aggregationSwitch, vswitchMap)) {
+				
+				for (SwitchResources switchResources : upperSwitchResources) {
+					if (embedInternal(internalVSwitch, switchResources, vswitchMap)) {
 						embedded = true;
-						vswitchMap.put(aggregationVSwitch, aggregationSwitch);
+						vswitchMap.put(internalVSwitch, switchResources.getSwitch());
 						
-						for (VSwitch edgeVSwitch : aggregationVSwitch.getEdgeVSwitches()) {
-							Arc vlink = virtualTopology.getVlink(edgeVSwitch, aggregationVSwitch);
-							Link link = physicalTopology.getLink(vswitchMap.get(edgeVSwitch).getAddress(), aggregationSwitch.getAddress());
+						for (VSwitch lowerVSwitch : internalVSwitch.getLowerVSwitches()) {
+							Arc vlink = virtualTopology.getVlink(lowerVSwitch, internalVSwitch);
+							Link link = physicalTopology.getLink(vswitchMap.get(lowerVSwitch).getAddress(), switchResources.getSwitch().getAddress());
 							vlinkMap.put(vlink, link);
 						}
 					}
+					break;
 				}
 				if (embedded == false) {
 					success = false;
+					break;
 				}
 			}
+			upperVSwitches = newUpperVSwitches;
+			
+			for (SwitchResources switchResources : upperSwitchResources) {
+				newUpperSwitchResources.addAll(getResources(switchResources.getSwitch().getUpperSwicthes()));
+			}
+			
+			upperSwitchResources = newUpperSwitchResources;
 			
 		}
 		
-		if (success) {
-			// embed core
-			for (VSwitch coreVSwitch : coreVSwitches) {
-				Boolean embedded = false;
-				for (CoreSwitch coreSwitch : coreSwitches) {
-					if (embedCore(coreVSwitch, coreSwitch, vswitchMap)) {
-						embedded = true;
-						vswitchMap.put(coreVSwitch, coreSwitch);
-						
-						for (VSwitch aggregationVSwitch : coreVSwitch.getAggregationVSwitches()) {
-							Arc vlink = virtualTopology.getVlink(aggregationVSwitch, coreVSwitch);
-							Link link = physicalTopology.getLink(vswitchMap.get(aggregationVSwitch).getAddress(), coreSwitch.getAddress());
-							vlinkMap.put(vlink, link);
-						}
-					}
-				}
-				if (embedded == false) {
-					success = false;
-				}
-			}
-			
-		}
+		
+		
 		
 		if (success) {
 			// embed VM
 			for (VSwitch edgeVSwitch : edgeVSwitches) {
-				for (TimedVm vm : edgeVSwitch.getVMs()) {
+				for (Vm vm : edgeVSwitch.getVMs()) {
 					Boolean embedded = false;
 					for (SDNHost sdnhost : ((EdgeSwitch)vswitchMap.get(edgeVSwitch)).getSDNHosts()) {
 						if (embedVM(vm, sdnhost)) {
@@ -121,6 +136,12 @@ public class VdcEmbedderSwitchLFF implements VdcEmbedder {
 					
 		}
 		
+
+		for (Map.Entry<Vm, SDNHost> entry : vmMap.entrySet()) {
+			unembedVM(entry.getKey(), entry.getValue());
+		}
+
+		
 		
 		
 		if (success) {
@@ -133,39 +154,24 @@ public class VdcEmbedderSwitchLFF implements VdcEmbedder {
 		return null;
 	}
 
-	private boolean embedEdge(VSwitch edgeVSwitch, EdgeSwitch edgeSwitch) {
-		return embedSwitch(edgeVSwitch, (Switch) edgeSwitch);
+
+
+	private boolean embedEdge(VSwitch edgeVSwitch, SwitchResources switchResources) {
+		return embedSwitch(edgeVSwitch, switchResources);
 	}
 
-	private boolean embedSwitch(VSwitch vSwitch, Switch pSwitch) {
+	private boolean embedSwitch(VSwitch vSwitch, SwitchResources switchResources) {
 		// TODO Auto-generated method stub
 		return false;
 	}
 
-	private boolean embedAggregation(VSwitch aggregationVSwitch, AggregationSwitch aggregationSwitch,
+	private boolean embedInternal(VSwitch internalVSwitch, SwitchResources switchResources,
 			Map<VSwitch, Switch> vswitchMap) {
-		boolean canEmbed = embedSwitch(aggregationVSwitch, aggregationSwitch);
+		boolean canEmbed = embedSwitch(internalVSwitch, switchResources);
 		if (canEmbed) {
-			for (VSwitch edgeVSwitch : aggregationVSwitch.getEdgeVSwitches()) {
-				EdgeSwitch edgeSwitch = (EdgeSwitch)vswitchMap.get(edgeVSwitch);
-				if (!linkExists(edgeSwitch, aggregationSwitch)) {
-					canEmbed = false;
-				}
-				if (!canEmbed) {
-					break;
-				}
-			}
-		}
-		
-		return canEmbed;
-	}
-	
-	private boolean embedCore(VSwitch coreVSwitch, CoreSwitch coreSwitch, Map<VSwitch, Switch> vswitchMap) {
-		boolean canEmbed = embedSwitch(coreVSwitch, coreSwitch);
-		if (canEmbed) {
-			for (VSwitch aggregationVSwitch : coreVSwitch.getAggregationVSwitches()) {
-				AggregationSwitch aggregationSwitch = (AggregationSwitch)vswitchMap.get(aggregationVSwitch);
-				if (!linkExists(aggregationSwitch, coreSwitch)) {
+			for (VSwitch lowerVSwitch : internalVSwitch.getLowerVSwitches()) {
+				Switch lowerSwitch = vswitchMap.get(lowerVSwitch);
+				if (!linkExists(lowerSwitch, switchResources.getSwitch())) {
 					canEmbed = false;
 				}
 				if (!canEmbed) {
@@ -177,7 +183,8 @@ public class VdcEmbedderSwitchLFF implements VdcEmbedder {
 		return canEmbed;
 	}
 
-	private boolean embedVM(TimedVm vm, SDNHost sdnhost) {
+
+	private boolean embedVM(Vm vm, SDNHost sdnhost) {
 		// TODO Auto-generated method stub
 		
 		Host host = sdnhost.getHost();
@@ -213,12 +220,34 @@ public class VdcEmbedderSwitchLFF implements VdcEmbedder {
 			return false;
 		}
 		
+		host.setStorage(host.getStorage() - vm.getSize());
+		
+//		host.getRamProvisioner().deallocateRamForVm(vm);
+//		host.getBwProvisioner().deallocateBwForVm(vm);
+//		host.getVmScheduler().deallocatePesForVm(vm);
+		
+		return true;
+	}
+	
+	private void unembedVM(Vm vm, SDNHost sdnhost) {
+		
+		Host host = sdnhost.getHost();
+		
+		host.setStorage(host.getStorage() + vm.getSize());
+		
 		host.getRamProvisioner().deallocateRamForVm(vm);
 		host.getBwProvisioner().deallocateBwForVm(vm);
-		host.getVmScheduler().deallocatePesForVm(vm);
-		
-		return false;
+		host.getVmScheduler().deallocatePesForVm(vm);		
 	}
+	
+	private List<SwitchResources> getResources(List<Switch> switches) {
+		List<SwitchResources> resources = new ArrayList<SwitchResources>();
+		for (Switch pswitch : switches) {
+			resources.add(new SwitchResources(pswitch));
+		}
+		return resources;
+	}
+	
 	
 	@Override
 	public void rollbackEmbedding(PhysicalTopology physicalTopology, VdcEmbedding embedding) {
@@ -231,6 +260,24 @@ public class VdcEmbedderSwitchLFF implements VdcEmbedder {
 		// TODO Auto-generated method stub
 		
 	}
+	
+	private class SwitchResources {
+		
+		private Switch pswitch;
+		
+		public SwitchResources(Switch pswitch) {
+			this.pswitch = pswitch;
+		}
+
+		public Switch getSwitch() {
+			return pswitch;
+		}
+		
+		
+
+		
+	}
 
 
 }
+
