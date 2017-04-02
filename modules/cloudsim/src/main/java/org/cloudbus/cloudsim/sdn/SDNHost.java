@@ -104,6 +104,8 @@ public class SDNHost extends SimEntity implements Node {
 			case CloudSimTags.CLOUDLET_RETURN: 
 				processCloudletReturn((Cloudlet) ev.getData()); 
 				break;
+			case Constants.PACKET_DELAY:
+				processDelayPacket((Package) ev.getData());
 			default: 
 				System.out.println("Unknown event received by " + super.getName() + ". Tag:" + ev.getTag());
 		}
@@ -159,6 +161,10 @@ public class SDNHost extends SimEntity implements Node {
 			Activity ac = req.removeNextActivity();
 			processActivity(ac, req, data.getVmId());
 		}
+	}
+	
+	private void processDelayPacket(Package pkg) {
+		nos.addPackageToChannel(this, pkg);
 	}
 	
 	private void processActivity(Activity ac, Request req, int vmId) {

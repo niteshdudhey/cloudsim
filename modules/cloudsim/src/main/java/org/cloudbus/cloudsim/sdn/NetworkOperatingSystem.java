@@ -325,8 +325,6 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		
 		updatePackageProcessing();
 		
-		pkgTable.put(pkg, sender);
-		
 		Channel channel = findChannel(src, dst, flowId);
 		
 		if(channel == null) {
@@ -339,6 +337,12 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 			}
 			
 			addChannel(src, dst, flowId, channel);
+		}
+		
+		if (!pkgTable.contains(pkg)) {
+			pkgTable.put(pkg, sender);
+			send(sender.getAddress(), channel.getDelay(), Constants.PACKET_DELAY, pkg);
+			return;
 		}
 		
 		double eft = channel.addTransmission(new Transmission(pkg));
@@ -770,13 +774,13 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		
 		switch(switchSpec.getType()){
 		case "core":
-			sw = new CoreSwitch(switchSpec.getName(), switchSpec.getBw(), switchSpec.getIops(), switchSpec.getUpports(), switchSpec.getDownports(), this);
+			sw = new CoreSwitch(switchSpec.getName(), switchSpec.getBw(), switchSpec.getIops(), switchSpec.getUpports(), switchSpec.getDownports(), switchSpec.getSwitchingDelay(), this);
 			break;
 		case "aggregate":
-			sw = new AggregationSwitch(switchSpec.getName(), switchSpec.getBw(), switchSpec.getIops(), switchSpec.getUpports(), switchSpec.getDownports(), this);
+			sw = new AggregationSwitch(switchSpec.getName(), switchSpec.getBw(), switchSpec.getIops(), switchSpec.getUpports(), switchSpec.getDownports(), switchSpec.getSwitchingDelay(), this);
 			break;
 		case "edge":
-			sw = new EdgeSwitch(switchSpec.getName(), switchSpec.getBw(), switchSpec.getIops(), switchSpec.getUpports(), switchSpec.getDownports(), this);
+			sw = new EdgeSwitch(switchSpec.getName(), switchSpec.getBw(), switchSpec.getIops(), switchSpec.getUpports(), switchSpec.getDownports(), switchSpec.getSwitchingDelay(), this);
 			break;
 		default:
 			System.err.println("No switch found!");
@@ -784,6 +788,24 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		}
 		
 		return sw;
+	}
+	
+	public int getVSwitchRank(VSwitchSpec vswitchSpec) {
+		int rank = -1;
+		switch(vswitchSpec.getType()) {
+		case "core":
+			rank = 0;
+			break;
+		case "aggregate":
+			rank = 1;
+			break;
+		case "edge":
+			rank = 2;
+			break;
+		default:
+			System.err.println("Invalid type for VSwitch");
+		}
+		return rank;
 	}
 	
 	/**
@@ -972,7 +994,9 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 				
 				Switch pswitch = getSwitchByName(vSwitchSpec.getPSwitchName());
 				
-				VSwitch vswitch = new VSwitch(virtualNodeId, vSwitchSpec, datacenterId, pswitch);
+				int rank = getVSwitchRank(vSwitchSpec);
+				
+				VSwitch vswitch = new VSwitch(virtualNodeId, userId, rank, vSwitchSpec, datacenterId, pswitch);
 						
 				vswitchList.add(vswitch);
 				// We use virtualNodeId to represent a virtual node Id. Since Arcs can 

@@ -16,14 +16,16 @@ public class SwitchSpec {
 	long iops;
 	int upports;
 	int downports;
+	double delay;
 	
-	public SwitchSpec(String name, String type, int bw, long iops, int upports, int downports) {
+	public SwitchSpec(String name, String type, int bw, long iops, int upports, int downports, double delay) {
 		this.name = name;
 		this.type = type;
 		this.bw = bw;
 		this.iops = iops;
 		this.upports = upports;
 		this.downports = downports;
+		this.delay = delay;
 	}
 
 	public String getName() {
@@ -77,5 +79,13 @@ public class SwitchSpec {
 	public String toString(){
 		Gson gson = new Gson();
 		return gson.toJson(this);
+	}
+	
+	public double getSwitchingDelay() {
+		return delay;
+	}
+
+	public void setSwitchingDelay(double delay) {
+		this.delay = delay;
 	}
 }

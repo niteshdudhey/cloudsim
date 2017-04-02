@@ -48,6 +48,8 @@ public class Channel {
 	private final int chId;
 	private final double requestedBandwidth;	// Requested by user
 	
+	private double totalSwitchingDelay;
+	
 	public Channel(String name, int chId, int srcId, int dstId, List<Node> nodes, List<Link> links, double bandwidth, String srcName, String dstName) {
 		this.name = name;
 		this.srcName = srcName;
@@ -88,6 +90,12 @@ public class Channel {
 			link.addChannel(from, this);
 			
 			from.updateNetworkUtilization();
+		}
+		
+		totalSwitchingDelay = 0.0;
+		
+		for (VSwitch vswitch: vswitches) {
+			totalSwitchingDelay += vswitch.getSwitch().getSwitchingDelay();
 		}
 		
 		nodes.get(nodes.size() - 1).updateNetworkUtilization();
@@ -278,7 +286,7 @@ public class Channel {
 		}
 		
 		double eft = (double)t.getSize() / bw;
-		
+
 		return eft;
 	}
 	
@@ -408,4 +416,9 @@ public class Channel {
 	public double getRequestedBandwidth() {
 		return requestedBandwidth;
 	}
+	
+	public double getDelay() {
+		return totalSwitchingDelay;
+	}
+	
 }

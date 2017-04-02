@@ -11,6 +11,10 @@ public class VSwitch implements VNode {
 	
 	private int id;
 	
+	private int userId;
+	
+	private int rank = -1;
+	
 	private String name;
 	
 	private double startTime;
@@ -35,9 +39,11 @@ public class VSwitch implements VNode {
 	
 	private boolean active;
 	
-	public VSwitch(int id, String name, int bw, long iops, int upports, int downports, 
+	public VSwitch(int id, int userId, int rank, String name, int bw, long iops, int upports, int downports, 
 					double startTime, double finishTime, int datacenterId, Switch pswitch) {
 		this.id = id;
+		this.userId = userId;
+		this.rank = rank;
 		this.name = name;
 		this.bw = bw;
 		this.iops = iops;
@@ -52,8 +58,10 @@ public class VSwitch implements VNode {
 		this.active = false;
 	}
 	
-	public VSwitch(int id, VSwitchSpec vSpec, int datacenterId, Switch pswitch) {
+	public VSwitch(int id, int userId, int rank, VSwitchSpec vSpec, int datacenterId, Switch pswitch) {
 		this.id = id;
+		this.userId = userId;
+		this.rank = rank;
 		this.name = vSpec.getName();
 		this.bw = vSpec.getBw();
 		this.iops = vSpec.getIops();
@@ -70,6 +78,14 @@ public class VSwitch implements VNode {
 	
 	public int getId() {
 		return id;
+	}
+	
+	public int getUserId() {
+		return userId;
+	}
+	
+	public int getRank() {
+		return rank;
 	}
 	
 	public String getName() {

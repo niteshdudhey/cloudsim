@@ -17,8 +17,8 @@ package org.cloudbus.cloudsim.sdn;
  */
 public class EdgeSwitch extends Switch {
 
-	public EdgeSwitch(String name, int bw, long iops, int upports, int downports, NetworkOperatingSystem nos) {
-		super(name, bw, iops, upports, downports, nos);
+	public EdgeSwitch(String name, int bw, long iops, int upports, int downports, double switchingDelay, NetworkOperatingSystem nos) {
+		super(name, bw, iops, upports, downports, switchingDelay, nos);
 	}
 	
 }

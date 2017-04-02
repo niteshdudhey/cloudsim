@@ -24,7 +24,7 @@ public class VdcEmbedderSwitchLFF implements VdcEmbedder {
 		List<AggregationSwitch> aggregationSwitches = physicalTopology.getAggregationSwitchList();
 		List<CoreSwitch> coreSwitches = physicalTopology.getCoreSwitchList();
 		
-		List<TimedVm> vms = virtualTopology.getVMList();
+		List<Vm> vms = virtualTopology.getVmList();
 		List<VSwitch> edgeVSwitches = virtualTopology.getEdgeVSwitchList();
 		List<VSwitch> aggregationVSwitches = virtualTopology.getAggregationVSwitchList();
 		List<VSwitch> coreVSwitches = virtualTopology.getCoreVSwitchList();

@@ -17,8 +17,8 @@ package org.cloudbus.cloudsim.sdn;
  */
 public class CoreSwitch extends Switch {
 
-	public CoreSwitch(String name, int bw, long iops, int upports, int downports, NetworkOperatingSystem nos) {
-		super(name, bw, iops, upports, downports, nos);
+	public CoreSwitch(String name, int bw, long iops, int upports, int downports, double switchingDelay, NetworkOperatingSystem nos) {
+		super(name, bw, iops, upports, downports, switchingDelay, nos);
 	}
 
 }

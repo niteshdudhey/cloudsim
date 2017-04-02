@@ -27,6 +27,14 @@ public class VirtualTopology {
 	
 	int datacenterId;
 	
+	List<Vm> vmList;
+	
+	List<VSwitch> edgeVSwitchList;
+	
+	List<VSwitch> aggVSwitchList;
+	
+	List<VSwitch> coreVSwitchList;
+	
 	// Vm id -> Vm
 	Map<Integer, Vm> vmsTable;
 	
@@ -54,6 +62,10 @@ public class VirtualTopology {
 		vlinksTable = new HashMap<Integer, Arc>();
 		adjList = new ArrayList<ArrayList<Integer>>();
 		graphNodes = new HashMap<Integer, GraphNode>();
+		vmList = new ArrayList<Vm>();
+		coreVSwitchList = new ArrayList<VSwitch>();
+		aggVSwitchList = new ArrayList<VSwitch>();
+		edgeVSwitchList = new ArrayList<VSwitch>();
 	}
 	
 	public Map<Integer, Vm> getVmsTable() {
@@ -62,10 +74,15 @@ public class VirtualTopology {
 
 	public void addVm(Vm vm) {
 		vmsTable.put(vm.getId(), vm);
+		vmList.add(vm);
 	}
 	
 	public Vm getVmById(int id) {
 		return vmsTable.get(id);
+	}
+	
+	public List<Vm> getVmList() {
+		return vmList;
 	}
 	
 	public Collection<Vm> getVms() {
@@ -78,10 +95,33 @@ public class VirtualTopology {
 
 	public void addVSwitch(VSwitch vswitch) {
 		vswitchesTable.put(vswitch.getId(), vswitch);
+		switch (vswitch.getRank()) {
+		case 0:
+			coreVSwitchList.add(vswitch);
+			break;
+		case 1:
+			aggVSwitchList.add(vswitch);
+			break;
+		case 2:
+			edgeVSwitchList.add(vswitch);
+			break;
+		}
 	}
 	
 	public VSwitch getVSwitchById(int id) {
 		return vswitchesTable.get(id);
+	}
+	
+	public List<VSwitch> getCoreVSwitchList() {
+		return coreVSwitchList;
+	}
+	
+	public List<VSwitch> getAggregationVSwitchList() {
+		return aggVSwitchList;
+	}
+	
+	public List<VSwitch> getEdgeVSwitchList() {
+		return edgeVSwitchList;
 	}
 	
 	public Collection<VSwitch> getVSwitches() {

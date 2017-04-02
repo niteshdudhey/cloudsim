@@ -46,6 +46,8 @@ public class Switch extends SimEntity implements Node {
 	
 	long numPackets;
 	
+	double switchingDelay;
+	
 	int rank = -1;
 	
 	int currentupports = 0;
@@ -69,7 +71,7 @@ public class Switch extends SimEntity implements Node {
 	
 	private List<SwitchStateHistoryEntry> stateHistory;
 	
-	public Switch(String name, int bw, long iops, int upports, int downports, NetworkOperatingSystem nos) {
+	public Switch(String name, int bw, long iops, int upports, int downports, double switchingDelay, NetworkOperatingSystem nos) {
 		super(name);
 		this.bw = bw;
 		this.currentBw = bw;
@@ -84,6 +86,8 @@ public class Switch extends SimEntity implements Node {
 		}
 		
 		this.downports = new Node[downports];
+		
+		this.switchingDelay = switchingDelay;
 		
 		this.forwardingTable = new ForwardingRule();
 		this.processingTable = new Hashtable<Package,Long>();
@@ -240,6 +244,10 @@ public class Switch extends SimEntity implements Node {
 		return num;
 	}
 	
+	public double getSwitchingDelay() {
+		return switchingDelay;
+	}
+	
 	/* 
 	 * TODO: Need to create a one-one mapping between Switch and 
 	 * VSwitch ports. This will require a lot of changes in the Switch class,
@@ -247,12 +255,12 @@ public class Switch extends SimEntity implements Node {
 	 */
 	public boolean vswitchCreate(VSwitch vswitch) {
 		boolean flag = true;
-		if (currentupports < vswitch.getUpports()) {
-			flag = false;
-		}
-		if (currentdownports < vswitch.getDownports()) {
-			flag = false;
-		}
+//		if (currentupports < vswitch.getUpports()) {
+//			flag = false;
+//		}
+//		if (currentdownports < vswitch.getDownports()) {
+//			flag = false;
+//		}
 		if (currentBw < vswitch.getBw()) {
 			flag = false;
 		}
@@ -260,8 +268,8 @@ public class Switch extends SimEntity implements Node {
 			flag = false;
 		}
 		if (flag) {
-			currentupports -= vswitch.getUpports();
-			currentdownports -= vswitch.getDownports();
+//			currentupports -= vswitch.getUpports();
+//			currentdownports -= vswitch.getDownports();
 			currentBw -= vswitch.getBw();
 			currentIops -= vswitch.getIops(); 
 			getVSwitchList().add(vswitch);
@@ -271,8 +279,8 @@ public class Switch extends SimEntity implements Node {
 	
 	public boolean vswitchDestroy(VSwitch vswitch) {
 		if (getVSwitchList().contains(vswitch)) {
-			currentupports += vswitch.getUpports();
-			currentdownports += vswitch.getDownports();
+//			currentupports += vswitch.getUpports();
+//			currentdownports += vswitch.getDownports();
 			currentBw += vswitch.getBw();
 			currentIops += vswitch.getIops();
 			getVSwitchList().remove(vswitch);
