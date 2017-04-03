@@ -902,7 +902,9 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 			
 			topology.addLink(srcAddress, dstAddress, linkSpec.getLatency());
 		}
-				
+		
+		topology.setUpperLowerNodes();
+	
 		topology.buildDefaultRouting();
 		
 		// Initialize the Embedder to get ready to serve VDC requests.
@@ -998,6 +1000,8 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 				
 				VSwitch vswitch = new VSwitch(virtualNodeId, userId, rank, vSwitchSpec, datacenterId, pswitch);
 						
+				virtualTopology.addVSwitch(vswitch);
+				
 				vswitchList.add(vswitch);
 				// We use virtualNodeId to represent a virtual node Id. Since Arcs can 
 				// contain both VMs and VSwitches, we need to use distinct Ids for 
@@ -1042,6 +1046,8 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 			Arc arc = new Arc(vLinkSpec, srcId, dstId, flowId);
 			arcList.add(arc);
 			
+			virtualTopology.addVLink(arc);
+			
 			if(flowId != -1) {
 				flowIdArcTable.put(flowId, arc);
 			}
@@ -1049,6 +1055,8 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		
 		EventSummary.setVmList(vmList);
 		EventSummary.setVSwitchList(vswitchList);
+		
+		virtualTopology.setUpperLowerVNodes();
 		
 		virtualTopologies.put(userId,  virtualTopology);
 	}

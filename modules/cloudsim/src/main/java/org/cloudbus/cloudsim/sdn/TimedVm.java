@@ -8,6 +8,10 @@
 package org.cloudbus.cloudsim.sdn;
 
 import org.cloudbus.cloudsim.core.CloudSim;
+
+import java.util.ArrayList;
+import java.util.List;
+
 import org.cloudbus.cloudsim.CloudletScheduler;
 import org.cloudbus.cloudsim.FullVmStateHistoryEntry;
 import org.cloudbus.cloudsim.Vm;
@@ -32,6 +36,8 @@ import org.cloudbus.cloudsim.sdn.datacenterSpecifications.VmSpec;
  */
 public class TimedVm extends Vm implements VNode {
 
+	private int rank = 3;
+	
 	private double startTime;
 	
 	private double finishTime;
@@ -53,6 +59,8 @@ public class TimedVm extends Vm implements VNode {
 	
 	private boolean active;
 	
+	private List<VNode> upperVNodes;
+	
 	public TimedVm(String name, int id, int userId, int datacenterId, double mips, int numberOfPes, int ram,
 			long bw, long size, String vmm, CloudletScheduler cloudletScheduler) {
 		
@@ -62,6 +70,7 @@ public class TimedVm extends Vm implements VNode {
 		currentUpBW = 0;
 		currentDownBW = 0;
 		this.active = false;		
+		this.upperVNodes = new ArrayList<VNode>();
 	}
 	
 	public TimedVm(String name, int id, int userId, int datacenterId, double mips, int numberOfPes, int ram,
@@ -77,6 +86,7 @@ public class TimedVm extends Vm implements VNode {
 		currentUpBW = 0;
 		currentDownBW = 0;
 		this.active = false;
+		this.upperVNodes = new ArrayList<VNode>();
 	}
 	
 	public TimedVm(int id, VmSpec vmSpec, int userId, int datacenterId, String vmm, CloudletScheduler cloudletScheduler) {
@@ -88,6 +98,7 @@ public class TimedVm extends Vm implements VNode {
 		this.startTime = vmSpec.getStarttime();
 		this.finishTime = vmSpec.getEndtime();
 		this.active = false;
+		this.upperVNodes = new ArrayList<VNode>();
 	}
 	
 	public TimedVm(int id, String name, VmSpec vmSpec, int userId, int datacenterId, String vmm, CloudletScheduler cloudletScheduler) {
@@ -99,6 +110,7 @@ public class TimedVm extends Vm implements VNode {
 		this.startTime = vmSpec.getStarttime();
 		this.finishTime = vmSpec.getEndtime();
 		this.active = false;
+		this.upperVNodes = new ArrayList<VNode>();
 	}
 	
 	public String getName() {
@@ -156,6 +168,25 @@ public class TimedVm extends Vm implements VNode {
 			setCurrentDownBW(0);
 		}
 		return;
+	}
+	
+	public List<VNode> getLowerVNodes() {
+		return null;
+	}
+	
+	public List<VNode> getUpperVNodes() {
+		return upperVNodes;
+	}
+	
+	public void addLowerVNode(VNode lowerNode) {
+		System.err.println("Vm cannot have a lower vnode.");
+	}
+	
+	public void addUpperVNode(VNode upperNode) {
+		if (upperNode == null) {
+			System.err.println("Vm cannot have null upper vnode.");
+		}
+		this.upperVNodes.add(upperNode);
 	}
 	
 	@Override

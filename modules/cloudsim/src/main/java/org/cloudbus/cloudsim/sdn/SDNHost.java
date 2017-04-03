@@ -57,6 +57,8 @@ public class SDNHost extends SimEntity implements Node {
 	NetworkOperatingSystem nos;
 
 	private List<FullHostStateHistoryEntry> fullStateHistory;
+	
+	private List<Node> upperNodes;
 
 	SDNHost(String name, Host host, NetworkOperatingSystem nos){
 		//super("Host" + host.getId());
@@ -70,6 +72,8 @@ public class SDNHost extends SimEntity implements Node {
 		this.forwardingTable = new ForwardingRule();
 		this.routingTable = new RoutingTable();
 		this.fullStateHistory = new LinkedList<FullHostStateHistoryEntry>();
+		
+		this.upperNodes = new ArrayList<Node>();
 	}
 	
 	public Host getHost(){
@@ -314,6 +318,25 @@ public class SDNHost extends SimEntity implements Node {
 	
 	public List<FullHostStateHistoryEntry> getFullHostStateHistory() {
 		return fullStateHistory;
+	}
+	
+	public List<Node> getLowerNodes() {
+		return null;
+	}
+	
+	public List<Node> getUpperNodes() {
+		return upperNodes;
+	}
+	
+	public void addLowerNode(Node lowerNode) {
+		System.err.println("Host cannot have lower nodes.");
+	}
+	
+	public void addUpperNode(Node upperNode) {
+		if (upperNode == null) {
+			System.err.println("Host cannot have null upper node.");
+		}
+		this.upperNodes.add(upperNode);
 	}
 
 	/******* Routeable interface implementation methods ******/

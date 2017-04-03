@@ -1,5 +1,6 @@
 package org.cloudbus.cloudsim.sdn;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -39,6 +40,10 @@ public class VSwitch implements VNode {
 	
 	private boolean active;
 	
+	private List<VNode> upperVNodes;
+	
+	private List<VNode> lowerVNodes;
+	
 	public VSwitch(int id, int userId, int rank, String name, int bw, long iops, int upports, int downports, 
 					double startTime, double finishTime, int datacenterId, Switch pswitch) {
 		this.id = id;
@@ -56,6 +61,8 @@ public class VSwitch implements VNode {
 		this.numPackets = 0;
 		this.stateHistory = new LinkedList<VSwitchStateHistoryEntry>();
 		this.active = false;
+		this.upperVNodes = new ArrayList<VNode>();
+		this.lowerVNodes = new ArrayList<VNode>();
 	}
 	
 	public VSwitch(int id, int userId, int rank, VSwitchSpec vSpec, int datacenterId, Switch pswitch) {
@@ -74,6 +81,8 @@ public class VSwitch implements VNode {
 		this.numPackets = 0;
 		this.stateHistory = new LinkedList<VSwitchStateHistoryEntry>();
 		this.active = false;
+		this.upperVNodes = new ArrayList<VNode>();
+		this.lowerVNodes = new ArrayList<VNode>();
 	}
 	
 	public int getId() {
@@ -151,6 +160,28 @@ public class VSwitch implements VNode {
 	
 	public boolean isActive() {
 		return active;
+	}
+	
+	public List<VNode> getLowerVNodes() {
+		return lowerVNodes;
+	}
+	
+	public List<VNode> getUpperVNodes() {
+		return upperVNodes;
+	}
+	
+	public void addLowerVNode(VNode lowerNode) {
+		if (lowerNode == null) {
+			System.err.println("VSwitch cannot have null lower vnode.");
+		}
+		this.lowerVNodes.add(lowerNode);
+	}
+	
+	public void addUpperVNode(VNode upperNode) {
+		if (upperNode == null) {
+			System.err.println("VSwitch cannot have null upper vnode.");
+		}
+		this.upperVNodes.add(upperNode);
 	}
 	
 }

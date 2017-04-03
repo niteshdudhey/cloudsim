@@ -50,6 +50,10 @@ public class PhysicalTopology {
 		return links.get(from, to);
 	}
 	
+	public boolean linkExists(int srcId, int dstId) {
+		return links.contains(srcId, dstId);
+	}
+	
 	public Node getNode(int id) {
 		System.out.println(nodesTable.toString());
 		return nodesTable.get(id);
@@ -81,6 +85,26 @@ public class PhysicalTopology {
 		else if (node instanceof SDNHost){
 			//Hosts are on the bottom of hierarchy (leaf).
 			node.setRank(3);
+		}
+	}
+	
+	public void setUpperLowerNodes() {
+//		for (Node node: getAllNodes()) {
+//			Collection<Link> links = getAdjacentLinks(node);
+//			for (Link link: links) {
+//				if (link.getLowOrder().equals(node)) {
+//					node.addUpperNode(link.getOtherNode(node));
+//				} else if (link.getHighOrder().equals(node)) {
+//					node.addLowerNode(link.getOtherNode(node));
+//				}
+//			}
+//		}
+		// Alternatively
+		for (Link link: getAllLinks()) {
+			Node low = link.getLowOrder();
+			Node high = link.getHighOrder();
+			low.addUpperNode(high);
+			high.addLowerNode(low);
 		}
 	}
 	

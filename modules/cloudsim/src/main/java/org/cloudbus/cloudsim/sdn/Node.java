@@ -50,4 +50,13 @@ public interface Node {
 	public void updateNetworkUtilization();
 	
 	public void storeCurrentState(double time);
+	
+	public List<Node> getUpperNodes();
+	
+	public List<Node> getLowerNodes();
+	
+	public void addUpperNode(Node upperNode);
+	
+	public void addLowerNode(Node lowerNode);
+	
 }

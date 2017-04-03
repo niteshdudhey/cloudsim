@@ -71,6 +71,10 @@ public class Switch extends SimEntity implements Node {
 	
 	private List<SwitchStateHistoryEntry> stateHistory;
 	
+	private List<Node> lowerNodes;
+	
+	private List<Node> upperNodes;
+	
 	public Switch(String name, int bw, long iops, int upports, int downports, double switchingDelay, NetworkOperatingSystem nos) {
 		super(name);
 		this.bw = bw;
@@ -99,6 +103,9 @@ public class Switch extends SimEntity implements Node {
 		this.stateHistory = new LinkedList<SwitchStateHistoryEntry>();
 		
 		this.vswitchList = new LinkedList<VSwitch>();
+		
+		this.upperNodes = new ArrayList<Node>();
+		this.lowerNodes = new ArrayList<Node>();
 	}
 	
 	@Override
@@ -144,6 +151,28 @@ public class Switch extends SimEntity implements Node {
 	public void storeCurrentState(double time) {
 		SwitchStateHistoryEntry stateHistory = new SwitchStateHistoryEntry(time, getNumPacketsTransferred());
 		getSwitchStateHistory().add(stateHistory);
+	}
+	
+	public List<Node> getLowerNodes() {
+		return lowerNodes;
+	}
+	
+	public List<Node> getUpperNodes() {
+		return upperNodes;
+	}
+	
+	public void addLowerNode(Node lowerNode) {
+		if (lowerNode == null) {
+			System.err.println("Switch cannot have null lower node.");
+		}
+		this.lowerNodes.add(lowerNode);
+	}
+	
+	public void addUpperNode(Node upperNode) {
+		if (upperNode == null) {
+			System.err.println("Switch cannot have null upper node.");
+		}
+		this.upperNodes.add(upperNode);
 	}
 	
 	/************************************************

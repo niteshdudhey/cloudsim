@@ -13,7 +13,9 @@ import java.util.Map;
 import org.apache.commons.math3.util.Pair;
 import org.cloudbus.cloudsim.Vm;
 
+import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Table;
 
 /**
  * Virtual topology of a Virtual Datacenter.
@@ -34,6 +36,8 @@ public class VirtualTopology {
 	List<VSwitch> aggVSwitchList;
 	
 	List<VSwitch> coreVSwitchList;
+	
+	Table<Integer, Integer, Arc> links; 	// From : To -> Link
 	
 	// Vm id -> Vm
 	Map<Integer, Vm> vmsTable;
@@ -66,6 +70,7 @@ public class VirtualTopology {
 		coreVSwitchList = new ArrayList<VSwitch>();
 		aggVSwitchList = new ArrayList<VSwitch>();
 		edgeVSwitchList = new ArrayList<VSwitch>();
+		links = HashBasedTable.create();
 	}
 	
 	public Map<Integer, Vm> getVmsTable() {
@@ -132,8 +137,18 @@ public class VirtualTopology {
 		return vlinksTable;
 	}
 
-	public void addVSwitch(Arc arc) {
+	public void addVLink(Arc arc) {
 		vlinksTable.put(arc.getFlowId(), arc);
+		links.put(arc.getSrcId(), arc.getDstId(), arc);
+		links.put(arc.getDstId(), arc.getSrcId(), arc);
+	}
+	
+	public Arc getVlink(int srcId, int dstId) {
+		return links.get(srcId, dstId);
+	}
+	
+	public boolean vLinkExists(int srcId, int dstId) {
+		return links.contains(srcId, dstId);
 	}
 	
 	public Arc getVLinkById(int id) {
@@ -142,6 +157,29 @@ public class VirtualTopology {
 	
 	public Collection<Arc> getVLinks() {
 		return vlinksTable.values();
+	}
+	
+	public void setUpperLowerVNodes() {
+		// Assuming bi-directional Arc
+		// SrcId is the lowOrder, DestId is highOrder
+		for (Arc vlink: getVLinks()) {
+			int srcId = vlink.getSrcId();
+			int dstId = vlink.getDstId();
+			VNode low = null, high = null;
+			if (vmsTable.containsKey(srcId)) {
+				low = (VNode) vmsTable.get(srcId);
+				high = (VNode) vswitchesTable.get(dstId);
+			} else if (vswitchesTable.containsKey(srcId)) {
+				low = (VNode) vswitchesTable.get(srcId);
+				high = (VNode) vswitchesTable.get(dstId);
+			}
+			if (low != null) {
+				low.addUpperVNode(high);
+			}
+			if (high != null) {
+				high.addLowerVNode(low);
+			}
+		}
 	}
 	
 	private void createAdjList() {
@@ -169,9 +207,9 @@ public class VirtualTopology {
 			int srcId = src.getGraphNodeId();
 			int dstId = dst.getGraphNodeId();
 			adjList.get(srcId).add(dstId);
-//			adjList.get(dstId).add(srcId);
+			adjList.get(dstId).add(srcId);
 			graphLinksMap.put(new Pair<Integer, Integer>(srcId, dstId), vlink);
-//			graphLinksMap.put(new Pair<Integer, Integer>(dstId, srcId), vlink);
+			graphLinksMap.put(new Pair<Integer, Integer>(dstId, srcId), vlink);
 		}
 	}
 	

@@ -58,7 +58,7 @@ public class VdcEmbedderSwitchLFF implements VdcEmbedder {
 		
 		for (VSwitch edgeVSwitch : edgeVSwitches) {
 			Boolean embedded = false;
-			upperVSwitches.addAll(edgeVSwitch.getUpperVSwitches());
+			upperVSwitches.addAll(edgeVSwitch.getUpperVNodes());
 			for (SwitchResources switchResources : edgeSwitchResources) {
 				if (embedEdge(edgeVSwitch, switchResources)) {
 					embedded = true;
@@ -74,7 +74,7 @@ public class VdcEmbedderSwitchLFF implements VdcEmbedder {
 		
 		Set<SwitchResources> upperSwitchResources = new HashSet<SwitchResources>();
 		for (SwitchResources switchResources : edgeSwitchResources) {
-			upperSwitchResources.addAll(getResources(switchResources.getSwitch().getUpperSwicthes()));
+			upperSwitchResources.addAll(getResources(switchResources.getSwitch().getUpperNodes()));
 		}
 		
 		while(success && !upperVSwitches.isEmpty()) {
@@ -83,7 +83,7 @@ public class VdcEmbedderSwitchLFF implements VdcEmbedder {
 			Set<SwitchResources> newUpperSwitchResources = new HashSet<SwitchResources>();
 			
 			for (VSwitch internalVSwitch : upperVSwitches) {
-				newUpperVSwitches.addAll(internalVSwitch.getUpperVSwitches());
+				newUpperVSwitches.addAll(internalVSwitch.getUpperVNodes());
 				Boolean embedded = false;
 				
 				for (SwitchResources switchResources : upperSwitchResources) {
@@ -91,8 +91,8 @@ public class VdcEmbedderSwitchLFF implements VdcEmbedder {
 						embedded = true;
 						vswitchMap.put(internalVSwitch, switchResources.getSwitch());
 						
-						for (VSwitch lowerVSwitch : internalVSwitch.getLowerVSwitches()) {
-							Arc vlink = virtualTopology.getVlink(lowerVSwitch, internalVSwitch);
+						for (VSwitch lowerVSwitch : internalVSwitch.getLowerVNodes()) {
+							Arc vlink = virtualTopology.getVlink(lowerVSwitch.getId(), internalVSwitch.getId());
 							Link link = physicalTopology.getLink(vswitchMap.get(lowerVSwitch).getAddress(), switchResources.getSwitch().getAddress());
 							vlinkMap.put(vlink, link);
 						}
@@ -107,7 +107,7 @@ public class VdcEmbedderSwitchLFF implements VdcEmbedder {
 			upperVSwitches = newUpperVSwitches;
 			
 			for (SwitchResources switchResources : upperSwitchResources) {
-				newUpperSwitchResources.addAll(getResources(switchResources.getSwitch().getUpperSwicthes()));
+				newUpperSwitchResources.addAll(getResources(switchResources.getSwitch().getUpperNodes()));
 			}
 			
 			upperSwitchResources = newUpperSwitchResources;
@@ -120,9 +120,9 @@ public class VdcEmbedderSwitchLFF implements VdcEmbedder {
 		if (success) {
 			// embed VM
 			for (VSwitch edgeVSwitch : edgeVSwitches) {
-				for (Vm vm : edgeVSwitch.getVMs()) {
+				for (Vm vm : edgeVSwitch.getLowerVNodes()) {
 					Boolean embedded = false;
-					for (SDNHost sdnhost : ((EdgeSwitch)vswitchMap.get(edgeVSwitch)).getSDNHosts()) {
+					for (SDNHost sdnhost : ((EdgeSwitch)vswitchMap.get(edgeVSwitch)).getLowerNodes()) {
 						if (embedVM(vm, sdnhost)) {
 							embedded = true;
 							vmMap.put(vm, sdnhost);
@@ -169,9 +169,9 @@ public class VdcEmbedderSwitchLFF implements VdcEmbedder {
 			Map<VSwitch, Switch> vswitchMap) {
 		boolean canEmbed = embedSwitch(internalVSwitch, switchResources);
 		if (canEmbed) {
-			for (VSwitch lowerVSwitch : internalVSwitch.getLowerVSwitches()) {
+			for (VSwitch lowerVSwitch : internalVSwitch.getLowerVNodes()) {
 				Switch lowerSwitch = vswitchMap.get(lowerVSwitch);
-				if (!linkExists(lowerSwitch, switchResources.getSwitch())) {
+				if (!linkExists(lowerSwitch.getAddress(), switchResources.getSwitch().getAddress())) {
 					canEmbed = false;
 				}
 				if (!canEmbed) {

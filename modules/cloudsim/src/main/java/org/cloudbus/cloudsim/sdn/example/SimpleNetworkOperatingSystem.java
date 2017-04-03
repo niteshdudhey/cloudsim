@@ -519,6 +519,9 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 			Arc lastVLink = vlinksForOnePairOfVms.get(vlinksForOnePairOfVms.size()-1);
 			int srcVmId = vm.getId();
 			int destVmId = lastVLink.getDstId();
+			if (!virtualTopology.getVmsTable().containsKey(destVmId)) {
+				destVmId = lastVLink.getSrcId();
+			}
 			Node srcNode = findSDNHost(vm.getId()), nextHop;
 			if (checkFlowExists(srcVmId, destVmId)) {
 				continue;
