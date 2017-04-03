@@ -15,6 +15,8 @@ import org.cloudbus.cloudsim.provisioners.BwProvisioner;
 import org.cloudbus.cloudsim.provisioners.RamProvisioner;
 
 public class VdcEmbedderSwitchLFF implements VdcEmbedder {
+	
+	private Map<Switch, SwitchResources> resourceMap;
 
 	@Override
 	public void init(PhysicalTopology topology) {
@@ -29,6 +31,13 @@ public class VdcEmbedderSwitchLFF implements VdcEmbedder {
 		List<EdgeSwitch> edgeSwitches = physicalTopology.getEdgeSwitchList();
 		List<AggregationSwitch> aggregationSwitches = physicalTopology.getAggregationSwitchList();
 		List<CoreSwitch> coreSwitches = physicalTopology.getCoreSwitchList();
+		
+		List<Switch> switches = physicalTopology.getSwitchList();
+		resourceMap = new HashMap<Switch, SwitchResources>();
+		
+		for (Switch pswitch : switches) {
+			resourceMap.put(pswitch, new SwitchResources(pswitch));
+		}
 		
 		List<Vm> vms = virtualTopology.getVmList();
 		List<VSwitch> edgeVSwitches = virtualTopology.getEdgeVSwitchList();
@@ -53,7 +62,7 @@ public class VdcEmbedderSwitchLFF implements VdcEmbedder {
 		
 		List<SwitchResources> edgeSwitchResources = new ArrayList<SwitchResources>();
 		for (Switch pswitch : edgeSwitches) {
-			edgeSwitchResources.add(new SwitchResources(pswitch));
+			edgeSwitchResources.add(resourceMap.get(pswitch));
 		}
 		
 		for (VSwitch edgeVSwitch : edgeVSwitches) {
@@ -243,7 +252,7 @@ public class VdcEmbedderSwitchLFF implements VdcEmbedder {
 	private List<SwitchResources> getResources(List<Switch> switches) {
 		List<SwitchResources> resources = new ArrayList<SwitchResources>();
 		for (Switch pswitch : switches) {
-			resources.add(new SwitchResources(pswitch));
+			resources.add(resourceMap.get(pswitch));
 		}
 		return resources;
 	}
