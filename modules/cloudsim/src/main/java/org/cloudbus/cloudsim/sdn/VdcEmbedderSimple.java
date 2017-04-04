@@ -125,7 +125,7 @@ public class VdcEmbedderSimple implements VdcEmbedder {
 					
 					System.out.println("Allocating vm:" + vm.getId() + " to host:" + host.getId());
 					
-					embedding.allocateVmToHost(vm.getId(), sdnHost.getId());
+					embedding.allocateVmToHost(vm, sdnHost);
 					
 					break;
 				}

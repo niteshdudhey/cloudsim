@@ -9,7 +9,7 @@ import com.google.gson.Gson;
  * @author Nitesh Dudhey
  *
  */
-public class VmSpec {
+public class VmSpec implements Cloneable {
 	String name;
 	String type;
 	long size;
@@ -113,6 +113,10 @@ public class VmSpec {
 
 	public void setEndtime(double endtime) {
 		this.endtime = endtime;
+	}
+	
+	public Object clone() throws CloneNotSupportedException {
+    	return super.clone();
 	}
 	
 	public String toString(){

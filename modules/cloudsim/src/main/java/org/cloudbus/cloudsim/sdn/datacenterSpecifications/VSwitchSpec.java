@@ -6,7 +6,7 @@ import com.google.gson.Gson;
  * @author Nitesh Dudhey
  *
  */
-public class VSwitchSpec {
+public class VSwitchSpec implements Cloneable {
 	String name;
 	String type;
 	double starttime;
@@ -110,6 +110,10 @@ public class VSwitchSpec {
 	
 	public void setDownports(int downports) {
 		this.downports = downports;
+	}
+	
+	public Object clone() throws CloneNotSupportedException {
+    	return super.clone();
 	}
 	
 	public String toString(){

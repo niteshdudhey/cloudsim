@@ -9,7 +9,7 @@ import com.google.gson.Gson;
  * @author Nitesh Dudhey
  *
  */
-public class HostSpec {
+public class HostSpec implements Cloneable {
 	String name;
 	String type;
 	int pes;
@@ -102,6 +102,10 @@ public class HostSpec {
 
 	public void setSize(long size) {
 		this.size = size;
+	}
+	
+	public Object clone() throws CloneNotSupportedException {
+    	return super.clone();
 	}
 	
 	public String toString(){

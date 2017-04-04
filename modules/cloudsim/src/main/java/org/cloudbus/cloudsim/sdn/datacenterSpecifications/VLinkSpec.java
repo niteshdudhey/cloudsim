@@ -2,7 +2,7 @@ package org.cloudbus.cloudsim.sdn.datacenterSpecifications;
 
 import com.google.gson.Gson;
 
-public class VLinkSpec {
+public class VLinkSpec implements Cloneable {
 
 	String name;
 	String source;
@@ -57,6 +57,10 @@ public class VLinkSpec {
 		this.latency = latency;
 	}
 
+	public Object clone() throws CloneNotSupportedException {
+    	return super.clone();
+	}
+	
 	public String toString(){
 		Gson gson = new Gson();
 		return gson.toJson(this);

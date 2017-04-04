@@ -1,5 +1,6 @@
 package org.cloudbus.cloudsim.sdn.datacenterSpecifications;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.google.gson.Gson;
@@ -17,7 +18,13 @@ public class PdcSpec {
 		this.switches = switches;
 		this.links = links;
 	}
-
+	
+	public PdcSpec(){
+		hosts = new ArrayList<HostSpec>();
+		switches = new ArrayList<SwitchSpec>();
+		links = new ArrayList<LinkSpec>();
+	}
+	
 	public List<HostSpec> getHosts() {
 		return hosts;
 	}
@@ -42,6 +49,18 @@ public class PdcSpec {
 		this.links = links;
 	}
 	
+	public void addHost(HostSpec host) {
+		hosts.add(host);
+	}
+
+	public void addSwitch(SwitchSpec switch1) {
+		switches.add(switch1);
+	}
+
+	public void addLink(LinkSpec link) {
+		links.add(link);
+	}
+
 	public String toString() {
 		Gson gson = new Gson();
 		return gson.toJson(this);

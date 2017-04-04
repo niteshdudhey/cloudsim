@@ -292,12 +292,12 @@ public class PhysicalTopology {
 		return switches;
 	}
 	
-	public List<CoreSwitch> getSwitchList(){
-		List<CoreSwitch> switches = new ArrayList<CoreSwitch>();
+	public List<Switch> getSwitchList(){
+		List<Switch> switches = new ArrayList<Switch>();
 		
 		for(Node node : nodesTable.values()){
 			if(node.getRank() == 0 || node.getRank() == 1 || node.getRank() == 2){
-				switches.add((CoreSwitch)node);
+				switches.add((Switch) node);
 			}
 		}
 		

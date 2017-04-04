@@ -9,7 +9,7 @@ import com.google.gson.Gson;
  * @author Nitesh Dudhey
  *
  */
-public class LinkSpec {
+public class LinkSpec implements Cloneable {
 	String source;
 	String destination;
 	double latency;
@@ -42,6 +42,10 @@ public class LinkSpec {
 
 	public void setLatency(double latency) {
 		this.latency = latency;
+	}
+	
+	public Object clone() throws CloneNotSupportedException {
+    	return super.clone();
 	}
 	
 	public String toString(){

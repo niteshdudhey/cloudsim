@@ -9,7 +9,7 @@ import com.google.gson.Gson;
  * @author Nitesh Dudhey
  *
  */
-public class SwitchSpec {
+public class SwitchSpec implements Cloneable {
 	String name;
 	String type;
 	int bw;
@@ -76,16 +76,20 @@ public class SwitchSpec {
 		this.downports = downports;
 	}
 	
-	public String toString(){
-		Gson gson = new Gson();
-		return gson.toJson(this);
-	}
-	
 	public double getSwitchingDelay() {
 		return delay;
 	}
 
 	public void setSwitchingDelay(double delay) {
 		this.delay = delay;
+	}
+	
+	public Object clone() throws CloneNotSupportedException {
+    	return super.clone();
+	}
+	
+	public String toString(){
+		Gson gson = new Gson();
+		return gson.toJson(this);
 	}
 }
