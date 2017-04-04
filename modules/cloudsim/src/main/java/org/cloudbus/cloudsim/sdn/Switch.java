@@ -449,6 +449,14 @@ public class Switch extends SimEntity implements Node {
 		return bw;
 	}
 	
+	public int getCurrentBandwidth() {
+		return currentBw;
+	}
+	
+	public long getCurrentIops() {
+		return currentIops;
+	}
+	
 	@Override
 	public void clearVMRoutingTable(){
 		this.forwardingTable.clear();
