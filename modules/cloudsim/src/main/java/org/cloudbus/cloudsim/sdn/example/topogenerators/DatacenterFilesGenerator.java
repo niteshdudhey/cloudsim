@@ -67,6 +67,7 @@ public class DatacenterFilesGenerator {
 		try (FileWriter writer = new FileWriter(folderLocation + "\\PDC.json")) {
 			PdcSpec pdc = generatePdc(allDCs.getPdc());
 			gson.toJson(pdc, writer);
+			System.out.println(folderLocation + "\\PDC.json");
 		} 
 		catch (IOException e) {
 			e.printStackTrace();
@@ -80,6 +81,7 @@ public class DatacenterFilesGenerator {
 			try (FileWriter writer = new FileWriter(folderLocation + "\\VDC" + i + ".json")) {
 				VdcSpec vdc = generateVdc(vdcShort);
 				gson.toJson(vdc, writer);
+				System.out.println(folderLocation + "\\VDC" + i + ".json");
 			}
 			catch (CloneNotSupportedException e1) {
 				// TODO Auto-generated catch block
