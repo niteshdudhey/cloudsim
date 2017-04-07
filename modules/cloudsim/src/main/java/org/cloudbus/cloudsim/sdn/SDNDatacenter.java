@@ -177,6 +177,7 @@ public class SDNDatacenter extends Datacenter {
 			case Constants.DEPLOY_APPLICATION:
 				String []data = (String [])ev.getData();
 				deployApplication(Integer.parseInt(data[0]), data[1]);
+				break;
 			default: 
 				System.out.println("Unknown event received by SdnDatacenter. Tag:" + ev.getTag());
 		}

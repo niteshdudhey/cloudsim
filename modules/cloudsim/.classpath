@@ -27,9 +27,9 @@
 			<attribute name="maven.pomderived" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="D:/acads/Sem8/RnD/externalJARS/commons-math3-3.6.1/commons-math3-3.6.1.jar"/>
-	<classpathentry kind="lib" path="D:/acads/Sem8/RnD/externalJARS/gson-2.8.0.jar"/>
-	<classpathentry kind="lib" path="D:/acads/Sem8/RnD/externalJARS/guava-master/guava/target/guava-22.0-SNAPSHOT.jar"/>
-	<classpathentry kind="lib" path="D:/acads/Sem8/RnD/externalJARS/json-simple-master/target/json-simple-1.1.1.jar"/>
+	<classpathentry kind="lib" path="/home/ravi/Downloads/jars/gson-2.8.0.jar"/>
+	<classpathentry kind="lib" path="/home/ravi/Downloads/jars/commons-math3-3.6.1.jar"/>
+	<classpathentry kind="lib" path="/home/ravi/Downloads/jars/guava-22.0-SNAPSHOT.jar"/>
+	<classpathentry kind="lib" path="/home/ravi/Downloads/jars/json-simple-1.1.1.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>

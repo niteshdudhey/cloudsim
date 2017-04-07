@@ -316,12 +316,12 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		int flowId = getFlowIdForVms(src, dst);
 		pkg.setFlowId(flowId);
 					
-		if(sender.equals(sender.getVMRoute(src, dst, flowId))) {
-			// For loopback packet (when src and dst is on the same host).
-			sendNow(sender.getAddress(), Constants.SDN_PACKAGE, pkg);
-			
-			return;
-		}
+//		if(sender.equals(sender.getVMRoute(src, dst, flowId))) {
+//			// For loopback packet (when src and dst is on the same host).
+//			sendNow(sender.getAddress(), Constants.SDN_PACKAGE, pkg);
+//			
+//			return;
+//		}
 		
 		updatePackageProcessing();
 		
@@ -338,8 +338,9 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 			
 			addChannel(src, dst, flowId, channel);
 		}
-		
-		if (!pkgTable.contains(pkg)) {
+			
+		if (!pkgTable.containsKey(pkg)) {
+			System.out.println("Reached addPackageToChannel once.");
 			pkgTable.put(pkg, sender);
 			send(sender.getAddress(), channel.getDelay(), Constants.PACKET_DELAY, pkg);
 			return;
@@ -575,6 +576,8 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		}
 		
 		List<VSwitch> vswitchList = getFlowIdVSwitchListTable().get(flowId);
+		
+		System.out.println(vswitchList);
 		
 		Channel channel = new Channel(chName, flowId, src, dst, nodes, links, vswitchList, reqBw, debugVmIdName.get(src), debugVmIdName.get(dst));
 
@@ -824,8 +827,7 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		PdcSpec pdc = null;
 		
 		try {
-			pdc = gson.fromJson(new FileReader(this.physicalTopologyFileName), PdcSpec.class);
-		} 
+			pdc = gson.fromJson(new FileReader(this.physicalTopologyFileName), PdcSpec.class);		} 
 		catch (JsonSyntaxException e1) {
 			e1.printStackTrace();
 		} 
@@ -945,6 +947,8 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		
 		for(VmSpec vmSpec : vdc.getVms()) {
 			
+//			System.out.println(vmSpec.toString());
+			
 			if(vmSpec.getBw() == 0) {
 				vmSpec.setBw(1000);
 			}
@@ -962,7 +966,10 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 			int nums = vmSpec.getNums();
 			
 			for(int n = 0 ; n < nums ; n++){
-				nodeName2 = nodeName + n;
+				
+				if (vmSpec.getNums() > 1) {
+					nodeName2 = nodeName + "_" + n;
+				}
 				
 				Vm vm = new TimedVm(virtualNodeId, nodeName2, vmSpec, userId, datacenterId, "VMM", new CloudletSchedulerTimeShared());
 				
@@ -992,7 +999,10 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 			String nodeName2 = nodeName;
 			
 			for(int n = 0 ; n < vSwitchSpec.getNums() ; n++){
-				nodeName2 = nodeName + n;
+				
+				if (vSwitchSpec.getNums() > 1) {
+					nodeName2 = nodeName + "_" + n;
+				}
 				
 				Switch pswitch = getSwitchByName(vSwitchSpec.getPSwitchName());
 				
@@ -1042,7 +1052,7 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 			
 			// For now we are assuming that Arc are uni-directional, hence the user
 			// must give 2 arcs to represent a bi-directional VLink.
-			
+						
 			Arc arc = new Arc(vLinkSpec, srcId, dstId, flowId);
 			arcList.add(arc);
 			

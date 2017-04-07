@@ -164,15 +164,17 @@ public class Switch extends SimEntity implements Node {
 	public void addLowerNode(Node lowerNode) {
 		if (lowerNode == null) {
 			System.err.println("Switch cannot have null lower node.");
+		} else {
+			this.lowerNodes.add(lowerNode);
 		}
-		this.lowerNodes.add(lowerNode);
 	}
 	
 	public void addUpperNode(Node upperNode) {
 		if (upperNode == null) {
 			System.err.println("Switch cannot have null upper node.");
+		} else {
+			this.upperNodes.add(upperNode);
 		}
-		this.upperNodes.add(upperNode);
 	}
 	
 	/************************************************
