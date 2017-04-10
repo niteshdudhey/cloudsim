@@ -542,6 +542,7 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 				System.out.println("vlink: " + vlink);
 				List<Link> plinks = vlinkMap.get(vlink);
 				for (Link link: plinks) { 
+					System.out.println(srcNode);
 					System.out.println("plink: " + link);
 					nextHop = link.getOtherNode(srcNode);
 					srcNode.addVMRoute(srcVmId, destVmId, flowId, nextHop);
@@ -550,7 +551,7 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 				}
 			}
 			System.out.println("New flow with FlowId = " + flowId + " between " + srcVmId + " " + destVmId + " created");
-			updateVSwitchesInFlow((SDNHost)srcNode, srcVmId, destVmId, flowId, pathLength);
+			updateVSwitchesInFlow(srcHost, srcVmId, destVmId, flowId, pathLength);
 			System.out.println("VSwitches updated for flow.");
 			Arc arc = new Arc(Integer.toString(flowId), srcVmId, destVmId, flowId, 0, 0);
 			newFlows.add(arc);

@@ -149,6 +149,7 @@ public class VdcEmbedderSwitchLFF implements VdcEmbedder {
 							List<Link> linklist = new ArrayList<Link>();
 							linklist.add(link);
 							vlinkMap.put(vlink, linklist);
+							break;
 						}
 					}
 					if (embedded == false) {
@@ -167,6 +168,7 @@ public class VdcEmbedderSwitchLFF implements VdcEmbedder {
 		
 		
 		if (success) {
+			System.out.println("Embedding Success.");
 			VdcEmbedding embedding = new VdcEmbedding(vmMap, vswitchMap, vlinkMap);
 			return embedding;
 		}
@@ -261,7 +263,8 @@ public class VdcEmbedderSwitchLFF implements VdcEmbedder {
 //		host.getRamProvisioner().deallocateRamForVm(vm);
 //		host.getBwProvisioner().deallocateBwForVm(vm);
 //		host.getVmScheduler().deallocatePesForVm(vm);
-		
+		System.out.println(vm.getId());
+		System.out.println(sdnhost.getName());
 		return true;
 	}
 	
