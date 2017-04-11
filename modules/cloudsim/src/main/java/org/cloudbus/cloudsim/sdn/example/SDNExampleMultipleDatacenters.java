@@ -16,6 +16,7 @@ import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.sdn.NetworkOperatingSystem;
 import org.cloudbus.cloudsim.sdn.SDNDatacenter;
 import org.cloudbus.cloudsim.sdn.VdcEmbedderSimple;
+import org.cloudbus.cloudsim.sdn.VdcEmbedderSwitchLFF;
 import org.cloudbus.cloudsim.sdn.Switch;
 import org.cloudbus.cloudsim.sdn.VdcEmbedder;
 import org.cloudbus.cloudsim.sdn.example.SDNExample.VmAllocationPolicyEnum;
@@ -95,7 +96,8 @@ public class SDNExampleMultipleDatacenters {
 			
 			VmAllocationPolicyFactory vmAllocationFac = null;
 			NetworkOperatingSystem snos = null;
-			VdcEmbedder embedder = new VdcEmbedderSimple();
+			//VdcEmbedder embedder = new VdcEmbedderSimple();
+			VdcEmbedder embedder = new VdcEmbedderSwitchLFF();
 			
 			switch(vmAllocPolicy) {
 			case CombMFF:

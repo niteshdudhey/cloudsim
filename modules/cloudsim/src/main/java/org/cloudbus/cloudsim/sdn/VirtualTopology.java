@@ -71,6 +71,7 @@ public class VirtualTopology {
 		aggVSwitchList = new ArrayList<VSwitch>();
 		edgeVSwitchList = new ArrayList<VSwitch>();
 		links = HashBasedTable.create();
+		graphLinksMap = new HashMap<Pair<Integer, Integer>, Arc>();
 	}
 	
 	public Map<Integer, Vm> getVmsTable() {
@@ -173,6 +174,7 @@ public class VirtualTopology {
 				low = (VNode) vswitchesTable.get(srcId);
 				high = (VNode) vswitchesTable.get(dstId);
 			}
+			System.out.println(srcId + "=" + low + "\n" + dstId + "=" + high);
 			if (low != null) {
 				low.addUpperVNode(high);
 			}
@@ -197,6 +199,9 @@ public class VirtualTopology {
 				++idx;
 			}
 		}
+		for (int i = 0; i < graphNodes.size(); ++i) {
+			adjList.add(new ArrayList<Integer>());
+		}
 		for (Map.Entry<Integer, Arc> entry: vlinksTable.entrySet()) {
 			Arc vlink = entry.getValue();
 			GraphNode src = graphNodes.get(vlink.getSrcId());
@@ -218,16 +223,22 @@ public class VirtualTopology {
 //	}
 	
 	public List<List<Arc>> getPathsFromVm(int vmId) {
-		int i, startId = graphNodes.get(vmId).getGraphNodeId();
+		int i, startId;
 		List<List<Arc>> allPaths = new ArrayList<List<Arc>>();
 		createAdjList();
+		System.out.println(adjList);
+		startId = graphNodes.get(vmId).getGraphNodeId();
 		dfs(startId);
 		for (i = 0; i < adjList.size(); ++i) {
+			System.out.println("Node :" + i);
+			System.out.println(graphNodes.get(i).getVisited());
+			System.out.println(i != startId);
+			System.out.println(checkIdOfVm(i));
 			if (graphNodes.get(i).getVisited() && i != startId && checkIdOfVm(i)) {
 				allPaths.add(makePath(startId, i));
 			}
 		}
-		return null;
+		return allPaths;
 	}
 	
 	private boolean checkIdOfVm(int graphNodeId) {
@@ -243,8 +254,10 @@ public class VirtualTopology {
 		while (nodeId != srcId) {
 			parentId = graphNodes.get(nodeId).getParent().getGraphNodeId();
 			path.add(graphNodes.get(nodeId).getVLinkFromParent());
+			System.out.println("Node -> " + nodeId + " Parent -> " + parentId);
 			nodeId = parentId;
 		}
+		System.out.println(path);
 		// Note that the VLinks are added in reverse order above.
 		return Lists.reverse(path);
 	}

@@ -185,8 +185,9 @@ public class TimedVm extends Vm implements VNode {
 	public void addUpperVNode(VNode upperNode) {
 		if (upperNode == null) {
 			System.err.println("Vm cannot have null upper vnode.");
+		} else {
+			this.upperVNodes.add(upperNode);
 		}
-		this.upperVNodes.add(upperNode);
 	}
 	
 	@Override

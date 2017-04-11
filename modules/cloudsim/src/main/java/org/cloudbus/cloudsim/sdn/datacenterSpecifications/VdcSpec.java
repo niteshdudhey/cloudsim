@@ -13,12 +13,13 @@ public class VdcSpec {
 	
 	List<VmSpec> vms;
 	
+	List<VSwitchSpec> vswitches;
+	
 	List<VLinkSpec> links;
 	
-	List<VSwitchSpec> vSwitches;
-	
-	public VdcSpec(List<VmSpec> vms, List<VLinkSpec> links, double starttime, double endtime) {
+	public VdcSpec(List<VmSpec> vms, List<VLinkSpec> links, List<VSwitchSpec> vswitches, double starttime, double endtime) {
 		this.vms = vms;
+		this.vswitches = vswitches;
 		this.links = links;
 		this.starttime = starttime;
 		this.endtime = endtime;
@@ -27,7 +28,7 @@ public class VdcSpec {
 	public VdcSpec() {
 		vms = new ArrayList<VmSpec>();
 		links = new ArrayList<VLinkSpec>();
-		vSwitches = new ArrayList<VSwitchSpec>();
+		vswitches = new ArrayList<VSwitchSpec>();
 		starttime = 0;
 		endtime = Double.POSITIVE_INFINITY;
 	}
@@ -65,11 +66,11 @@ public class VdcSpec {
 	}
 
 	public List<VSwitchSpec> getVSwitches() {
-		return vSwitches;
+		return vswitches;
 	}
 
 	public void setVSwitches(List<VSwitchSpec> vSwitches) {
-		this.vSwitches = vSwitches;
+		this.vswitches = vSwitches;
 	}
 
 	public void addVm(VmSpec vm) {
@@ -81,7 +82,7 @@ public class VdcSpec {
 	}
 
 	public void addSwitch(VSwitchSpec vSwitch) {
-		vSwitches.add(vSwitch);
+		vswitches.add(vSwitch);
 	}
 	
 	public String toString() {

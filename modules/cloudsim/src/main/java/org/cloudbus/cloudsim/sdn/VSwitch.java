@@ -173,15 +173,17 @@ public class VSwitch implements VNode {
 	public void addLowerVNode(VNode lowerNode) {
 		if (lowerNode == null) {
 			System.err.println("VSwitch cannot have null lower vnode.");
+		} else {
+			this.lowerVNodes.add(lowerNode);
 		}
-		this.lowerVNodes.add(lowerNode);
 	}
 	
 	public void addUpperVNode(VNode upperNode) {
 		if (upperNode == null) {
 			System.err.println("VSwitch cannot have null upper vnode.");
+		} else {
+			this.upperVNodes.add(upperNode);
 		}
-		this.upperVNodes.add(upperNode);
 	}
 	
 }

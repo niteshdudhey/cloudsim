@@ -35,7 +35,9 @@ public class Constants {
 	// Deploy application at SDNDatacenter.
 	public static final int DEPLOY_APPLICATION = SDN_BASE + 22;
 	
-	public static final int PACKET_DELAY = SDN_BASE + 23;
+	public static final int PROCESS_APPLICATION_COMPLETE = SDN_BASE + 23;
+	
+	public static final int PACKET_DELAY = SDN_BASE + 24;
 	
 	public static String TagText(int tagValue) {
 		tagValue = tagValue - SDN_BASE;
@@ -64,6 +66,9 @@ public class Constants {
         		ret = "DEPLOY_APPLICATION";
         		break;
         	case 23:
+        		ret = "PROCESS_APPLICATION_COMPLETE";
+        		break;
+        	case 24:
         		ret = "PACKET_DELAY";
         		break;
         	default:

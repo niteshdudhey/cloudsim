@@ -110,6 +110,7 @@ public class SDNHost extends SimEntity implements Node {
 				break;
 			case Constants.PACKET_DELAY:
 				processDelayPacket((Package) ev.getData());
+				break;
 			default: 
 				System.out.println("Unknown event received by " + super.getName() + ". Tag:" + ev.getTag());
 		}
@@ -335,8 +336,10 @@ public class SDNHost extends SimEntity implements Node {
 	public void addUpperNode(Node upperNode) {
 		if (upperNode == null) {
 			System.err.println("Host cannot have null upper node.");
+		} 
+		else {
+			this.upperNodes.add(upperNode);
 		}
-		this.upperNodes.add(upperNode);
 	}
 
 	/******* Routeable interface implementation methods ******/

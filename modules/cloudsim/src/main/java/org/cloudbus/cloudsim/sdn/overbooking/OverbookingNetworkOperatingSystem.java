@@ -33,12 +33,6 @@ public class OverbookingNetworkOperatingSystem extends NetworkOperatingSystem {
 		super(fileName, embedder);
 	}
 
-	// Depricated.
-	@Override
-	protected boolean deployApplication(List<Vm> vms, List<Middlebox> middleboxes, List<Arc> links,
-			List<VSwitch> vswitchList) {
-		return false;
-	}
 
 	@Override
 	public boolean deployApplication(VirtualTopology virtualTopology) {
