@@ -85,7 +85,8 @@ public class WorkloadParser {
 	
 	
 	private int getVmId(String vmName) {
-		Integer vmId = this.vmNames.get(vmName);
+		String searchVmName = userId + "_" + vmName;
+		Integer vmId = this.vmNames.get(searchVmName);
 		
 		if(vmId == null) {
 			System.err.println("Cannot find VM name:" + vmName);

@@ -8,6 +8,9 @@
 
 package org.cloudbus.cloudsim.sdn;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.cloudbus.cloudsim.sdn.datacenterSpecifications.VLinkSpec;
 
 import com.google.gson.Gson;
@@ -20,6 +23,10 @@ import com.google.gson.Gson;
  * @since CloudSimSDN 1.0
  */
 public class Arc {
+	
+	Node lowOrder;
+	
+	Node highOrder;
 
 	int srcId;
 	
@@ -27,13 +34,17 @@ public class Arc {
 	
 	int flowId;
 	
-	long requiredBandwidth;
+	double requiredBandwidth;
 	
 	double requiredLatency;
 	
+	private List<Channel> upChannels;
+	
+	private List<Channel> downChannels;
+	
 	String name;
 	
-	public Arc(String name, int srcId, int dstId, int flowId, long reqBW, double reqLatency) {
+	public Arc(String name, int srcId, int dstId, int flowId, double reqBW, double reqLatency) {
 		super();
 		this.name = name;
 		this.srcId = srcId;
@@ -41,6 +52,8 @@ public class Arc {
 		this.flowId = flowId;
 		this.requiredBandwidth = reqBW;
 		this.requiredLatency = reqLatency;
+		this.upChannels = new ArrayList<Channel>();
+		this.downChannels = new ArrayList<Channel>();
 	}
 
 	public Arc(VLinkSpec vLinkSpec, int srcId, int dstId, int flowId) {
@@ -49,9 +62,10 @@ public class Arc {
 		this.srcId = srcId;
 		this.dstId = dstId;
 		this.flowId = flowId;
-		// TODO: whether Bw is long or double ?
-		this.requiredBandwidth = (long) vLinkSpec.getBw();
+		this.requiredBandwidth = vLinkSpec.getBw();
 		this.requiredLatency = vLinkSpec.getLatency();
+		this.upChannels = new ArrayList<Channel>();
+		this.downChannels = new ArrayList<Channel>();
 	}
 	
 	public String getName(){
@@ -69,7 +83,7 @@ public class Arc {
 		return flowId;
 	}
 
-	public long getBw() {
+	public double getBw() {
 		return requiredBandwidth;
 	}
 
@@ -78,7 +92,8 @@ public class Arc {
 	}
 	
 	public String toString() {
-		Gson gson = new Gson();
-		return gson.toJson(this);
+		String str = "";
+		str += "Arc " + flowId + ": " + srcId + " <-> " + dstId;
+		return str;
 	}
 }

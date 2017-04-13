@@ -54,6 +54,9 @@ public class VirtualTopology {
 	// Node id in graph -> GraphNode object
 	Map<Integer, GraphNode> graphNodes;
 	
+	// Id in VDC -> Node id in graph
+	Map<Integer, Integer> idNodeIdMap;
+	
 	// Assuming no two Arcs are between the same pair of nodes
 	// GraphNode id 1, GraphNode id 2 -> Arc
 	Map<Pair<Integer, Integer>, Arc> graphLinksMap;
@@ -72,6 +75,7 @@ public class VirtualTopology {
 		edgeVSwitchList = new ArrayList<VSwitch>();
 		links = HashBasedTable.create();
 		graphLinksMap = new HashMap<Pair<Integer, Integer>, Arc>();
+		idNodeIdMap = new HashMap<Integer, Integer>();
 	}
 	
 	public Map<Integer, Vm> getVmsTable() {
@@ -189,28 +193,36 @@ public class VirtualTopology {
 		adjList.clear();
 		for (Map.Entry<Integer, Vm> entry: vmsTable.entrySet()) {
 			if (((TimedVm)entry.getValue()).isActive()) {
+				System.out.println(idx + "->" + entry.getKey() + " added to graphNodes");
 				graphNodes.put(idx, new GraphNode(idx, entry.getKey()));
+				idNodeIdMap.put(entry.getKey(), idx);
 				++idx;
 			}
 		}
 		for (Map.Entry<Integer, VSwitch> entry: vswitchesTable.entrySet()) {
 			if (entry.getValue().isActive()) {
+				System.out.println(idx + "->" + entry.getKey() + " added to graphNodes");
 				graphNodes.put(idx, new GraphNode(idx, entry.getKey()));
+				idNodeIdMap.put(entry.getKey(), idx);
 				++idx;
 			}
 		}
 		for (int i = 0; i < graphNodes.size(); ++i) {
 			adjList.add(new ArrayList<Integer>());
 		}
+		System.out.println("Vlinks to adjList");
 		for (Map.Entry<Integer, Arc> entry: vlinksTable.entrySet()) {
 			Arc vlink = entry.getValue();
-			GraphNode src = graphNodes.get(vlink.getSrcId());
-			GraphNode dst = graphNodes.get(vlink.getDstId());
+			GraphNode src = graphNodes.get(idNodeIdMap.get(vlink.getSrcId()));
+			GraphNode dst = graphNodes.get(idNodeIdMap.get(vlink.getDstId()));
+			System.out.println(vlink.getSrcId() + " " + vlink.getDstId());
+			System.out.println(idNodeIdMap.get(vlink.getSrcId()) + " " + idNodeIdMap.get(vlink.getDstId()));
 			if (src == null || dst == null) {
 				continue;
 			}
 			int srcId = src.getGraphNodeId();
 			int dstId = dst.getGraphNodeId();
+			System.out.println(srcId + " " + dstId);
 			adjList.get(srcId).add(dstId);
 			adjList.get(dstId).add(srcId);
 			graphLinksMap.put(new Pair<Integer, Integer>(srcId, dstId), vlink);
@@ -226,8 +238,8 @@ public class VirtualTopology {
 		int i, startId;
 		List<List<Arc>> allPaths = new ArrayList<List<Arc>>();
 		createAdjList();
-		System.out.println(adjList);
-		startId = graphNodes.get(vmId).getGraphNodeId();
+		System.out.println("adjList: " + adjList);
+		startId = idNodeIdMap.get(vmId);
 		dfs(startId);
 		for (i = 0; i < adjList.size(); ++i) {
 			System.out.println("Node :" + i);

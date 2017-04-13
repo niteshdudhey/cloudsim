@@ -504,17 +504,23 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 	
 	private void createFlowsBetweenVms() {
 		for (Vm vm: vmList) {
-			createFlowsForVm(vm, vm.getUserId());
+			if (((TimedVm)vm).isActive()) {
+				createFlowsForVm(vm, vm.getUserId());
+			}
 		}
 	}
 	
 	private void createFlowsForVm(Vm vm, int userId) {
 		VirtualTopology virtualTopology = virtualTopologies.get(userId);
+		System.out.println(virtualTopology.getVLinks());
+		System.out.println(virtualTopology.getVms());
+		System.out.println(virtualTopology.getVSwitches());
 		List<List<Arc>> links = virtualTopology.getPathsFromVm(vm.getId());
 		VdcEmbedding embedding = vdcEmbeddingMap.get(virtualTopology);
 		Map<Arc, List<Link>> vlinkMap = embedding.getVLinkMap();
 		System.out.println("embedding: " + embedding);
 		System.out.println("vLinkMap: " + vlinkMap);
+		System.out.println("links returned by pathToVms: " + links);
 		int flowId;
 		if (links == null) {
 			return;
@@ -533,6 +539,7 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 			}
 			SDNHost srcHost = findSDNHost(srcVmId);
 			SDNHost dstHost = findSDNHost(destVmId);
+			System.out.println(srcHost + " " + dstHost);
 			if (srcHost == null || dstHost == null) {
 				continue;
 			}

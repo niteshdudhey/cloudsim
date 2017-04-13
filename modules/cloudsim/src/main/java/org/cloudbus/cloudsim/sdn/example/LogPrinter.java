@@ -106,20 +106,21 @@ public class LogPrinter {
 	}
 	
 	public static void printLinkUtilizationHistory(Table<Integer, Integer, Link> links){
-		Collection<Link> linksList = links.values();			
-		Set<Link> linksSet = new HashSet<Link>(linksList);
-		
-		Log.printLine("========== LINK UTILIZATIONS ===========");
-		
-		for(Link link : linksSet){
-			Log.printLine("link: " + link.getName());
-			Log.printLine("Time AvailableBw");
-			List<LinkStateHistoryEntry> stateHistory = link.stateHistory;
-			
-			for(LinkStateHistoryEntry entry : stateHistory){
-				Log.printLine(String.format("%.12f %.0f", entry.getTime(), entry.getAvailableBw()));
-			}
-		}
+		// TODO: Commented for testing purpose
+//		Collection<Link> linksList = links.values();			
+//		Set<Link> linksSet = new HashSet<Link>(linksList);
+//		
+//		Log.printLine("========== LINK UTILIZATIONS ===========");
+//		
+//		for(Link link : linksSet){
+//			Log.printLine("link: " + link.getName());
+//			Log.printLine("Time AvailableBw");
+//			List<LinkStateHistoryEntry> stateHistory = link.stateHistory;
+//			
+//			for(LinkStateHistoryEntry entry : stateHistory){
+//				Log.printLine(String.format("%.12f %.0f", entry.getTime(), entry.getAvailableBw()));
+//			}
+//		}
 	}
 	
 	static public String indent = ",";

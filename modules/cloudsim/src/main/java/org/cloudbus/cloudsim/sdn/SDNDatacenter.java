@@ -212,6 +212,8 @@ public class SDNDatacenter extends Datacenter {
 		// Request received from user. Send to SdnHost.
 		Activity ac = req.getNextActivity();
 		
+		System.out.println("Received REQUEST_SUBMIT from Broker at " + this.getName());
+		
 		if(ac instanceof Processing) {
 			Cloudlet cl = ((Processing) ac).getCloudlet();
 			int hostAddress = nos.getHostAddressByVmId(cl.getVmId());
@@ -284,6 +286,8 @@ public class SDNDatacenter extends Datacenter {
 	public void processVSwitchDestroy(SimEvent ev, boolean ack) {
 		VSwitch vswitch = (VSwitch) ev.getData();
 		Switch pswitch = vswitch.getSwitch();
+		
+		System.out.println(CloudSim.clock() + " Destroying VSwitch Id " + vswitch.getId());
 		
 		if (pswitch.vswitchDestroy(vswitch)) {
 			getVSwitchList().remove(vswitch);

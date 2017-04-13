@@ -128,7 +128,7 @@ public class EventSummary {
 		EventSummary.switchList = switchList;
 		for (Switch pswitch: switchList) {
 			if (pswitch != null) {
-				System.out.println("Host ID = " + pswitch.getName());
+				System.out.println("Switch ID = " + pswitch.getName());
 			} else {
 				System.out.println("Null VSwitch in vmlist");
 			}
@@ -141,7 +141,7 @@ public class EventSummary {
 		EventSummary.vswitchList = vswitchList;
 		for (VSwitch vswitch: vswitchList) {
 			if (vswitch != null) {
-				System.out.println("Host ID = " + vswitch.getName());
+				System.out.println("VSwitch ID = " + vswitch.getName());
 			} else {
 				System.out.println("Null VSwitch in vmlist");
 			}

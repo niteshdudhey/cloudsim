@@ -253,4 +253,9 @@ public class TimedVm extends Vm implements VNode {
 		return active;
 	}
 	
+	public String toString() {
+		String str = getName() + ": " + getId();
+		return str;
+	}
+	
 }

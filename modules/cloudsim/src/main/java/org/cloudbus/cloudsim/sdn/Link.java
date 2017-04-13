@@ -33,6 +33,10 @@ public class Link {
 	double downBW;	// high -> low
 	double latency;
 	
+	// Data Members required for VLink embedding
+	double availableBw;
+	List<Arc> vlinksList;
+	
 	private List<Channel> upChannels;
 	private List<Channel> downChannels;
 	
@@ -53,8 +57,12 @@ public class Link {
 		this.upBW = this.downBW = bw;
 		this.latency = latency;
 		
+		this.availableBw = bw; // Initially all Bw is available
+		
 		this.upChannels = new ArrayList<Channel>();
 		this.downChannels = new ArrayList<Channel>();
+		
+		this.vlinksList = new ArrayList<Arc>();
 		
 		this.name = highOrder.getName() + "-" + lowOrder.getName();
 	}
@@ -77,6 +85,42 @@ public class Link {
 
 	public Node getLowOrder() {
 		return lowOrder;
+	}
+	
+	public double getAvailableBw() {
+		return availableBw;
+	}
+	
+	public void setAvailableBw(double bw) { 
+		this.availableBw = bw;
+	}
+	
+	public List<Arc> getVLinksList() {
+		return vlinksList;
+	}
+	
+	// Also subtracts the bw requested by arc/vlink
+	public boolean addVLink(Arc arc) {
+		if (arc.getBw() > this.availableBw) {
+			System.err.println("Cannot add Arc with required Bw higher than available.");
+			return false;
+		} else {
+			setAvailableBw(this.availableBw-arc.getBw());
+			vlinksList.add(arc);
+			return true;
+		}
+	}
+	
+	// Also adds the bw allocated to arc/vlink
+	public boolean removeVLink(Arc arc) {
+		if (!vlinksList.contains(arc)) {
+			System.err.println("Cannot remove unembedded VLink.");
+			return false;
+		} else {
+			setAvailableBw(this.availableBw+arc.getBw());
+			vlinksList.remove(arc);
+			return true;
+		}
 	}
 	
 	public Node getOtherNode(Node from) {

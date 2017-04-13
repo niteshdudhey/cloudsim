@@ -16,6 +16,7 @@ import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.sdn.NetworkOperatingSystem;
 import org.cloudbus.cloudsim.sdn.SDNDatacenter;
 import org.cloudbus.cloudsim.sdn.VdcEmbedderSimple;
+import org.cloudbus.cloudsim.sdn.VdcEmbedderSwitchLFF;
 import org.cloudbus.cloudsim.sdn.Switch;
 import org.cloudbus.cloudsim.sdn.VdcEmbedder;
 import org.cloudbus.cloudsim.sdn.example.SDNExample.VmAllocationPolicyEnum;
@@ -95,7 +96,7 @@ public class SDNExampleMultipleDatacenters {
 			
 			VmAllocationPolicyFactory vmAllocationFac = null;
 			NetworkOperatingSystem snos = null;
-			VdcEmbedder embedder = new VdcEmbedderSimple();
+			VdcEmbedder embedder = new VdcEmbedderSwitchLFF();
 			
 			switch(vmAllocPolicy) {
 			case CombMFF:
@@ -183,14 +184,15 @@ public class SDNExampleMultipleDatacenters {
 	}
 	
 	public static void initializeDeploymentApplication(VmAllocationPolicyFactory vmAllocationFac){
+		// Create a Datacenter.
+		SDNDatacenter datacenter = createSDNDatacenter(0, vmAllocationFac);
 		
 		for(int i = 0 ; i < deploymentFiles.size() ; i++){
 			// Broker
 			SDNBroker broker = createBroker(i);
 			int brokerId = broker.getId();
-						
-			// Create a Datacenter.
-			SDNDatacenter datacenter = createSDNDatacenter(i, brokerId, vmAllocationFac);
+
+			nos.addDatacenter(datacenter, brokerId);
 
 			// Submit virtual topology.
 			// deploymentFile : virtual-topology file.
@@ -224,7 +226,7 @@ public class SDNExampleMultipleDatacenters {
 	 *
 	 * @return the datacenter
 	 */
-	protected static SDNDatacenter createSDNDatacenter(int nameInt, int userId, 
+	protected static SDNDatacenter createSDNDatacenter(int nameInt, 
 			VmAllocationPolicyFactory vmAllocationFactory) {
 		
 		String name = "Datacenter_" + nameInt;
@@ -253,8 +255,6 @@ public class SDNExampleMultipleDatacenters {
 			VmAllocationPolicy vmPolicy = vmAllocationFactory.create(hostList);
 			maxHostHandler = (PowerUtilizationMaxHostInterface) vmPolicy;
 			datacenter = new SDNDatacenter(name, characteristics, vmPolicy, storageList, 0, nos);
-			
-			nos.addDatacenter(datacenter, userId);
 		} 
 		catch (Exception e) {
 			e.printStackTrace();

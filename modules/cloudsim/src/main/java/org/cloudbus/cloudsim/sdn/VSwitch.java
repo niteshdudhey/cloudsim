@@ -186,4 +186,9 @@ public class VSwitch implements VNode {
 		}
 	}
 	
+	public String toString() {
+		String str = getName() + ": " + getId();
+		return str;
+	}
+	
 }

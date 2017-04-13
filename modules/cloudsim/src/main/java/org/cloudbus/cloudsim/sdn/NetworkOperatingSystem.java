@@ -971,6 +971,8 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 					nodeName2 = nodeName + "_" + n;
 				}
 				
+				nodeName2 = userId + "_" + nodeName2;
+				
 				Vm vm = new TimedVm(virtualNodeId, nodeName2, vmSpec, userId, datacenterId, "VMM", new CloudletSchedulerTimeShared());
 				
 				vmNameIdTable.put(nodeName2, virtualNodeId);
@@ -1004,6 +1006,8 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 					nodeName2 = nodeName + "_" + n;
 				}
 				
+				nodeName2 = userId + "_" + nodeName2;
+				
 				Switch pswitch = getSwitchByName(vSwitchSpec.getPSwitchName());
 				
 				int rank = getVSwitchRank(vSwitchSpec);
@@ -1031,6 +1035,9 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 			// Next few lines assume that a VM and VSwitch cannot have the same name.
 			// It is a reasonable assumption, but must be kept in mind while creating
 			// VDCs.
+			
+			src = userId + "_" + src;
+			dst = userId + "_" + dst;
 			
 			Integer srcId = vmNameIdTable.get(src);
 			Integer dstId = vmNameIdTable.get(dst);
