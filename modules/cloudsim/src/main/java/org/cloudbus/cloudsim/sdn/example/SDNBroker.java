@@ -58,7 +58,7 @@ public class SDNBroker extends SimEntity {
 		System.out.println("Starting Broker:" + this.getId());
 		// Replace the below line with the schedule() to schedule it to start at some different time.
 		// This will enable the datacenter to come up at a given time.
-		sendNow(this.datacenter.getId(), Constants.APPLICATION_SUBMIT, this.applicationFileName);
+		applicationSubmit();
 	}
 	
 	@Override
@@ -88,7 +88,9 @@ public class SDNBroker extends SimEntity {
 				processVmCreate(ev);
 				break;
 			case Constants.APPLICATION_SUBMIT_ACK:
-				applicationSubmitCompleted(ev); 
+				// Application successfully submitted.
+				// Now submitting workloads.
+				applicationSubmitCompleted(); 
 				break;
 			case Constants.REQUEST_COMPLETED:
 				requestCompleted(ev); 
@@ -96,6 +98,10 @@ public class SDNBroker extends SimEntity {
 			default: 
 				System.out.println("Unknown event received by " + super.getName() + ". Tag:" + ev.getTag());
 		}
+	}
+	
+	private void applicationSubmit(){
+		sendNow(this.datacenter.getId(), Constants.APPLICATION_SUBMIT, this.applicationFileName);
 	}
 	
 	private void processVmCreate(SimEvent ev) {	
@@ -110,7 +116,7 @@ public class SDNBroker extends SimEntity {
 
 	public static int appId = 0;
 	
-	private void applicationSubmitCompleted(SimEvent ev) {
+	private void applicationSubmitCompleted() {
 		for (String workloadFileName : this.workloadFileNames) {
 			scheduleRequest(workloadFileName);
 			SDNBroker.appId++;

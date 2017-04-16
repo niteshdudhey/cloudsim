@@ -48,34 +48,17 @@ public class SDNDatacenter extends Datacenter {
 	
 	List<VSwitch> vswitchList;
 	
-	public SDNDatacenter(String name, DatacenterCharacteristics characteristics, VmAllocationPolicy vmAllocationPolicy, List<Storage> storageList, double schedulingInterval, NetworkOperatingSystem nos) throws Exception {
+	public SDNDatacenter(
+			String name, DatacenterCharacteristics characteristics, VmAllocationPolicy vmAllocationPolicy, 
+			List<Storage> storageList, double schedulingInterval, NetworkOperatingSystem nos) 
+					throws Exception {
+		
 		super(name, characteristics, vmAllocationPolicy, storageList, schedulingInterval);
-		
-		this.nos = nos;
-		
+		this.nos = nos;		
 		this.vswitchList = new LinkedList<VSwitch>();
 	}
 	
-	public double getStartTime() {
-		return startTime;
-	}
-
-
-	public void setStartTime(double startTime) {
-		this.startTime = startTime;
-	}
-
-
-	public double getEndTime() {
-		return endTime;
-	}
-
-
-	public void setEndTime(double endTime) {
-		this.endTime = endTime;
-	}
-
-
+	
 	/**
 	 * Adds a VM to the datacenter.
 	 * @param vm
@@ -175,8 +158,7 @@ public class SDNDatacenter extends Datacenter {
 				processVSwitchDestroy(ev, false);
 				break;
 			case Constants.DEPLOY_APPLICATION:
-				String []data = (String [])ev.getData();
-				deployApplication(Integer.parseInt(data[0]), data[1]);
+				deployApplication((Integer)ev.getData());
 				break;
 			default: 
 				System.out.println("Unknown event received by SdnDatacenter. Tag:" + ev.getTag());
@@ -229,30 +211,28 @@ public class SDNDatacenter extends Datacenter {
 	
 	/**
 	 * Processes application request and schedules the deployment at the start time of the datacenter.
+	 * 
 	 * @param userId
 	 * @param filename
 	 */
 	private void processApplication(int userId, String filename) {
-		
+		System.out.println(filename);
 		nos.readVirtualNetwork(userId, filename);
 		
-		String []sendData = {Integer.toString(userId), filename};
-		
-		send(this.getId(), this.getStartTime() + CloudSim.getMinTimeBetweenEvents(), 
-				Constants.DEPLOY_APPLICATION, sendData);
+		send(this.getId(), this.getStartTime() + CloudSim.getMinTimeBetweenEvents(), Constants.DEPLOY_APPLICATION, userId);
 	}
 	
 	/**
 	 * Deploys the virtual datacenter and its workload if it succeeds.
+	 * 
 	 * @param userId
-	 * @param filename
 	 */
-	private void deployApplication(int userId, String filename){
+	private void deployApplication(int userId){
 		boolean result = nos.deployApplication(userId);
 		
 		if (result) {
 			// Deploying workload.
-			send(userId, CloudSim.getMinTimeBetweenEvents(), Constants.APPLICATION_SUBMIT_ACK, filename);
+			send(userId, CloudSim.getMinTimeBetweenEvents(), Constants.APPLICATION_SUBMIT_ACK, null);
 		}
 		else {
 			System.out.println("Could not deploy Virtual Datacenter");
@@ -300,4 +280,21 @@ public class SDNDatacenter extends Datacenter {
 			 */ 
 		}
 	}
+	
+	public double getStartTime() {
+		return startTime;
+	}
+
+	public void setStartTime(double startTime) {
+		this.startTime = startTime;
+	}
+
+	public double getEndTime() {
+		return endTime;
+	}
+
+	public void setEndTime(double endTime) {
+		this.endTime = endTime;
+	}
+
 }

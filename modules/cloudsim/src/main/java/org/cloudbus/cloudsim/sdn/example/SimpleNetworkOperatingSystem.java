@@ -46,41 +46,8 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 		super(fileName, embedder);
 	}
 	
-	@Override
-	protected boolean deployApplication(List<Vm> vms, List<Middlebox> middleboxes, List<Arc> links,
-			List<VSwitch> vswitchList) {
-		Log.printLine(CloudSim.clock() + ": " + getName() + ": Starting deploying application..");
-		
-		for(Vm vm : vms) {	
-			TimedVm tvm = (TimedVm) vm;
-			SDNDatacenter datacenter = getDatacenterById(tvm.getDatacenterId());
-			
-			Log.printLine(CloudSim.clock() + ": " + getName() + ": Trying to Create VM #" + vm.getId() 
-					+ " in " + datacenter.getName() + ", (" + tvm.getStartTime() + "~" + tvm.getFinishTime() + ")");
-			
-			send(datacenter.getId(), tvm.getStartTime(), CloudSimTags.VM_CREATE_ACK, vm);
-			
-			if(tvm.getFinishTime() != Double.POSITIVE_INFINITY) {
-				send(datacenter.getId(), tvm.getFinishTime(), CloudSimTags.VM_DESTROY, vm);
-				send(this.getId(), tvm.getFinishTime(), CloudSimTags.VM_DESTROY, vm);
-			}
-		}
-		for (VSwitch vswitch: vswitchList) {
-			SDNDatacenter datacenter = getDatacenterById(vswitch.getDatacenterId());
-			Log.printLine(CloudSim.clock() + ": " + "Trying to Create VSwitch " + vswitch.getName() 
-			+ " in " + datacenter.getName() + ", (" + vswitch.getStartTime() + "~" + vswitch.getFinishTime() + ")");
-	
-			send(datacenter.getId(), vswitch.getStartTime(), CloudSimTags.VSWITCH_CREATE_ACK, vswitch);
-			
-			if(vswitch.getFinishTime() != Double.POSITIVE_INFINITY) {
-				send(datacenter.getId(), vswitch.getFinishTime(), CloudSimTags.VSWITCH_DESTROY, vswitch);
-				send(this.getId(), vswitch.getFinishTime(), CloudSimTags.VSWITCH_DESTROY, vswitch);
-			}
-		}
-		return true;
-	}
-	
-	// @deprecated.
+
+	// Depricated.
 	@Override
 	public boolean deployApplication(List<Vm> vms, List<Middlebox> middleboxes, List<Arc> links, VirtualTopology virtualTopology) {
 		return false;
@@ -511,16 +478,21 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 	}
 	
 	private void createFlowsForVm(Vm vm, int userId) {
-		VirtualTopology virtualTopology = virtualTopologies.get(userId);
+		
+		System.out.println("VM = " + vm.getId() + " UserId = " + userId);
+		
+		VirtualTopology virtualTopology = deployedTopologies.get(userId);
 		System.out.println(virtualTopology.getVLinks());
 		System.out.println(virtualTopology.getVms());
 		System.out.println(virtualTopology.getVSwitches());
+		
 		List<List<Arc>> links = virtualTopology.getPathsFromVm(vm.getId());
 		VdcEmbedding embedding = vdcEmbeddingMap.get(virtualTopology);
 		Map<Arc, List<Link>> vlinkMap = embedding.getVLinkMap();
 		System.out.println("embedding: " + embedding);
 		System.out.println("vLinkMap: " + vlinkMap);
 		System.out.println("links returned by pathToVms: " + links);
+		
 		int flowId;
 		if (links == null) {
 			return;

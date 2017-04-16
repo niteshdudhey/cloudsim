@@ -172,7 +172,6 @@ public class VdcEmbedderSwitchLFF implements VdcEmbedder {
 							List<Link> linklist = new ArrayList<Link>();
 							linklist.add(link);
 							vlinkMap.put(vlink, linklist);
-							// link embedding to be done
 							break;
 						}
 					}
@@ -292,6 +291,8 @@ public class VdcEmbedderSwitchLFF implements VdcEmbedder {
 //		host.getBwProvisioner().deallocateBwForVm(vm);
 //		host.getVmScheduler().deallocatePesForVm(vm);
 
+		System.out.println(vm.getId());
+		System.out.println(sdnhost.getName());
 		return true;
 	}
 	
@@ -373,11 +374,7 @@ public class VdcEmbedderSwitchLFF implements VdcEmbedder {
 		public void setCurrentIops(Long iops) {
 			currentIops = iops;
 		}
-		
-
-		
+	
 	}
-
-
 }
 

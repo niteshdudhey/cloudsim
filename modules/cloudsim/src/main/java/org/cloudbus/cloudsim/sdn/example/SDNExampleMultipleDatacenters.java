@@ -96,6 +96,7 @@ public class SDNExampleMultipleDatacenters {
 			
 			VmAllocationPolicyFactory vmAllocationFac = null;
 			NetworkOperatingSystem snos = null;
+			
 			VdcEmbedder embedder = new VdcEmbedderSwitchLFF();
 			
 			switch(vmAllocPolicy) {
@@ -193,6 +194,8 @@ public class SDNExampleMultipleDatacenters {
 			int brokerId = broker.getId();
 
 			nos.addDatacenter(datacenter, brokerId);
+			
+			System.out.println("Created broker with userId = " + brokerId);
 
 			// Submit virtual topology.
 			// deploymentFile : virtual-topology file.

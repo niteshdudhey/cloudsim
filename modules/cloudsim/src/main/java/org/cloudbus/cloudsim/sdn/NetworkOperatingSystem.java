@@ -15,9 +15,12 @@ import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Random;
 
 import org.cloudbus.cloudsim.CloudletSchedulerTimeShared;
 import org.cloudbus.cloudsim.EventSummary;
@@ -81,6 +84,8 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	// UserId -> VirtualTopology.
 	protected Map<Integer, VirtualTopology> virtualTopologies;
 	
+	protected Map<Integer, VirtualTopology> deployedTopologies;
+	
 	protected VdcEmbedder embedder;
 	
 	protected Map<VirtualTopology, VdcEmbedding> vdcEmbeddingMap;
@@ -143,6 +148,18 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	public static int resolutionPlaces = 5;
 	public static int timeUnit = 1;							// 1: sec, 1000: msec
 	
+	/**
+	 * 1. map VMs and middleboxes to hosts, add the new vm/mb to the vmHostTable, advise host, advise dc
+	 * 2. set channels and bws
+	 * 3. set routing tables to restrict hops to meet latency
+	 */
+	// TODO: Need to remove the arguments that are redundant.
+	protected abstract boolean deployApplication(VirtualTopology virtualTopology);
+	
+	// Depricated.
+	protected abstract boolean deployApplication(List<Vm> vms, List<Middlebox> middleboxes, List<Arc> links, VirtualTopology virtualTopology);
+	protected abstract Middlebox deployMiddlebox(String type, Vm vm);
+
 	public NetworkOperatingSystem(String physicalTopologyFileName, VdcEmbedder embedder) {
 		super("NOS");
 		
@@ -158,6 +175,7 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		initPhysicalTopology();
 		
 		virtualTopologies = new HashMap<Integer, VirtualTopology>();
+		deployedTopologies = new HashMap<Integer, VirtualTopology>();
 		
 		vmNameIdTable = new HashMap<String, Integer>();
 		vmList = new LinkedList<Vm>();
@@ -183,58 +201,20 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		EventSummary.setSwitchList(switches);
 	}
 
-	/**
-	 * 1. map VMs and middleboxes to hosts, add the new vm/mb to the vmHostTable, advise host, advise dc
-	 * 2. set channels and bws
-	 * 3. set routing tables to restrict hops to meet latency
-	 */
-	// TODO: Need to remove the arguments that are redundant.
-	protected abstract boolean deployApplication(VirtualTopology virtualTopology);
-	
-	protected abstract boolean deployApplication(List<Vm> vms, List<Middlebox> middleboxes, List<Arc> links, List<VSwitch> vswitchList);
-	
-	// Depricated.
-	protected abstract boolean deployApplication(List<Vm> vms, List<Middlebox> middleboxes, List<Arc> links, VirtualTopology virtualTopology);
-	
-	protected abstract Middlebox deployMiddlebox(String type, Vm vm);
-
-	public PhysicalTopology getPhysicalTopology(){
-		return topology;
-	}
-
-	public static double getMinTimeBetweenNetworkEvents() {
-	    return minTimeBetweenEvents* timeUnit;
-	}
-	
-	public static double round(double value) {
-		int places = resolutionPlaces;
-	    
-		if (places < 0) {
-			throw new IllegalArgumentException();
-		}
-
-		if(timeUnit >= 1000) {
-			value = Math.floor(value*timeUnit);
-		}
-		
-	    BigDecimal bd = new BigDecimal(value);
-	    bd = bd.setScale(places, RoundingMode.CEILING);
-	    
-	    return bd.doubleValue();
-	}
-		
 	@Override
-	public void startEntity() {}
+	public void startEntity() {
+	}
 
 	@Override
-	public void shutdownEntity() {}
+	public void shutdownEntity() {
+	}
 	
 	@Override
 	public void processEvent(SimEvent ev) {
 		int tag = ev.getTag();
 		
 		EventSummary.storePresentState(CloudSim.clock());
-		System.out.println("handling event in NOS. Event Tag " + tag);
+		System.out.println("Handling event in NOS. Event Tag :" + tag);
 		
 		switch(tag){
 			case Constants.SDN_INTERNAL_PACKAGE_PROCESS: 
@@ -253,6 +233,8 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 			case CloudSimTags.VSWITCH_DESTROY:
 				processVSwitchDestroyAck(ev);
 				break;
+			case Constants.PROCESS_APPLICATION_COMPLETE:
+				processApplicationComplete((Integer)ev.getData());
 			default: 
 				System.out.println("Unknown event received by " + super.getName() + ". Tag:" + ev.getTag());
 		}
@@ -435,34 +417,6 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 				sendNow(dest.getAddress(), Constants.SDN_PACKAGE, pkg);
 			}
 		}
-	}
-	
-	public Map<Integer, String> getRequestedHostTable() {
-        return this.vmIdRequestedHostTable;
-    }
-    
-	public Map<String, Integer> getHostNameIdTable() {
-    	return this.hostNameIdTable;
-    }
-	
-	public Map<String, Integer> getVmNameIdTable() {
-		return this.vmNameIdTable;
-	}
-	
-	public Map<String, Integer> getFlowNameIdTable() {
-		return this.flowNameIdTable;
-	}
-	
-	public Map<Integer, String> getvswitchIdNameTable() {
-		return this.vswitchIdNameTable;
-	}
-	
-	public Map<String, Integer> getvswitchNameIdTable() {
-		return this.vswitchNameIdTable;
-	}
-	
-	public Map<Integer, List<VSwitch> > getFlowIdVSwitchListTable() {
-		return this.flowIdVSwitchListTable;
 	}
 	
 	private Channel findChannel(int from, int to, int channelId) {
@@ -921,6 +875,8 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	 */
 	public void readVirtualNetwork(int userId, String virtualTopologyFileName) {
 
+		System.out.println("in readVirtualNetwork");
+		
 		Gson gson = new Gson();
 		VdcSpec vdc = null;
 		
@@ -1008,11 +964,9 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 				
 				nodeName2 = userId + "_" + nodeName2;
 				
-				Switch pswitch = getSwitchByName(vSwitchSpec.getPSwitchName());
-				
 				int rank = getVSwitchRank(vSwitchSpec);
 				
-				VSwitch vswitch = new VSwitch(virtualNodeId, userId, rank, vSwitchSpec, datacenterId, pswitch);
+				VSwitch vswitch = new VSwitch(virtualNodeId, userId, rank, vSwitchSpec, datacenterId, null);
 						
 				virtualTopology.addVSwitch(vswitch);
 				
@@ -1076,24 +1030,64 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		virtualTopology.setUpperLowerVNodes();
 		
 		virtualTopologies.put(userId,  virtualTopology);
+		System.out.println("Added VT for User " + userId);
 	}
 
 	
 	/**
 	 * Deploys the VDC (if possible according to the Embedding Policy).
+	 * Also schedules the removal of VDC on process complete so as to create space 
+	 * for next request.
 	 * 
 	 * @param userId
-	 * @return
+	 * @return true on successful deployment. false otherwise.
 	 */
 	public boolean deployApplication(int userId) {
 		boolean result = deployApplication(virtualTopologies.get(userId));
 		
 		if (result) {
 			isApplicationDeployed = true;
+			
+			deployedTopologies.put(userId, virtualTopologies.get(userId));
+			
+			int datacenterId = brokerIdToDatacenterIdMap.get(userId);
+			Double endTime = datacenterIdToDatacenterMap.get(datacenterId).getEndTime();
+			
+			send(this.getId(), endTime, Constants.PROCESS_APPLICATION_COMPLETE, userId);
+			
+			virtualTopologies.remove(userId);
+			
 			return true;
 		}
 		
 		return false;
+	}
+	
+	private void processApplicationComplete(int userId) {
+		deployedTopologies.remove(userId);
+		
+		deployPendingRequest();
+	}
+	
+	protected void deployPendingRequest() {
+		Iterator<Entry<Integer, VirtualTopology>> it = virtualTopologies.entrySet().iterator();
+		
+		while(it.hasNext()) {
+			Map.Entry<Integer, VirtualTopology> pair = (Map.Entry<Integer, VirtualTopology>)it.next();
+			int userId = pair.getKey();
+			
+			int datacenterId = brokerIdToDatacenterIdMap.get(userId);
+			Double startTime = datacenterIdToDatacenterMap.get(datacenterId).getStartTime();
+			Double endTime = datacenterIdToDatacenterMap.get(datacenterId).getEndTime();
+			
+			Double startTimeNew = CloudSim.clock();
+			Double endTimeNew = startTimeNew + endTime - startTime;
+			
+			datacenterIdToDatacenterMap.get(datacenterId).setStartTime(startTimeNew);
+			datacenterIdToDatacenterMap.get(datacenterId).setEndTime(endTimeNew);
+			
+			send(datacenterId, CloudSim.getMinTimeBetweenEvents(), Constants.DEPLOY_APPLICATION, userId);
+		}
 	}
 	
 	public List<SDNHost> getSDNHostList() {
@@ -1124,4 +1118,56 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		return -2;
 	}
 	
+	public PhysicalTopology getPhysicalTopology(){
+		return topology;
+	}
+
+	public static double getMinTimeBetweenNetworkEvents() {
+	    return minTimeBetweenEvents* timeUnit;
+	}
+	
+	public static double round(double value) {
+		int places = resolutionPlaces;
+	    
+		if (places < 0) {
+			throw new IllegalArgumentException();
+		}
+
+		if(timeUnit >= 1000) {
+			value = Math.floor(value*timeUnit);
+		}
+		
+	    BigDecimal bd = new BigDecimal(value);
+	    bd = bd.setScale(places, RoundingMode.CEILING);
+	    
+	    return bd.doubleValue();
+	}
+	
+	public Map<Integer, String> getRequestedHostTable() {
+        return this.vmIdRequestedHostTable;
+    }
+    
+	public Map<String, Integer> getHostNameIdTable() {
+    	return this.hostNameIdTable;
+    }
+	
+	public Map<String, Integer> getVmNameIdTable() {
+		return this.vmNameIdTable;
+	}
+	
+	public Map<String, Integer> getFlowNameIdTable() {
+		return this.flowNameIdTable;
+	}
+	
+	public Map<Integer, String> getvswitchIdNameTable() {
+		return this.vswitchIdNameTable;
+	}
+	
+	public Map<String, Integer> getvswitchNameIdTable() {
+		return this.vswitchNameIdTable;
+	}
+	
+	public Map<Integer, List<VSwitch> > getFlowIdVSwitchListTable() {
+		return this.flowIdVSwitchListTable;
+	}
 }
