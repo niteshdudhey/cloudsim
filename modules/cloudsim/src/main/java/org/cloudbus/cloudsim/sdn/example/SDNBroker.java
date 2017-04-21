@@ -35,6 +35,14 @@ import org.cloudbus.cloudsim.sdn.SDNDatacenter;
  *
  */
 public class SDNBroker extends SimEntity {
+	
+	private double requestedStartTime;
+	
+	private double requestedDuration;
+	
+	private double startTime;
+	
+	private double endTime;
 
 	private SDNDatacenter datacenter = null;
 	
@@ -51,6 +59,10 @@ public class SDNBroker extends SimEntity {
 		this.workloadFileNames = new ArrayList<String>();
 		this.cloudletList = new ArrayList<Cloudlet>();
 		this.workloads = new ArrayList<Workload>();
+		this.startTime = 0.0;
+		this.endTime = Double.POSITIVE_INFINITY;
+		this.requestedStartTime = 0.0;
+		this.requestedDuration = Double.POSITIVE_INFINITY;
 	}
 	
 	@Override
@@ -139,4 +151,37 @@ public class SDNBroker extends SimEntity {
 	public List<Workload> getWorkloads() {
 		return this.workloads;
 	}
+	
+	public double getRequestedStartTime() {
+		return requestedStartTime;
+	}
+
+	public void setRequestedStartTime(double startTime) {
+		this.requestedStartTime = startTime;
+	}
+	
+	public double getRequestedDuration() {
+		return requestedDuration;
+	}
+
+	public void setRequestedDuration(double duration) {
+		this.requestedDuration = duration;
+	}
+	
+	public double getStartTime() {
+		return startTime;
+	}
+
+	public void setStartTime(double startTime) {
+		this.startTime = startTime;
+	}
+
+	public double getEndTime() {
+		return endTime;
+	}
+
+	public void setEndTime(double endTime) {
+		this.endTime = endTime;
+	}
+
 }

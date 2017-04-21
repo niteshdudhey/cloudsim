@@ -59,4 +59,14 @@ public interface Node {
 	
 	public void addLowerNode(Node lowerNode);
 	
+	public void clearModifiedVMRoutingTable();
+
+	public void addModifiedVMRoute(int flowId, Node from, Node to);
+
+	public Node getModifiedVMRoute(int flowId, Node from);
+
+	public void removeModifiedVMRoute(int flowId, Node from);
+
+	public void printModifiedVMRoute();
+	
 }

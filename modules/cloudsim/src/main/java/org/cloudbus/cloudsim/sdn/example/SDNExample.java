@@ -156,6 +156,8 @@ public class SDNExample {
 			// Create a Datacenter
 			SDNDatacenter datacenter = createSDNDatacenter("Datacenter_0", brokerId, physicalTopologyFile, snos, vmAllocationFac);
 
+			nos.addBroker(datacenter, brokerId, broker);
+			
 			// Submit virtual topology
 			// deploymentFile : virtual-topology file.
 			broker.submitDeployApplication(datacenter, deploymentFile);
@@ -276,7 +278,6 @@ public class SDNExample {
 			
 			
 			//nos.setDatacenter(datacenter);
-			nos.addDatacenter(datacenter, userId);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

@@ -1,5 +1,6 @@
 package org.cloudbus.cloudsim.sdn.example;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -172,6 +173,8 @@ public class SDNExampleMultipleDatacenters {
 			List<Switch> switchList = nos.getSwitchList();
 			LogPrinter.printEnergyConsumption(hostList, switchList, finishTime);
 			
+			printAllMetricsToFile();
+			
 			LogPrinter.printLinkUtilizationHistory(nos.getPhysicalTopology().getLinks());
 			
 			Log.printLine("Simultanously used hosts:" + maxHostHandler.getMaxNumHostsUsed());			
@@ -193,7 +196,7 @@ public class SDNExampleMultipleDatacenters {
 			SDNBroker broker = createBroker(i);
 			int brokerId = broker.getId();
 
-			nos.addDatacenter(datacenter, brokerId);
+			nos.addBroker(datacenter, brokerId, broker);
 			
 			System.out.println("Created broker with userId = " + brokerId);
 
@@ -220,6 +223,22 @@ public class SDNExampleMultipleDatacenters {
 		for(int i = 0 ; i < deploymentFiles.size() ; i++){
 			System.out.println("Network:" + deploymentFiles.get(i) + " Workload:" + workloadFiles.get(i));
 		}		
+	}
+	
+	public static void printAllMetricsToFile() {
+		File folder = new File(LogPrinter.dataFilesFolderName);
+		File[] files = folder.listFiles();
+	    for (int i = 0; i < files.length; i++) {
+	    	if (files[i].isFile()) {
+	    		files[i].delete();
+	    	}
+	    }
+		LogPrinter.printHostMetricsToFile(nos.getSDNHostList());
+		LogPrinter.printVmMetricsToFile(nos.getVmList());
+		LogPrinter.printLinkMetricsToFile(nos.getPhysicalTopology().getLinks());
+		LogPrinter.printSwitchMetricsToFile(nos.getSwitchList());
+		LogPrinter.printVSwitchMetricsToFile(nos.getVSwitchList());
+		LogPrinter.printVDCMetricsToFile(nos.getVDCRequestMetrics());
 	}
 	
 	/**

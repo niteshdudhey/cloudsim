@@ -28,6 +28,7 @@ import org.cloudbus.cloudsim.sdn.Request;
 import org.cloudbus.cloudsim.sdn.SDNHost;
 import org.cloudbus.cloudsim.sdn.Switch;
 import org.cloudbus.cloudsim.sdn.Transmission;
+import org.cloudbus.cloudsim.sdn.VDCRequestMetrics;
 import org.cloudbus.cloudsim.sdn.VSwitch;
 import org.cloudbus.cloudsim.sdn.VSwitchStateHistoryEntry;
 import org.cloudbus.cloudsim.sdn.Switch.HistoryEntry;
@@ -37,6 +38,7 @@ import org.cloudbus.cloudsim.sdn.power.PowerUtilizationInterface;
 import com.google.common.collect.Table;
 import org.cloudbus.cloudsim.sdn.Link;
 import org.cloudbus.cloudsim.sdn.LinkStateHistoryEntry;
+import org.cloudbus.cloudsim.sdn.NetworkOperatingSystem;
 
 /**
  * This class is to print out logs into console.
@@ -444,6 +446,26 @@ public class LogPrinter {
     				addToDataFile("VSwitch-" + vswitch.getName() + "-Num-Packets.dat", entry.getTime(), entry.getPacketsTransferred());                    
     			}
     		}
+            fw.close();
+		} catch(Exception e) {
+			System.out.println(e);
+		}
+	}
+	
+	public static void printVDCMetricsToFile(List<VDCRequestMetrics> vdcRequestMetrics) {
+		String fileName = folderName + "metrics_vdcrequests.txt";
+		try {
+			File file = new File(fileName);
+            if (!file.exists()) {
+                file.createNewFile();
+            }
+            FileWriter fw = new FileWriter(file.getAbsoluteFile(), false);
+			for (VDCRequestMetrics entry : vdcRequestMetrics) {
+				fw.write("Time = " + entry.getTime() + "\n" + entry.toString() + "\n");
+				addToDataFile("VDC-Requests-Total.dat", entry.getTime(), entry.getTotalRequestsCount());
+				addToDataFile("VDC-Requests-Pending.dat", entry.getTime(), entry.getWaitingRequestsCount());
+				addToDataFile("VDC-Requests-Served.dat", entry.getTime(), entry.getDeployedRequestsCount());
+			}
             fw.close();
 		} catch(Exception e) {
 			System.out.println(e);

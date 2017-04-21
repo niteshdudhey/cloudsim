@@ -119,8 +119,10 @@ public class VdcEmbedderSwitchLFF implements VdcEmbedder {
 					newUpperVSwitches.add(vswitch);
 				}
 				Boolean embedded = false;
-				
-				for (SwitchResources switchResources : upperSwitchResources) {
+				List<SwitchResources> upperSwitchResourcesList = new ArrayList<SwitchResources>();
+				upperSwitchResourcesList.addAll(upperSwitchResources);
+				Collections.shuffle(upperSwitchResourcesList,  new Random(r.nextLong()));
+				for (SwitchResources switchResources : upperSwitchResourcesList) {
 					if (embedInternal(internalVSwitch, switchResources, vswitchMap, physicalTopology)) {
 						System.out.println("Mapped vswitch #" + internalVSwitch.getId()+" to switch #"+switchResources.getSwitch().getId());
 						
@@ -160,7 +162,9 @@ public class VdcEmbedderSwitchLFF implements VdcEmbedder {
 				for (VNode vnode : edgeVSwitch.getLowerVNodes()) {
 					Vm vm = (Vm) vnode;
 					Boolean embedded = false;
-					for (Node node : ((EdgeSwitch)vswitchMap.get(edgeVSwitch)).getLowerNodes()) {
+					List<Node> hosts = ((EdgeSwitch)vswitchMap.get(edgeVSwitch)).getLowerNodes();
+					Collections.shuffle(hosts, new Random(r.nextLong()));
+					for (Node node : hosts) {
 						SDNHost sdnhost = (SDNHost) node;
 						if (embedVM(vm, sdnhost)) {
 							System.out.println("Mapped vm #" + vm.getId()+" to sdnhost #"+sdnhost.getId());

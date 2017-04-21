@@ -39,10 +39,6 @@ import org.cloudbus.cloudsim.core.SimEvent;
  *
  */
 public class SDNDatacenter extends Datacenter {
-
-	double startTime;
-	
-	double endTime;
 	
 	NetworkOperatingSystem nos;
 	
@@ -219,7 +215,9 @@ public class SDNDatacenter extends Datacenter {
 		System.out.println(filename);
 		nos.readVirtualNetwork(userId, filename);
 		
-		send(this.getId(), this.getStartTime() + CloudSim.getMinTimeBetweenEvents(), Constants.DEPLOY_APPLICATION, userId);
+		double startTime = nos.getBrokerById(userId).getStartTime();
+		
+		send(this.getId(), startTime + CloudSim.getMinTimeBetweenEvents(), Constants.DEPLOY_APPLICATION, userId);
 	}
 	
 	/**
@@ -281,20 +279,4 @@ public class SDNDatacenter extends Datacenter {
 		}
 	}
 	
-	public double getStartTime() {
-		return startTime;
-	}
-
-	public void setStartTime(double startTime) {
-		this.startTime = startTime;
-	}
-
-	public double getEndTime() {
-		return endTime;
-	}
-
-	public void setEndTime(double endTime) {
-		this.endTime = endTime;
-	}
-
 }
