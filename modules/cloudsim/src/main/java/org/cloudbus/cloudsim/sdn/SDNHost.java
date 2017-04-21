@@ -193,6 +193,7 @@ public class SDNHost extends SimEntity implements Node {
 				requestsTable.put(cl, req);
 				//sendNow(host.getDatacenter().getId(), CloudSimTags.CLOUDLET_SUBMIT, cl); // Depricated.
 				sendNow(nos.getDatacenterIdFromBrokerId(cl.getUserId()), CloudSimTags.CLOUDLET_SUBMIT, cl);
+				Log.printLine(CloudSim.clock() + ": " + getName() + ": Submitted cloudlet..");
 		}
 		
 		else {

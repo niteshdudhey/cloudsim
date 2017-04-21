@@ -72,6 +72,11 @@ public class SDNDatacenter extends Datacenter {
 	@Override
 	protected void processVmCreate(SimEvent ev, boolean ack) {
 		Vm vm = (Vm) ev.getData();
+		processVmCreateHelper(vm, ack, false);
+		
+	}
+	
+	public void processVmCreateHelper(Vm vm, boolean ack, boolean immediate) {
 		
 		TimedVm tvm = (TimedVm) vm;
 		
@@ -91,8 +96,13 @@ public class SDNDatacenter extends Datacenter {
 			else {
 				data[2] = CloudSimTags.FALSE;
 			}
-			
-			send(vm.getUserId(), CloudSim.getMinTimeBetweenEvents(), CloudSimTags.VM_CREATE_ACK, data);
+			if (immediate) {
+				nos.getBrokerById(vm.getUserId()).processVmCreateAckImmediate();;
+			}
+			else {
+				send(vm.getUserId(), CloudSim.getMinTimeBetweenEvents(), CloudSimTags.VM_CREATE_ACK, data);
+				
+			}
 		}
 
 		if (result) {
@@ -107,7 +117,13 @@ public class SDNDatacenter extends Datacenter {
 		}
 		
 		if(ack) {
-			send(nos.getId(), CloudSim.getMinTimeBetweenEvents(), CloudSimTags.VM_CREATE_ACK, ev.getData());
+			if (immediate) {
+				nos.processVmCreateAckHelper((TimedVm)vm);
+			}
+			else {
+				send(nos.getId(), CloudSim.getMinTimeBetweenEvents(), CloudSimTags.VM_CREATE_ACK, vm);
+			}
+			
 		}
 			
 	}
@@ -251,13 +267,23 @@ public class SDNDatacenter extends Datacenter {
 	
 	public void processVSwitchCreate(SimEvent ev, boolean ack) {
 		VSwitch vswitch = (VSwitch) ev.getData();
+		processVSwitchCreateHelper(vswitch, ack, false);
+	}
+	
+	public void processVSwitchCreateHelper(VSwitch vswitch, boolean ack, boolean immediate) {
 		Switch pswitch = vswitch.getSwitch();
 		if (pswitch.vswitchCreate(vswitch)) {
 			getVSwitchList().add(vswitch);
 			vswitch.setActive(true);
 		}
 		if (ack) {
-			send(nos.getId(), CloudSim.getMinTimeBetweenEvents(), CloudSimTags.VSWITCH_CREATE_ACK, ev.getData());
+			if (immediate) {
+				nos.processVSwitchCreateAckHelper(vswitch);
+			}
+			else {
+				send(nos.getId(), CloudSim.getMinTimeBetweenEvents(), CloudSimTags.VSWITCH_CREATE_ACK, vswitch);
+			}
+			
 		}
 	}
 	

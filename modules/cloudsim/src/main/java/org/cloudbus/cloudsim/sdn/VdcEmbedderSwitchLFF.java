@@ -281,8 +281,8 @@ public class VdcEmbedderSwitchLFF implements VdcEmbedder {
 		}
 
 		if (!host.getVmScheduler().allocatePesForVm(vm, vm.getCurrentRequestedMips())) {
-			System.out.println("Allocation of VM #" + vm.getId() + " to Host #" + host.getId() +
-					" failed by MIPS");
+//			System.out.println("Allocation of VM #" + vm.getId() + " to Host #" + host.getId() +
+//					" failed by MIPS");
 			
 			host.getRamProvisioner().deallocateRamForVm(vm);
 			host.getBwProvisioner().deallocateBwForVm(vm);

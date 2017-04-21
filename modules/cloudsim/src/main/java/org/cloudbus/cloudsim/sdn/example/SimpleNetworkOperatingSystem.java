@@ -55,7 +55,7 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 	}
 	
 	@Override
-	public boolean deployApplication(VirtualTopology virtualTopology) {
+	public boolean deployApplication(VirtualTopology virtualTopology, int userId) {
 		
 		Log.printLine(CloudSim.clock() + ": " + getName() + ": Starting deploying application..");
 		
@@ -69,6 +69,8 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 			System.out.println("Embedding Failed!!!");
 			return false;
 		}
+		
+		deployedTopologies.put(userId, virtualTopologies.get(userId));
 		
 		Map<Integer, Vm> vms1 = virtualTopology.getVmsTable();
 		
@@ -86,7 +88,13 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 			Log.printLine(CloudSim.clock() + ": " + getName() + ": Trying to Create VM #" + tvm.getId() 
 					+ " in " + datacenter.getName() + ", (" + tvm.getStartTime() + "~" + tvm.getFinishTime() + ")");
 			
-			send(datacenter.getId(), tvm.getStartTime(), CloudSimTags.VM_CREATE_ACK, tvm);
+//			send(datacenter.getId(), tvm.getStartTime(), CloudSimTags.VM_CREATE_ACK, tvm);
+			
+			if (tvm.getStartTime()>CloudSim.clock()) {
+				System.err.println("Vm being created earlier than specified!");
+			}
+			
+			datacenter.processVmCreateHelper(tvm, true, true);
 			
 			if(tvm.getFinishTime() != Double.POSITIVE_INFINITY) {
 				send(datacenter.getId(), tvm.getFinishTime(), CloudSimTags.VM_DESTROY, tvm);
@@ -109,6 +117,12 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 					+ " in " + datacenter.getName() + ", (" + vswitch.getStartTime() + "~" + vswitch.getFinishTime() + ")");
 			
 			send(datacenter.getId(), vswitch.getStartTime(), CloudSimTags.VSWITCH_CREATE_ACK, vswitch);
+			
+			if (vswitch.getStartTime()>CloudSim.clock()) {
+				System.err.println("VSwitch being created earlier than specified!");
+			}
+			
+			datacenter.processVSwitchCreateHelper(vswitch, true, true);
 			
 			if(vswitch.getFinishTime() != Double.POSITIVE_INFINITY) {
 				send(datacenter.getId(), vswitch.getFinishTime(), CloudSimTags.VSWITCH_DESTROY, vswitch);
@@ -448,6 +462,12 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 	public void processVmCreateAck(SimEvent ev) {
 		// Print the created VM info.
 		TimedVm vm = (TimedVm) ev.getData();
+		processVmCreateAckHelper(vm);
+		
+	}
+	
+	@Override
+	public void processVmCreateAckHelper(TimedVm vm) {
 		SDNHost host = this.findSDNHost(vm.getId());
 		
 		Log.printLine(CloudSim.clock() + ": " + getName() 
@@ -458,12 +478,17 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 		
 		// Can optimize by calling createFlowsForVm(vm, ..).
 		createFlowsBetweenVms();
-		
 	}
 	
 	@Override
 	public void processVSwitchCreateAck(SimEvent ev) {
 		VSwitch vswitch = (VSwitch) ev.getData();
+		processVSwitchCreateAckHelper(vswitch);
+		
+	}
+	
+	@Override
+	public void processVSwitchCreateAckHelper(VSwitch vswitch) {
 		Switch pswitch = vswitch.getSwitch();
 		
 		Log.printLine(CloudSim.clock() + ": " + getName() 
@@ -472,7 +497,6 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 //		createNewFlows();
 		
 		createFlowsBetweenVms();
-		
 	}
 	
 	private void createFlowsBetweenVms() {

@@ -159,7 +159,7 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	 * 3. set routing tables to restrict hops to meet latency
 	 */
 	// TODO: Need to remove the arguments that are redundant.
-	protected abstract boolean deployApplication(VirtualTopology virtualTopology);
+	protected abstract boolean deployApplication(VirtualTopology virtualTopology, int userId);
 	
 	// Depricated.
 	protected abstract boolean deployApplication(List<Vm> vms, List<Middlebox> middleboxes, List<Arc> links, VirtualTopology virtualTopology);
@@ -256,6 +256,10 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	public void processVmCreateAck(SimEvent ev) {
 	}
 	
+	public void processVmCreateAckHelper(TimedVm vm) {
+		
+	}
+	
 	protected void processVmDestroyAck(SimEvent ev) {
 		Vm destroyedVm = (Vm) ev.getData();
 		
@@ -278,6 +282,10 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	
 	// TODO: Need to handle data transfer b/w VSwitches and VMs in NOS (and/or SNOS)
 	public void processVSwitchCreateAck(SimEvent ev) {
+		
+	}
+	
+	public void processVSwitchCreateAckHelper(VSwitch vswitch) {
 		
 	}
 	
@@ -1078,12 +1086,12 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 			return false;
 		}
 		
-		boolean result = deployApplication(virtualTopologies.get(userId));
+		boolean result = deployApplication(virtualTopologies.get(userId), userId);
 		
 		if (result) {
 			isApplicationDeployed = true;
 			
-			deployedTopologies.put(userId, virtualTopologies.get(userId));
+//			deployedTopologies.put(userId, virtualTopologies.get(userId));
 						
 			double endTime = brokerMap.get(userId).getEndTime();
 			

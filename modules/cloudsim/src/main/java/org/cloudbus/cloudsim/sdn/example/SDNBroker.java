@@ -119,6 +119,10 @@ public class SDNBroker extends SimEntity {
 	private void processVmCreate(SimEvent ev) {	
 	}
 	
+	public void processVmCreateAckImmediate() {
+		
+	}
+	
 	private void requestCompleted(SimEvent ev) {
 	}
 	
