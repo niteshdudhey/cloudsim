@@ -1058,7 +1058,7 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		virtualTopology.setUpperLowerVNodes();
 		
 		virtualTopologies.put(userId,  virtualTopology);
-		System.out.println("Added VT for User " + userId);
+		System.out.println("Added VT for User " + userId + " VT : " + virtualTopology);
 	}
 
 	
@@ -1071,6 +1071,13 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	 * @return true on successful deployment. false otherwise.
 	 */
 	public boolean deployApplication(int userId) {
+		
+		// Some extraneous deploy application requests can be present
+		// as deploy application is requested every time a VDC finishes.
+		if (virtualTopologies.get(userId) == null) {
+			return false;
+		}
+		
 		boolean result = deployApplication(virtualTopologies.get(userId));
 		
 		if (result) {

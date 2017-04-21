@@ -37,7 +37,7 @@ public class VdcEmbedderSwitchLFF implements VdcEmbedder {
 		List<Switch> switches = physicalTopology.getSwitchList();
 		resourceMap = new HashMap<Switch, SwitchResources>();
 		
-		
+		System.out.println(virtualTopology);
 		
 		List<Vm> vms = virtualTopology.getVmList();
 		List<VSwitch> edgeVSwitches = virtualTopology.getEdgeVSwitchList();
