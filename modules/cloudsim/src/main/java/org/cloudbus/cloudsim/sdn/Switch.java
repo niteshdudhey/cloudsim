@@ -63,6 +63,8 @@ public class Switch extends SimEntity implements Node {
 
 	ForwardingRule forwardingTable;
 	
+	ModifiedForwardingRule modifiedForwardingTable;
+	
 	RoutingTable routingTable;	
 	
 	Hashtable<Package,Long> processingTable;
@@ -94,6 +96,7 @@ public class Switch extends SimEntity implements Node {
 		this.switchingDelay = switchingDelay;
 		
 		this.forwardingTable = new ForwardingRule();
+		this.modifiedForwardingTable = new ModifiedForwardingRule();
 		this.processingTable = new Hashtable<Package,Long>();
 		this.routingTable = new RoutingTable();
 		
@@ -521,5 +524,38 @@ public class Switch extends SimEntity implements Node {
 	@Override
 	public RoutingTable getRoutingTable() {
 		return this.routingTable;
+	}
+	
+	@Override
+	public void clearModifiedVMRoutingTable(){
+	    this.modifiedForwardingTable.clear();
+	}
+
+	@Override
+	public void addModifiedVMRoute(int flowId, Node from, Node to){
+	    this.modifiedForwardingTable.addRule(flowId, from, to);
+	}
+
+	@Override
+	public Node getModifiedVMRoute(int flowId, Node from){
+	    Node route = this.modifiedForwardingTable.getRoute(flowId, from);
+	    
+	    if(route == null) {
+	        this.printModifiedVMRoute();
+	        System.err.println("SDNSwitch.getRoute() ERROR: Cannot find route for flow: " 
+	        + flowId + " from src: " + NetworkOperatingSystem.debugVmIdName.get(from));
+	    }
+	        
+	    return route;
+	}
+
+	@Override
+	public void removeModifiedVMRoute(int flowId, Node from) {
+	    modifiedForwardingTable.removeRule(flowId, from);
+	}
+
+	@Override
+	public void printModifiedVMRoute() {
+	    modifiedForwardingTable.printForwardingTable(getName());
 	}
 }

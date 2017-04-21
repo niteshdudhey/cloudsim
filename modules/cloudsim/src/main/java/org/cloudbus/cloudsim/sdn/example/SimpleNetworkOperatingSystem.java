@@ -8,6 +8,7 @@
 package org.cloudbus.cloudsim.sdn.example;
 
 import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -126,6 +127,9 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 	 * @return
 	 */
 	private boolean isValidEmbedding(VdcEmbedding embedding, VirtualTopology virtualTopology){
+		if (embedding == null || embedding.getVLinkMap() == null || embedding.getVmMap() == null || embedding.getVSwitchMap() == null) {
+			return false;
+		}
 		if (embedding.getVmMap().size() == virtualTopology.getVms().size()) {
 			return true;
 		}
@@ -290,7 +294,7 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 					buildForwardingTables(srcHost, srcId, dstId, flowId, null);
 				}
 				System.out.println("New flow with FlowId = " + flowId + " between " + srcId + " " + dstId + " created");
-				updateVSwitchesInFlow(srcHost, srcId, dstId, flowId, 1000);
+				updateVSwitchesInFlow(srcHost, null, srcId, dstId, flowId, 1000);
 				Arc arc = new Arc(Integer.toString(flowId), srcId, dstId, flowId, 0, 0);
 				newFlows.add(arc);
 				this.flowIdArcTable.put(flowId, arc);
@@ -298,22 +302,24 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 		}
 	}
 	
-	private void updateVSwitchesInFlow(Node node, int srcId, int dstId, int flowId, int pathLength) {
+	private void updateVSwitchesInFlow(Node node, Node prevNode, int srcId, int dstId, int flowId, int pathLength) {
 		if (pathLength == 0) {
 			return;
 		}
 		if (getFlowIdVSwitchListTable().get(flowId) == null) {
 			getFlowIdVSwitchListTable().put(flowId, new LinkedList<VSwitch>());
 		}
-		Node next = node.getVMRoute(srcId, dstId, flowId);
-		System.out.println("VSwitches in Flow: " + next);
+//		System.out.println("VSwitches in Flow Src: " + node);
+//		Node next = node.getVMRoute(srcId, dstId, flowId);
+		Node next = node.getModifiedVMRoute(flowId, prevNode);
+//		System.out.println("VSwitches in Flow Dst: " + next);
 		if (next instanceof Switch) {
 			if (!((Switch)next).getVSwitchList().isEmpty()) {
 				VSwitch vswitch = ((Switch) next).getVSwitchList().get(0);
 				getFlowIdVSwitchListTable().get(flowId).add(vswitch);
 			}
 		}
-		updateVSwitchesInFlow(next, srcId, dstId, flowId, pathLength-1);
+		updateVSwitchesInFlow(next, node, srcId, dstId, flowId, pathLength-1);
 	}
 	
 	private boolean checkFlowExists(int srcId, int dstId) {
@@ -482,22 +488,24 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 		System.out.println("VM = " + vm.getId() + " UserId = " + userId);
 		
 		VirtualTopology virtualTopology = deployedTopologies.get(userId);
-		System.out.println(virtualTopology.getVLinks());
-		System.out.println(virtualTopology.getVms());
-		System.out.println(virtualTopology.getVSwitches());
+//		System.out.println(virtualTopology.getVLinks());
+//		System.out.println(virtualTopology.getVms());
+//		System.out.println(virtualTopology.getVSwitches());
 		
 		List<List<Arc>> links = virtualTopology.getPathsFromVm(vm.getId());
+		List<Node> allNodes;
 		VdcEmbedding embedding = vdcEmbeddingMap.get(virtualTopology);
 		Map<Arc, List<Link>> vlinkMap = embedding.getVLinkMap();
-		System.out.println("embedding: " + embedding);
-		System.out.println("vLinkMap: " + vlinkMap);
-		System.out.println("links returned by pathToVms: " + links);
+//		System.out.println("embedding: " + embedding);
+//		System.out.println("vLinkMap: " + vlinkMap);
+//		System.out.println("links returned by pathToVms: " + links);
 		
 		int flowId;
 		if (links == null) {
 			return;
 		}
 		for (List<Arc> vlinksForOnePairOfVms: links) {
+			allNodes = new ArrayList<Node>();
 			Arc lastVLink = vlinksForOnePairOfVms.get(vlinksForOnePairOfVms.size()-1);
 			int srcVmId = vm.getId();
 			int destVmId = lastVLink.getDstId();
@@ -505,33 +513,39 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 			if (!virtualTopology.getVmsTable().containsKey(destVmId)) {
 				destVmId = lastVLink.getSrcId();
 			}
-			Node srcNode = findSDNHost(vm.getId()), nextHop;
+			Node srcNode = findSDNHost(vm.getId()), prevNode;
+			prevNode = srcNode;
 			if (checkFlowExists(srcVmId, destVmId)) {
 				continue;
 			}
 			SDNHost srcHost = findSDNHost(srcVmId);
 			SDNHost dstHost = findSDNHost(destVmId);
-			System.out.println(srcHost + " " + dstHost);
+//			System.out.println(srcHost + " " + dstHost);
 			if (srcHost == null || dstHost == null) {
 				continue;
 			}
 			flowNumbers++;
 			flowId = flowNumbers;
 			for (Arc vlink: vlinksForOnePairOfVms) {
-				System.out.println("vlink: " + vlink);
+//				System.out.println("vlink: " + vlink);
 				List<Link> plinks = vlinkMap.get(vlink);
-				for (Link link: plinks) { 
-					System.out.println(srcNode);
-					System.out.println("plink: " + link);
+				for (Link link: plinks) {
+					Node nextHop;
+//					System.out.println(srcNode);
+					allNodes.add(srcNode);
+//					System.out.println("plink: " + link);
 					nextHop = link.getOtherNode(srcNode);
-					srcNode.addVMRoute(srcVmId, destVmId, flowId, nextHop);
+//					srcNode.addVMRoute(srcVmId, destVmId, flowId, nextHop);
+					srcNode.addModifiedVMRoute(flowId, prevNode, nextHop);
+//					System.out.println("Added VMRoute " + flowId + " b/w " + srcVmId + " and " + destVmId + " for " + srcNode.getName() + " " + nextHop.getName());
+					prevNode = srcNode;
 					srcNode = nextHop;
 					++pathLength;
 				}
 			}
 			System.out.println("New flow with FlowId = " + flowId + " between " + srcVmId + " " + destVmId + " created");
-			updateVSwitchesInFlow(srcHost, srcVmId, destVmId, flowId, pathLength);
-			System.out.println("VSwitches updated for flow.");
+			updateVSwitchesInFlow(srcHost, srcHost, srcVmId, destVmId, flowId, pathLength);
+			System.out.println("VSwitches updated for flow " + flowId + ".");
 			Arc arc = new Arc(Integer.toString(flowId), srcVmId, destVmId, flowId, 0, 0);
 			newFlows.add(arc);
 			this.flowIdArcTable.put(flowId, arc);

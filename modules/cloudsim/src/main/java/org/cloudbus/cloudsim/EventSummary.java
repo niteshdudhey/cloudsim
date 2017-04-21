@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.List;
 
 import org.cloudbus.cloudsim.sdn.Link;
+import org.cloudbus.cloudsim.sdn.NetworkOperatingSystem;
 import org.cloudbus.cloudsim.sdn.SDNHost;
 import org.cloudbus.cloudsim.sdn.Switch;
 import org.cloudbus.cloudsim.sdn.VSwitch;
@@ -11,6 +12,8 @@ import org.cloudbus.cloudsim.sdn.VSwitch;
 import com.google.common.collect.Table;
 
 public class EventSummary {
+	
+	private static NetworkOperatingSystem nos;
 	
 	private static List<? extends Vm> vmList;
 	
@@ -67,6 +70,9 @@ public class EventSummary {
 			for (VSwitch vswitch: vswitchList) {
 				vswitch.storeCurrentState(time);
 			}
+		}
+		if (nos != null) {
+			nos.storeCurrentState(time);
 		}
 	}
 		
@@ -146,6 +152,13 @@ public class EventSummary {
 				System.out.println("Null VSwitch in vmlist");
 			}
 		}
+	}
+	
+	public static void setNOS(NetworkOperatingSystem nos) {
+		System.out.println("Event Summary Class NOS");
+		System.out.println("=============================");
+		EventSummary.nos = nos;
+		System.out.println("NOS ID = " + nos.getId());
 	}
 	
 	public List<? extends Vm> getVmList() {

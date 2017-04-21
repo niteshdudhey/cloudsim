@@ -47,6 +47,7 @@ import org.cloudbus.cloudsim.sdn.datacenterSpecifications.VLinkSpec;
 import org.cloudbus.cloudsim.sdn.datacenterSpecifications.VSwitchSpec;
 import org.cloudbus.cloudsim.sdn.datacenterSpecifications.VdcSpec;
 import org.cloudbus.cloudsim.sdn.datacenterSpecifications.VmSpec;
+import org.cloudbus.cloudsim.sdn.example.SDNBroker;
 import org.cloudbus.cloudsim.sdn.example.policies.VmSchedulerTimeSharedEnergy;
 
 import com.google.gson.Gson;
@@ -96,6 +97,8 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	// Multiple Datacenters on one NOS.
 	protected Map<Integer, SDNDatacenter> datacenterIdToDatacenterMap;
 	
+	protected Map<Integer, SDNBroker> brokerMap;
+	
 	Hashtable<Package, Node> pkgTable;
 	
 	Hashtable<String, Channel> channelTable;
@@ -143,6 +146,8 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	
 	boolean isApplicationDeployed = false;
 	
+	protected List<VDCRequestMetrics> vdcRequestMetrics;
+	
 	// Resolution of the result.
 	public static double minTimeBetweenEvents = 0.001;		// in sec
 	public static int resolutionPlaces = 5;
@@ -172,6 +177,10 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		this.brokerIdToDatacenterIdMap = new HashMap<Integer, Integer>();
 		this.datacenterIdToDatacenterMap = new HashMap<Integer, SDNDatacenter>();
 		
+		this.brokerMap = new HashMap<Integer, SDNBroker>();
+		
+		this.vdcRequestMetrics = new ArrayList<VDCRequestMetrics>();
+		
 		initPhysicalTopology();
 		
 		virtualTopologies = new HashMap<Integer, VirtualTopology>();
@@ -196,6 +205,7 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		
 		vdcEmbeddingMap = new HashMap<VirtualTopology, VdcEmbedding>();
 		
+		EventSummary.setNOS(this);
 		EventSummary.setSDNHostList(sdnhosts);
 		EventSummary.setLinks(getPhysicalTopology().getAllLinks());
 		EventSummary.setSwitchList(switches);
@@ -235,6 +245,7 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 				break;
 			case Constants.PROCESS_APPLICATION_COMPLETE:
 				processApplicationComplete((Integer)ev.getData());
+				break;
 			default: 
 				System.out.println("Unknown event received by " + super.getName() + ". Tag:" + ev.getTag());
 		}
@@ -487,7 +498,10 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		List<Link> links = new ArrayList<Link>();
 		
 		Node origin = srcNode;
-		Node dest = origin.getVMRoute(src, dst, flowId);
+//		Node dest = origin.getVMRoute(src, dst, flowId);
+		Node prevNode = srcNode;
+		
+		Node dest = origin.getModifiedVMRoute(flowId, prevNode);
 		
 		if(dest == null) {
 			return null;
@@ -519,8 +533,10 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 				break;
 			}
 			
+			prevNode = origin;
 			origin = dest;
-			dest = origin.getVMRoute(src, dst, flowId);
+//			dest = origin.getVMRoute(src, dst, flowId);
+			dest = origin.getModifiedVMRoute(flowId, prevNode);
 		} 
 		
 		if(flowId != -1 && lowestBw < reqBw) {
@@ -563,9 +579,14 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		return getKey(origin, destination) + "-" + appId;
 	}
 
-	public void addDatacenter(SDNDatacenter dc, int userId) {
+	public void addBroker(SDNDatacenter dc, int userId, SDNBroker broker) {
 		brokerIdToDatacenterIdMap.put(userId, dc.getId());
 		datacenterIdToDatacenterMap.put(dc.getId(), dc);
+		brokerMap.put(userId, broker);
+	}
+	
+	public SDNBroker getBrokerById(int userId) {
+		return brokerMap.get(userId);
 	}
 	
 	public SDNDatacenter getDatacenterById(int datacenterId) {
@@ -898,8 +919,15 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		
 		VirtualTopology virtualTopology = new VirtualTopology(datacenterId, datacenterName);
 		
-		datacenterIdToDatacenterMap.get(datacenterId).setStartTime(vdc.getStarttime());
-		datacenterIdToDatacenterMap.get(datacenterId).setEndTime(vdc.getEndtime());
+		// TODO: Check duration vs endTime, what is taken as input
+		SDNBroker broker = brokerMap.get(userId);
+		double startTime = vdc.getStarttime();
+		double endTime = vdc.getEndtime();
+		
+		broker.setStartTime(startTime);
+		broker.setEndTime(endTime);
+		broker.setRequestedStartTime(startTime);
+		broker.setRequestedDuration(endTime-startTime);
 		
 		for(VmSpec vmSpec : vdc.getVms()) {
 			
@@ -1049,9 +1077,8 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 			isApplicationDeployed = true;
 			
 			deployedTopologies.put(userId, virtualTopologies.get(userId));
-			
-			int datacenterId = brokerIdToDatacenterIdMap.get(userId);
-			Double endTime = datacenterIdToDatacenterMap.get(datacenterId).getEndTime();
+						
+			double endTime = brokerMap.get(userId).getEndTime();
 			
 			send(this.getId(), endTime, Constants.PROCESS_APPLICATION_COMPLETE, userId);
 			
@@ -1077,14 +1104,14 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 			int userId = pair.getKey();
 			
 			int datacenterId = brokerIdToDatacenterIdMap.get(userId);
-			Double startTime = datacenterIdToDatacenterMap.get(datacenterId).getStartTime();
-			Double endTime = datacenterIdToDatacenterMap.get(datacenterId).getEndTime();
+			double startTime = brokerMap.get(userId).getStartTime();
+			double endTime = brokerMap.get(userId).getEndTime();
 			
-			Double startTimeNew = CloudSim.clock();
-			Double endTimeNew = startTimeNew + endTime - startTime;
+			double startTimeNew = CloudSim.clock();
+			double endTimeNew = startTimeNew + endTime - startTime;
 			
-			datacenterIdToDatacenterMap.get(datacenterId).setStartTime(startTimeNew);
-			datacenterIdToDatacenterMap.get(datacenterId).setEndTime(endTimeNew);
+			brokerMap.get(userId).setStartTime(startTimeNew);
+			brokerMap.get(userId).setEndTime(endTimeNew);
 			
 			send(datacenterId, CloudSim.getMinTimeBetweenEvents(), Constants.DEPLOY_APPLICATION, userId);
 		}
@@ -1169,5 +1196,25 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	
 	public Map<Integer, List<VSwitch> > getFlowIdVSwitchListTable() {
 		return this.flowIdVSwitchListTable;
+	}
+	
+	public int getNumDeployedVDCs() {
+		return this.deployedTopologies.size();
+	}
+	
+	public int getNumWaitingVDCs() {
+		return this.virtualTopologies.size();
+	}
+	
+	public List<VDCRequestMetrics> getVDCRequestMetrics() {
+		return this.vdcRequestMetrics;
+	}
+	
+	public void storeCurrentState(double time) {
+		int totalRequestsCount = getNumDeployedVDCs() + getNumWaitingVDCs();
+		int waitingRequestsCount = getNumWaitingVDCs();
+		int deployedRequestsCount = getNumDeployedVDCs();
+		VDCRequestMetrics metric = new VDCRequestMetrics(time, totalRequestsCount, waitingRequestsCount, deployedRequestsCount);
+		vdcRequestMetrics.add(metric);
 	}
 }
