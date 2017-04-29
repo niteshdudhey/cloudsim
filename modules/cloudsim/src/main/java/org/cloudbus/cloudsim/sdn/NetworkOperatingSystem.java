@@ -87,6 +87,8 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	
 	protected Map<Integer, VirtualTopology> deployedTopologies;
 	
+	protected Map<Integer, VirtualTopology> waitingTopologies;
+	
 	protected VdcEmbedder embedder;
 	
 	protected Map<VirtualTopology, VdcEmbedding> vdcEmbeddingMap;
@@ -185,6 +187,7 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		
 		virtualTopologies = new HashMap<Integer, VirtualTopology>();
 		deployedTopologies = new HashMap<Integer, VirtualTopology>();
+		waitingTopologies = new HashMap<Integer, VirtualTopology>();
 		
 		vmNameIdTable = new HashMap<String, Integer>();
 		vmList = new LinkedList<Vm>();
@@ -640,9 +643,9 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	}
 	
 	protected VSwitch findVSwitch(int vswitchId) {
-		String name = getvswitchIdNameTable().get(vswitchId);
+//		String name = getvswitchIdNameTable().get(vswitchId);
 		for(VSwitch vswitch : vswitchList) {
-			if (vswitch.getName().equals(name)) {
+			if (vswitch.getId() == vswitchId) {
 				return vswitch;
 			}
 		}
@@ -930,12 +933,12 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		// TODO: Check duration vs endTime, what is taken as input
 		SDNBroker broker = brokerMap.get(userId);
 		double startTime = vdc.getStarttime();
-		double endTime = vdc.getEndtime();
+		double duration = vdc.getEndtime();
 		
 		broker.setStartTime(startTime);
-		broker.setEndTime(endTime);
+		broker.setEndTime(startTime+duration);
 		broker.setRequestedStartTime(startTime);
-		broker.setRequestedDuration(endTime-startTime);
+		broker.setRequestedDuration(duration);
 		
 		for(VmSpec vmSpec : vdc.getVms()) {
 			
@@ -1086,16 +1089,16 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 			return false;
 		}
 		
+		waitingTopologies.put(userId, virtualTopologies.get(userId));
+		
 		boolean result = deployApplication(virtualTopologies.get(userId), userId);
 		
 		if (result) {
 			isApplicationDeployed = true;
 			
 //			deployedTopologies.put(userId, virtualTopologies.get(userId));
-						
-			double endTime = brokerMap.get(userId).getEndTime();
 			
-			send(this.getId(), endTime, Constants.PROCESS_APPLICATION_COMPLETE, userId);
+			send(this.getId(), brokerMap.get(userId).getRequestedDuration(), Constants.PROCESS_APPLICATION_COMPLETE, userId);
 			
 			virtualTopologies.remove(userId);
 			
@@ -1106,13 +1109,18 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	}
 	
 	private void processApplicationComplete(int userId) {
+		SDNBroker broker = brokerMap.get(userId);
+		if (broker!=null) {
+			broker.setFinishTime(CloudSim.clock());
+		}
 		deployedTopologies.remove(userId);
+		System.out.println("Removing from deployed topologies for user " + userId);
 		
 		deployPendingRequest();
 	}
 	
 	protected void deployPendingRequest() {
-		Iterator<Entry<Integer, VirtualTopology>> it = virtualTopologies.entrySet().iterator();
+		Iterator<Entry<Integer, VirtualTopology>> it = waitingTopologies.entrySet().iterator();
 		
 		while(it.hasNext()) {
 			Map.Entry<Integer, VirtualTopology> pair = (Map.Entry<Integer, VirtualTopology>)it.next();
@@ -1122,8 +1130,8 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 			double startTime = brokerMap.get(userId).getStartTime();
 			double endTime = brokerMap.get(userId).getEndTime();
 			
-			double startTimeNew = CloudSim.clock();
-			double endTimeNew = startTimeNew + endTime - startTime;
+			double startTimeNew = CloudSim.clock()+CloudSim.getMinTimeBetweenEvents();
+			double endTimeNew = startTimeNew + brokerMap.get(userId).getRequestedDuration();
 			
 			brokerMap.get(userId).setStartTime(startTimeNew);
 			brokerMap.get(userId).setEndTime(endTimeNew);
@@ -1213,12 +1221,16 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		return this.flowIdVSwitchListTable;
 	}
 	
+	public Map<Integer, SDNBroker> getBrokerMap() {
+		return this.brokerMap;
+	}
+	
 	public int getNumDeployedVDCs() {
 		return this.deployedTopologies.size();
 	}
 	
 	public int getNumWaitingVDCs() {
-		return this.virtualTopologies.size();
+		return this.waitingTopologies.size();
 	}
 	
 	public List<VDCRequestMetrics> getVDCRequestMetrics() {

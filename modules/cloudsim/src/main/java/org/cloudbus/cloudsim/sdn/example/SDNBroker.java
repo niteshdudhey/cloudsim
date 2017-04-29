@@ -40,9 +40,15 @@ public class SDNBroker extends SimEntity {
 	
 	private double requestedDuration;
 	
+	private double actualStartTime;
+	
+	private double finishTime;
+	
 	private double startTime;
 	
 	private double endTime;
+	
+	private boolean addedToQueue;
 
 	private SDNDatacenter datacenter = null;
 	
@@ -63,6 +69,9 @@ public class SDNBroker extends SimEntity {
 		this.endTime = Double.POSITIVE_INFINITY;
 		this.requestedStartTime = 0.0;
 		this.requestedDuration = Double.POSITIVE_INFINITY;
+		this.actualStartTime = 0.0;
+		this.finishTime = Double.POSITIVE_INFINITY;
+		this.addedToQueue = false;
 	}
 	
 	@Override
@@ -164,6 +173,22 @@ public class SDNBroker extends SimEntity {
 		this.requestedStartTime = startTime;
 	}
 	
+	public double getActualStartTime() {
+		return actualStartTime;
+	}
+	
+	public void setActualStartTime(double startTime) {
+		actualStartTime = startTime;
+	}
+	
+	public double getFinishTime() {
+		return finishTime;
+	}
+	
+	public void setFinishTime(double time) {
+		finishTime = time;
+	}
+	
 	public double getRequestedDuration() {
 		return requestedDuration;
 	}
@@ -186,6 +211,14 @@ public class SDNBroker extends SimEntity {
 
 	public void setEndTime(double endTime) {
 		this.endTime = endTime;
+	}
+	
+	public boolean isAddedToQueue() {
+		return addedToQueue;
+	}
+	
+	public void setAddedToQueue() {
+		addedToQueue = true;
 	}
 
 }

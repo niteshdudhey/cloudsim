@@ -233,12 +233,13 @@ public class SDNExampleMultipleDatacenters {
 	    		files[i].delete();
 	    	}
 	    }
-		LogPrinter.printHostMetricsToFile(nos.getSDNHostList());
-		LogPrinter.printVmMetricsToFile(nos.getVmList());
-		LogPrinter.printLinkMetricsToFile(nos.getPhysicalTopology().getLinks());
-		LogPrinter.printSwitchMetricsToFile(nos.getSwitchList());
-		LogPrinter.printVSwitchMetricsToFile(nos.getVSwitchList());
+//		LogPrinter.printHostMetricsToFile(nos.getSDNHostList());
+//		LogPrinter.printVmMetricsToFile(nos.getVmList());
+//		LogPrinter.printLinkMetricsToFile(nos.getPhysicalTopology().getLinks());
+//		LogPrinter.printSwitchMetricsToFile(nos.getSwitchList());
+//		LogPrinter.printVSwitchMetricsToFile(nos.getVSwitchList());
 		LogPrinter.printVDCMetricsToFile(nos.getVDCRequestMetrics());
+		LogPrinter.printVDCEmbedTimes(nos.getBrokerMap());
 	}
 	
 	/**

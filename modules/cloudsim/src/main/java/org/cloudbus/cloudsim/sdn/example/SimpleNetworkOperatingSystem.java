@@ -71,6 +71,7 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 		}
 		
 		deployedTopologies.put(userId, virtualTopologies.get(userId));
+		waitingTopologies.remove(userId);
 		
 		Map<Integer, Vm> vms1 = virtualTopology.getVmsTable();
 		
@@ -116,7 +117,7 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 			Log.printLine(CloudSim.clock() + ": " + getName() + ": Trying to Create VSwitch #" + vswitch.getId() 
 					+ " in " + datacenter.getName() + ", (" + vswitch.getStartTime() + "~" + vswitch.getFinishTime() + ")");
 			
-			send(datacenter.getId(), vswitch.getStartTime(), CloudSimTags.VSWITCH_CREATE_ACK, vswitch);
+//			send(datacenter.getId(), vswitch.getStartTime(), CloudSimTags.VSWITCH_CREATE_ACK, vswitch);
 			
 			if (vswitch.getStartTime()>CloudSim.clock()) {
 				System.err.println("VSwitch being created earlier than specified!");
@@ -128,6 +129,11 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 				send(datacenter.getId(), vswitch.getFinishTime(), CloudSimTags.VSWITCH_DESTROY, vswitch);
 				send(this.getId(), vswitch.getFinishTime(), CloudSimTags.VSWITCH_DESTROY, vswitch);
 			}
+		}
+		
+		SDNBroker broker = brokerMap.get(userId);
+		if (broker!=null) {
+			broker.setActualStartTime(CloudSim.clock());
 		}
 		
 		return true;
@@ -316,6 +322,28 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 		}
 	}
 	
+	private void updateVSwitchesInFlow(List<Arc> vlinks, int flowId) {
+		if (getFlowIdVSwitchListTable().get(flowId) == null) {
+			getFlowIdVSwitchListTable().put(flowId, new LinkedList<VSwitch>());
+		}
+		for (Arc vlink: vlinks) {
+			if (getvswitchIdNameTable().get(vlink.getSrcId()) != null) {
+				VSwitch vswitch = findVSwitch(vlink.getSrcId());
+				if (!getFlowIdVSwitchListTable().get(flowId).contains(vswitch)) {
+					getFlowIdVSwitchListTable().get(flowId).add(vswitch);
+					System.out.println("VSwitches (as src) in Flow " + flowId + ": " + vswitch);
+				}
+			}
+			if (getvswitchIdNameTable().get(vlink.getDstId()) != null) {
+				VSwitch vswitch = findVSwitch(vlink.getDstId());
+				if (!getFlowIdVSwitchListTable().get(flowId).contains(vswitch)) {
+					getFlowIdVSwitchListTable().get(flowId).add(vswitch);
+					System.out.println("VSwitches (as src) in Flow " + flowId + ": " + vswitch);
+				}
+			}
+		}
+	}
+	
 	private void updateVSwitchesInFlow(Node node, Node prevNode, int srcId, int dstId, int flowId, int pathLength) {
 		if (pathLength == 0) {
 			return;
@@ -331,6 +359,7 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 			if (!((Switch)next).getVSwitchList().isEmpty()) {
 				VSwitch vswitch = ((Switch) next).getVSwitchList().get(0);
 				getFlowIdVSwitchListTable().get(flowId).add(vswitch);
+				System.out.println("VSwitches in Flow " + flowId + ": " + vswitch);
 			}
 		}
 		updateVSwitchesInFlow(next, node, srcId, dstId, flowId, pathLength-1);
@@ -512,7 +541,7 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 		System.out.println("VM = " + vm.getId() + " UserId = " + userId);
 		
 		VirtualTopology virtualTopology = deployedTopologies.get(userId);
-//		System.out.println(virtualTopology.getVLinks());
+//		System.out.println(virtualTopology);
 //		System.out.println(virtualTopology.getVms());
 //		System.out.println(virtualTopology.getVSwitches());
 		
@@ -568,7 +597,8 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 				}
 			}
 			System.out.println("New flow with FlowId = " + flowId + " between " + srcVmId + " " + destVmId + " created");
-			updateVSwitchesInFlow(srcHost, srcHost, srcVmId, destVmId, flowId, pathLength);
+//			updateVSwitchesInFlow(srcHost, srcHost, srcVmId, destVmId, flowId, pathLength);
+			updateVSwitchesInFlow(vlinksForOnePairOfVms, flowId);
 			System.out.println("VSwitches updated for flow " + flowId + ".");
 			Arc arc = new Arc(Integer.toString(flowId), srcVmId, destVmId, flowId, 0, 0);
 			newFlows.add(arc);
