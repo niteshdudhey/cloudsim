@@ -52,13 +52,13 @@ public class LogPrinter {
 	 * Folder Name where all metrics summary files will be stored.
 	 * Give the folder path including the slash at the end.
 	 */
-	public static String folderName = "/home/ravi/Documents/Ravi Teja A.V/RnD/";
+	public static String folderName = "/home/vinay/Documents/RnD/";
 	
 	/*
 	 * Folder Name where all the data files needed to generate plots will be stored.
 	 * Give the folder path including the slash at the end.
 	 */
-	public static String dataFilesFolderName = "/home/ravi/Documents/Ravi Teja A.V/RnD/data_files/";
+	public static String dataFilesFolderName = "/home/vinay/Documents/RnD/data_files/";
 	
 	public static void printEnergyConsumption(List<Host> hostList, List<Switch> switchList, double finishTime) {
 		double hostEnergyConsumption = 0, switchEnergyConsumption = 0;
@@ -439,11 +439,11 @@ public class LogPrinter {
             }
             FileWriter fw = new FileWriter(file.getAbsoluteFile(), false);
             for (VSwitch vswitch: vswitchList) {
-    			fw.write("VSwitch " + vswitch.getName() + "\n");
+    			fw.write("VSwitch " + vswitch.getId() + "\n");
     			fw.write("--------\n");
     			for (VSwitchStateHistoryEntry entry : vswitch.getVSwitchStateHistory()) {
     				fw.write("Time = " + entry.getTime() + "\n" + entry.toString() + "\n");
-    				addToDataFile("VSwitch-" + vswitch.getName() + "-Num-Packets.dat", entry.getTime(), entry.getPacketsTransferred());                    
+    				addToDataFile("VSwitch-" + vswitch.getId() + "-Num-Packets.dat", entry.getTime(), entry.getPacketsTransferred());                    
     			}
     		}
             fw.close();
@@ -466,6 +466,31 @@ public class LogPrinter {
 				addToDataFile("VDC-Requests-Pending.dat", entry.getTime(), entry.getWaitingRequestsCount());
 				addToDataFile("VDC-Requests-Served.dat", entry.getTime(), entry.getDeployedRequestsCount());
 			}
+            fw.close();
+		} catch(Exception e) {
+			System.out.println(e);
+		}
+	}
+	
+	public static void printVDCEmbedTimes(Map<Integer, SDNBroker> brokerMap) {
+		String fileName = dataFilesFolderName + "VDC-Embed-Times.stat";
+		try {
+			File file = new File(fileName);
+            if (!file.exists()) {
+                file.createNewFile();
+            }
+            FileWriter fw = new FileWriter(file.getAbsoluteFile(), true);
+            fw.write("VDC, Start, End, ActualStart, Finish, Waiting\n");
+            for (Map.Entry<Integer, SDNBroker> entry: brokerMap.entrySet()) {
+            	fw.write(Integer.toString(entry.getKey()) + 
+            			", " + Double.toString(entry.getValue().getRequestedStartTime()) + 
+            			", " + Double.toString(entry.getValue().getRequestedStartTime()+entry.getValue().getRequestedDuration()) + 
+            			", " + Double.toString(entry.getValue().getActualStartTime()) + 
+            			", " + Double.toString(entry.getValue().getFinishTime()) + 
+            			", " + Double.toString(entry.getValue().getActualStartTime()-entry.getValue().getRequestedStartTime()) + 
+            			"\n");
+            }
+            
             fw.close();
 		} catch(Exception e) {
 			System.out.println(e);
