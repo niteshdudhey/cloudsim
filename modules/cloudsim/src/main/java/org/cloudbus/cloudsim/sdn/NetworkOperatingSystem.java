@@ -535,7 +535,7 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 			link = this.topology.getLink(origin.getAddress(), dest.getAddress());
 			links.add(link);
 			nodes.add(dest);
-			
+
 			if(lowestBw > link.getFreeBandwidth(origin)) {
 				lowestBw = link.getFreeBandwidth(origin);
 			}
@@ -841,6 +841,7 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 				topology.addNode(sdnHost);
 				this.hosts.add(host);
 				this.sdnhosts.add(sdnHost);
+				topology.addSelfLink(sdnHost.getAddress(), hostSpec.getLoopBw(), hostSpec.getLoopLat());
 				
 			}
 			else{
@@ -860,6 +861,7 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 					topology.addNode(sdnHost);
 					this.hosts.add(host);
 					this.sdnhosts.add(sdnHost);
+					topology.addSelfLink(sdnHost.getAddress(), hostSpec.getLoopBw(), hostSpec.getLoopLat());
 					
 				}
 			}

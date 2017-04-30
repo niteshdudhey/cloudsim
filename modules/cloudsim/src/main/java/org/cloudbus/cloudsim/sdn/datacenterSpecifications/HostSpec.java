@@ -19,8 +19,10 @@ public class HostSpec implements Cloneable {
 	long bw;
 	int nums;
 	long size;
+	long loopbw;
+	double looplat;
 	
-	public HostSpec(String name, String type, int pes, long mips, int ram, long storage, long bw, int nums, long size){
+	public HostSpec(String name, String type, int pes, long mips, int ram, long storage, long bw, int nums, long size, long loopbw, double looplat){
 		this.name = name;
 		this.type = type;
 		this.pes =  pes;
@@ -30,6 +32,8 @@ public class HostSpec implements Cloneable {
 		this.bw = bw;
 		this.nums = nums;
 		this.size = size;
+		this.loopbw = loopbw;
+		this.looplat = looplat;
 	}
 
 	public String getName() {
@@ -102,6 +106,22 @@ public class HostSpec implements Cloneable {
 
 	public void setSize(long size) {
 		this.size = size;
+	}
+
+	public long getLoopBw() {
+		return loopbw;
+	}
+
+	public void setLoopBw(long loopbw) {
+		this.loopbw = loopbw;
+	}
+
+	public long getLoopLat() {
+		return looplat;
+	}
+
+	public void setLoopLat(long looplat) {
+		this.looplat = looplat;
 	}
 	
 	public Object clone() throws CloneNotSupportedException {

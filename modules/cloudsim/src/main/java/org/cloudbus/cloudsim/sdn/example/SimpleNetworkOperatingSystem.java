@@ -410,11 +410,11 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 	private boolean buildForwardingTables(Node node, int srcVm, int dstVm, int flowId, Node prevNode) {
 		// There are many links. Determine which hop to go.
 		SDNHost desthost = findSDNHost(dstVm);
-		
+
 		if(node.equals(desthost)) {
 			return true;
 		}
-		
+
 		List<Link> nextLinks = node.getRoute(desthost);
 		
 		// Let's choose the first link. make simple.
@@ -422,10 +422,21 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 		//Link nextLink = selectLinkRandom(nextLinks);
 		//Link nextLink = selectBestLink(node, nextLinks);
 		//Link nextLink = selectRandomTreeLink(nextLinks, desthost);
-		Node nextHop = nextLink.getOtherNode(node);
 		
+		
+		// Note: Ensure above link is not internal
+		
+		if (nextLink.isInternal()) {
+			System.err.println("SimpleNetworkOperatingSystem.buildForwardingTables: Internal link found.");
+			return false;
+		}
+		
+		Node nextHop = nextLink.getOtherNode(node);
+
 		node.addVMRoute(srcVm, dstVm, flowId, nextHop);
+
 		buildForwardingTables(nextHop, srcVm, dstVm, flowId, null);
+		
 		
 		return true;
 			
