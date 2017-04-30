@@ -116,11 +116,11 @@ public class HostSpec implements Cloneable {
 		this.loopbw = loopbw;
 	}
 
-	public long getLoopLat() {
+	public double getLoopLat() {
 		return looplat;
 	}
 
-	public void setLoopLat(long looplat) {
+	public void setLoopLat(double looplat) {
 		this.looplat = looplat;
 	}
 	
