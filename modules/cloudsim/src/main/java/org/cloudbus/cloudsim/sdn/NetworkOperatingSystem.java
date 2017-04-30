@@ -87,7 +87,9 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	
 	protected Map<Integer, VirtualTopology> deployedTopologies;
 	
-	protected Map<Integer, VirtualTopology> waitingTopologies;
+//	protected Map<Integer, VirtualTopology> waitingTopologies;
+	
+	protected List<Integer> waitingUsers;
 	
 	protected VdcEmbedder embedder;
 	
@@ -187,7 +189,8 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 		
 		virtualTopologies = new HashMap<Integer, VirtualTopology>();
 		deployedTopologies = new HashMap<Integer, VirtualTopology>();
-		waitingTopologies = new HashMap<Integer, VirtualTopology>();
+//		waitingTopologies = new HashMap<Integer, VirtualTopology>();
+		waitingUsers = new ArrayList<Integer>();
 		
 		vmNameIdTable = new HashMap<String, Integer>();
 		vmList = new LinkedList<Vm>();
@@ -1091,7 +1094,12 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 			return false;
 		}
 		
-		waitingTopologies.put(userId, virtualTopologies.get(userId));
+//		waitingTopologies.put(userId, virtualTopologies.get(userId));
+		if (!waitingUsers.contains((Integer) userId)) {
+			System.out.println("Lol user " + userId);
+			waitingUsers.add(userId);
+		}
+		
 		
 		boolean result = deployApplication(virtualTopologies.get(userId), userId);
 		
@@ -1122,11 +1130,13 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	}
 	
 	protected void deployPendingRequest() {
-		Iterator<Entry<Integer, VirtualTopology>> it = waitingTopologies.entrySet().iterator();
+//		Iterator<Entry<Integer, VirtualTopology>> it = waitingTopologies.entrySet().iterator();
+		Iterator<Integer> it = waitingUsers.iterator();
 		
 		while(it.hasNext()) {
-			Map.Entry<Integer, VirtualTopology> pair = (Map.Entry<Integer, VirtualTopology>)it.next();
-			int userId = pair.getKey();
+//			Map.Entry<Integer, VirtualTopology> pair = (Map.Entry<Integer, VirtualTopology>)it.next();
+//			int userId = pair.getKey();
+			int userId = it.next();
 			
 			int datacenterId = brokerIdToDatacenterIdMap.get(userId);
 			double startTime = brokerMap.get(userId).getStartTime();
@@ -1232,7 +1242,7 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	}
 	
 	public int getNumWaitingVDCs() {
-		return this.waitingTopologies.size();
+		return this.waitingUsers.size();
 	}
 	
 	public List<VDCRequestMetrics> getVDCRequestMetrics() {

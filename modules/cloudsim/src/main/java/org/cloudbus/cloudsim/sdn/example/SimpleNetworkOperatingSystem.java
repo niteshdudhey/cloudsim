@@ -71,7 +71,8 @@ public class SimpleNetworkOperatingSystem extends NetworkOperatingSystem {
 		}
 		
 		deployedTopologies.put(userId, virtualTopologies.get(userId));
-		waitingTopologies.remove(userId);
+//		waitingTopologies.remove(userId);
+		waitingUsers.remove((Integer) userId);
 		
 		Map<Integer, Vm> vms1 = virtualTopology.getVmsTable();
 		
